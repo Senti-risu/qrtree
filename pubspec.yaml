@@ -67,7 +67,7 @@ flutter:
   uses-material-design: true
 
   assets:
-    - assets/icon/
+    - assets/images/ecotag.jpg
 
   fonts:
     - family: EcoTagRoboto
