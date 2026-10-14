@@ -3,7 +3,7 @@
     <uses-feature android:name="android.hardware.camera" android:required="false" />
 
     <application
-        android:label="flutter_application_1"
+        android:label="Ecotag"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
