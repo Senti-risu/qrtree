@@ -1,0 +1,39 @@
+lib/
+├── main.dart
+├── config/
+│   └── supabase_config.dart
+├── models/
+│   ├── user_model.dart
+│   ├── campus_model.dart
+│   ├── college_model.dart
+│   ├── plant_model.dart
+│   └── inspection_model.dart
+├── services/
+│   ├── auth_service.dart
+│   ├── plant_service.dart
+│   ├── inspection_service.dart
+│   └── report_service.dart
+├── screens/
+│   ├── auth/
+│   │   ├── login_screen.dart
+│   │   └── register_screen.dart
+│   ├── admin/
+│   │   ├── dashboard_screen.dart          <-- The Admin Dashboard
+│   │   ├── campus_management_screen.dart  <-- Colleges & Campuses lists
+│   │   └── plant_records_screen.dart      <-- The "All Plants" table
+│   ├── plants/
+│   │   ├── plant_list_screen.dart         <-- Mobile Home
+│   │   ├── plant_detail_screen.dart
+│   │   ├── plant_registration_screen.dart
+│   │   └── qr_scanner_screen.dart         <-- The Mobile Scan page
+│   └── inspections/
+│       ├── inspection_form_screen.dart
+│       └── inspection_history_screen.dart
+├── widgets/
+│   ├── custom_dropdown.dart
+│   ├── stat_card.dart                     <-- The "400, 340, 10, 50" cards
+│   ├── plant_card.dart
+│   └── loading_indicator.dart
+└── utils/
+    ├── constants.dart
+    └── validators.dart

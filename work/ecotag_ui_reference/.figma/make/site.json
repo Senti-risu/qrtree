@@ -1,0 +1,10 @@
+{
+  "description": "Manage campus plant data with a user-friendly dashboard that tracks plant health, inspections, and statistics for university environmental monitoring.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}
