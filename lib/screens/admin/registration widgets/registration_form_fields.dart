@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../theme/app_colors.dart';
+import '../../../theme/app_layout.dart';
 
 class RegistrationDropdownField extends StatelessWidget {
   final String label;
@@ -19,19 +20,19 @@ class RegistrationDropdownField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final validValue = value != null && items.contains(value) ? value : null;
+    final theme = Theme.of(context);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
-          style: const TextStyle(
+          style: theme.textTheme.labelMedium?.copyWith(
             color: AppColors.darkGreen,
-            fontSize: 12,
             fontWeight: FontWeight.w600,
           ),
         ),
-        const SizedBox(height: 6),
+        const SizedBox(height: AppSpacing.sm),
         LayoutBuilder(
           builder: (context, constraints) {
             return DropdownMenu<String>(
@@ -46,7 +47,7 @@ class RegistrationDropdownField extends StatelessWidget {
               trailingIcon: const Icon(Icons.keyboard_arrow_down_rounded),
               selectedTrailingIcon: const Icon(
                 Icons.keyboard_arrow_up_rounded,
-                color: AppColors.green,
+                color: AppColors.primary,
               ),
               dropdownMenuEntries: items
                   .map(
@@ -55,22 +56,7 @@ class RegistrationDropdownField extends StatelessWidget {
                   )
                   .toList(),
               onSelected: onChanged,
-              inputDecorationTheme: InputDecorationTheme(
-                filled: true,
-                fillColor: Colors.white,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(9),
-                  borderSide: const BorderSide(color: AppColors.border),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(9),
-                  borderSide: const BorderSide(color: AppColors.border),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(9),
-                  borderSide: const BorderSide(color: AppColors.green),
-                ),
-              ),
+              inputDecorationTheme: theme.inputDecorationTheme,
             );
           },
         ),
@@ -95,37 +81,25 @@ class RegistrationTextField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
-          style: const TextStyle(
+          style: theme.textTheme.labelMedium?.copyWith(
             color: AppColors.darkGreen,
-            fontSize: 12,
             fontWeight: FontWeight.w600,
           ),
         ),
-        const SizedBox(height: 6),
+        const SizedBox(height: AppSpacing.sm),
         TextFormField(
           controller: controller,
           readOnly: readOnly,
           decoration: InputDecoration(
             hintText: hint,
-            filled: true,
-            fillColor: readOnly ? const Color(0xFFF1F3F1) : Colors.white,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(9),
-              borderSide: const BorderSide(color: AppColors.border),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(9),
-              borderSide: const BorderSide(color: AppColors.border),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(9),
-              borderSide: const BorderSide(color: AppColors.green),
-            ),
+            fillColor: readOnly ? AppColors.surfaceVariant : null,
           ),
         ),
       ],
@@ -152,45 +126,44 @@ class RegistrationDateField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Date Planted',
-          style: TextStyle(
+          style: theme.textTheme.labelMedium?.copyWith(
             color: AppColors.darkGreen,
-            fontSize: 12,
             fontWeight: FontWeight.w600,
           ),
         ),
-        const SizedBox(height: 6),
+        const SizedBox(height: AppSpacing.sm),
         InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(9),
-          child: Container(
-            height: 56,
-            padding: const EdgeInsets.symmetric(horizontal: 14),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(9),
-              border: Border.all(color: AppColors.border),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    value == null ? 'Select date' : _formatDate(value!),
-                    style: TextStyle(
-                      color: value == null ? Colors.grey : Colors.black87,
+          child: InputDecorator(
+            decoration: const InputDecoration(),
+            child: SizedBox(
+              height: 24,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      value == null ? 'Select date' : _formatDate(value!),
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: value == null
+                            ? AppColors.textSecondary
+                            : AppColors.textPrimary,
+                      ),
                     ),
                   ),
-                ),
-                const Icon(
-                  Icons.calendar_today_outlined,
-                  size: 18,
-                  color: AppColors.green,
-                ),
-              ],
+                  const Icon(
+                    Icons.calendar_today_outlined,
+                    size: 18,
+                    color: AppColors.primary,
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -213,15 +186,21 @@ class ResponsiveFieldPair extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        if (constraints.maxWidth < 550) {
-          return Column(children: [first, const SizedBox(height: 16), second]);
+        if (constraints.maxWidth < AppBreakpoints.phone) {
+          return Column(
+            children: [
+              first,
+              const SizedBox(height: AppSpacing.lg),
+              second,
+            ],
+          );
         }
 
         return Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(child: first),
-            const SizedBox(width: 16),
+            const SizedBox(width: AppSpacing.lg),
             Expanded(child: second),
           ],
         );

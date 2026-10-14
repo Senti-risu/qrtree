@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import '../../services/guest_service.dart';
 import '../../theme/app_colors.dart';
+import '../../theme/app_layout.dart';
 import '../../utils/user_facing_error.dart';
 import '../../widgets/app_card.dart';
 
@@ -103,7 +104,7 @@ class _GuestEntryScreenState extends State<GuestEntryScreen> {
         top: false,
         child: LayoutBuilder(
           builder: (context, constraints) {
-            final compact = constraints.maxWidth < 600;
+            final compact = AppBreakpoints.isPhone(constraints.maxWidth);
             final pagePadding = compact ? 16.0 : 32.0;
             return SingleChildScrollView(
               keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,

@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 
 import '../../../theme/app_colors.dart';
+import '../../../theme/app_layout.dart';
 import '../../../widgets/app_card.dart';
 import 'plant_image_picker_field.dart';
 import 'registration_form_fields.dart';
@@ -63,20 +64,21 @@ class PlantClassificationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return AppCard(
-      padding: const EdgeInsets.fromLTRB(24, 26, 24, 24),
+      padding: const EdgeInsets.all(AppSpacing.xl),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Plant Classification',
-            style: TextStyle(
-              fontSize: 22,
+            style: theme.textTheme.titleLarge?.copyWith(
               fontWeight: FontWeight.w700,
               color: AppColors.darkGreen,
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: AppSpacing.xl),
 
           ResponsiveFieldPair(
             first: RegistrationDropdownField(
@@ -93,7 +95,7 @@ class PlantClassificationCard extends StatelessWidget {
             ),
           ),
 
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.lg),
 
           ResponsiveFieldPair(
             first: RegistrationTextField(
@@ -108,7 +110,7 @@ class PlantClassificationCard extends StatelessWidget {
             ),
           ),
 
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.lg),
 
           ResponsiveFieldPair(
             first: RegistrationDropdownField(
@@ -125,7 +127,7 @@ class PlantClassificationCard extends StatelessWidget {
             ),
           ),
 
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.lg),
 
           ResponsiveFieldPair(
             first: RegistrationDateField(value: datePlanted, onTap: onDateTap),
@@ -135,7 +137,7 @@ class PlantClassificationCard extends StatelessWidget {
             ),
           ),
 
-          const SizedBox(height: 20),
+          const SizedBox(height: AppSpacing.xl),
 
           PlantImagePickerField(
             imageBytes: imageBytes,

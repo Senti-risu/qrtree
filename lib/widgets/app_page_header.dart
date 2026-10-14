@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
+import '../theme/app_layout.dart';
 import 'app_card.dart';
 
 class AppPageHeader extends StatelessWidget {
@@ -18,25 +19,28 @@ class AppPageHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AppCard(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 22),
+      padding: const EdgeInsets.all(AppSpacing.xl),
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final stackActions = trailing != null && constraints.maxWidth < 680;
+          final stackActions =
+              trailing != null &&
+              !AppBreakpoints.isDesktop(constraints.maxWidth);
           final heading = Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 title,
-                style: const TextStyle(
-                  fontSize: 26,
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.w800,
                   color: AppColors.darkGreen,
                 ),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: AppSpacing.xs),
               Text(
                 subtitle,
-                style: const TextStyle(fontSize: 13, color: AppColors.green),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.copyWith(color: AppColors.green),
               ),
             ],
           );
@@ -46,7 +50,7 @@ class AppPageHeader extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 heading,
-                const SizedBox(height: 16),
+                const SizedBox(height: AppSpacing.lg),
                 Align(alignment: Alignment.centerLeft, child: trailing!),
               ],
             );
@@ -56,7 +60,10 @@ class AppPageHeader extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Expanded(child: heading),
-              if (trailing != null) ...[const SizedBox(width: 20), trailing!],
+              if (trailing != null) ...[
+                const SizedBox(width: AppSpacing.xl),
+                trailing!,
+              ],
             ],
           );
         },

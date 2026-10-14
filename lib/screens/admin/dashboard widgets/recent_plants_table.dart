@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../../../theme/app_colors.dart';
+import '../../../theme/app_layout.dart';
+import '../../../widgets/app_card.dart';
+
 class RecentPlantsTable extends StatelessWidget {
   final List<Map<String, dynamic>> plants;
   final VoidCallback onViewAll;
@@ -10,27 +14,23 @@ class RecentPlantsTable extends StatelessWidget {
     required this.onViewAll,
   });
 
-  static const _green = Color(0xFF2E7D32);
-  static const _darkGreen = Color(0xFF075E38);
-  static const _border = Color(0xFFD8E8DD);
-
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final compact = constraints.maxWidth < 760;
+        final compact = AppBreakpoints.isPhone(constraints.maxWidth);
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _header(compact),
-            const SizedBox(height: 20),
+            const SizedBox(height: AppSpacing.xl),
             if (plants.isEmpty)
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: 24),
                 child: Center(
                   child: Text(
                     'No plants registered yet.',
-                    style: TextStyle(color: Colors.grey),
+                    style: TextStyle(color: AppColors.textSecondary),
                   ),
                 ),
               )
@@ -54,20 +54,22 @@ class RecentPlantsTable extends StatelessWidget {
         ),
         Text(
           'Recently registered or updated plants',
-          style: TextStyle(color: Colors.grey, fontSize: 13),
+          style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
         ),
       ],
     );
     final action = OutlinedButton(
       onPressed: onViewAll,
       style: OutlinedButton.styleFrom(
-        side: const BorderSide(color: _green),
-        minimumSize: const Size(88, 42),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        side: const BorderSide(color: AppColors.green),
+        minimumSize: const Size(88, AppLayout.minimumTapTarget),
+        shape: const RoundedRectangleBorder(
+          borderRadius: AppRadii.fullyRounded,
+        ),
       ),
       child: const Text(
         'View All',
-        style: TextStyle(color: _green, fontSize: 13),
+        style: TextStyle(color: AppColors.green, fontSize: 13),
       ),
     );
     return Row(
@@ -86,48 +88,69 @@ class RecentPlantsTable extends StatelessWidget {
       scrollDirection: Axis.horizontal,
       child: DataTable(
         columnSpacing: 32,
-        headingRowColor: WidgetStateProperty.all(Colors.grey.shade50),
+        headingRowColor: const WidgetStatePropertyAll(AppColors.surfaceSubtle),
         columns: const [
           DataColumn(
             label: Text(
               'PLANT',
-              style: TextStyle(fontWeight: FontWeight.w600, color: Colors.grey),
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                color: AppColors.textSecondary,
+              ),
             ),
           ),
           DataColumn(
             label: Text(
               'TYPE',
-              style: TextStyle(fontWeight: FontWeight.w600, color: Colors.grey),
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                color: AppColors.textSecondary,
+              ),
             ),
           ),
           DataColumn(
             label: Text(
               'VARIETY',
-              style: TextStyle(fontWeight: FontWeight.w600, color: Colors.grey),
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                color: AppColors.textSecondary,
+              ),
             ),
           ),
           DataColumn(
             label: Text(
               'CAMPUS',
-              style: TextStyle(fontWeight: FontWeight.w600, color: Colors.grey),
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                color: AppColors.textSecondary,
+              ),
             ),
           ),
           DataColumn(
             label: Text(
               'GROWTH STAGE',
-              style: TextStyle(fontWeight: FontWeight.w600, color: Colors.grey),
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                color: AppColors.textSecondary,
+              ),
             ),
           ),
           DataColumn(
             label: Text(
               'HEALTH',
-              style: TextStyle(fontWeight: FontWeight.w600, color: Colors.grey),
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                color: AppColors.textSecondary,
+              ),
             ),
           ),
           DataColumn(
             label: Text(
               'DATE PLANTED',
-              style: TextStyle(fontWeight: FontWeight.w600, color: Colors.grey),
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                color: AppColors.textSecondary,
+              ),
             ),
           ),
         ],
@@ -151,14 +174,9 @@ class RecentPlantsTable extends StatelessWidget {
     final summary = _summary(plant);
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
-      child: Container(
+      child: AppCard(
         width: double.infinity,
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: _border),
-        ),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -168,13 +186,13 @@ class RecentPlantsTable extends StatelessWidget {
                   width: 42,
                   height: 42,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFE2F7ED),
-                    borderRadius: BorderRadius.circular(11),
+                    color: AppColors.primaryContainer,
+                    borderRadius: AppRadii.medium,
                   ),
                   child: const Icon(
                     Icons.local_florist_rounded,
                     size: 22,
-                    color: _green,
+                    color: AppColors.green,
                   ),
                 ),
                 const SizedBox(width: 11),
@@ -189,7 +207,7 @@ class RecentPlantsTable extends StatelessWidget {
                         style: const TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w700,
-                          color: _darkGreen,
+                          color: AppColors.darkGreen,
                         ),
                       ),
                       Text(
@@ -198,7 +216,7 @@ class RecentPlantsTable extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
                           fontSize: 11,
-                          color: Colors.grey,
+                          color: AppColors.textSecondary,
                         ),
                       ),
                     ],
@@ -240,7 +258,13 @@ class RecentPlantsTable extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: const TextStyle(fontSize: 10, color: Colors.grey)),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 10,
+              color: AppColors.textSecondary,
+            ),
+          ),
           const SizedBox(height: 2),
           Text(
             value,
@@ -259,7 +283,7 @@ class RecentPlantsTable extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
       decoration: BoxDecoration(
         color: color.withValues(alpha: .12),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: AppRadii.fullyRounded,
       ),
       child: Text(
         health,
@@ -287,7 +311,11 @@ class RecentPlantsTable extends StatelessWidget {
         DataCell(
           Row(
             children: [
-              Icon(Icons.local_florist, size: 16, color: Colors.green.shade300),
+              const Icon(
+                Icons.local_florist,
+                size: 16,
+                color: AppColors.primaryLight,
+              ),
               const SizedBox(width: 8),
               Text(plant, style: const TextStyle(fontWeight: FontWeight.w600)),
             ],
@@ -300,13 +328,13 @@ class RecentPlantsTable extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
-              color: Colors.purple.shade50,
-              borderRadius: BorderRadius.circular(4),
+              color: AppColors.accentPurpleContainer,
+              borderRadius: AppRadii.small,
             ),
             child: Text(
               stage,
               style: TextStyle(
-                color: Colors.purple.shade700,
+                color: AppColors.accentPurple,
                 fontSize: 12,
                 fontWeight: FontWeight.w500,
               ),
@@ -318,7 +346,7 @@ class RecentPlantsTable extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
               color: healthColor,
-              borderRadius: BorderRadius.circular(4),
+              borderRadius: AppRadii.small,
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -337,7 +365,9 @@ class RecentPlantsTable extends StatelessWidget {
             ),
           ),
         ),
-        DataCell(Text(date, style: TextStyle(color: Colors.grey.shade600))),
+        DataCell(
+          Text(date, style: const TextStyle(color: AppColors.textSecondary)),
+        ),
       ],
     );
   }
@@ -375,10 +405,10 @@ class RecentPlantsTable extends StatelessWidget {
   }
 
   Color _healthColor(String health) => switch (health) {
-    'Healthy' => _green,
-    'At Risk' => const Color(0xFFF57C00),
-    'Dead' => const Color(0xFFD32F2F),
-    _ => Colors.grey,
+    'Healthy' => AppColors.green,
+    'At Risk' => AppColors.warningAccent,
+    'Dead' => AppColors.danger,
+    _ => AppColors.textSecondary,
   };
 
   String _formatDate(dynamic value) {

@@ -1,9 +1,11 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import '../../models/app_role.dart';
 import '../../services/qr_print_service.dart';
 import '../../services/qr_service.dart';
 import '../../theme/app_colors.dart';
+import '../../theme/app_layout.dart';
 import '../../utils/user_facing_error.dart';
 import '../../widgets/app_card.dart';
 import '../../widgets/app_page_header.dart';
@@ -41,7 +43,7 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
   bool _hasMore = false;
   bool _generating = false;
   final Set<int> _updatingTags = <int>{};
-  String _filter = 'available';
+  String _filter = 'all';
   int _loadRequestId = 0;
   Timer? _searchDebounce;
 
@@ -210,7 +212,7 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
   Future<void> _resetFilters() async {
     _searchDebounce?.cancel();
     _searchController.clear();
-    setState(() => _filter = 'available');
+    setState(() => _filter = 'all');
     await _loadTags();
   }
 
@@ -720,8 +722,10 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDesktop = MediaQuery.sizeOf(context).width >= 900;
-    final useHeaderActions = MediaQuery.sizeOf(context).width >= 1200;
+    final isDesktop = AppBreakpoints.isDesktop(
+      MediaQuery.sizeOf(context).width,
+    );
+    final useHeaderActions = isDesktop;
     return AppShell(
       activeRoute: '/qr-management',
       mobileTitle: 'QR Management',
@@ -745,10 +749,13 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
               subtitle: 'Generate, print, scan, and monitor EcoTag QR codes',
               trailing: useHeaderActions ? _headerActions() : null,
             ),
-            const SizedBox(height: 18),
+            const SizedBox(height: AppSpacing.xl),
           ],
-          if (!useHeaderActions) ...[_toolbar(), const SizedBox(height: 18)],
-          _tagList(),
+          if (!useHeaderActions) ...[
+            _toolbar(),
+            const SizedBox(height: AppSpacing.xl),
+          ],
+          Expanded(child: _tagList()),
         ],
       ),
     );
@@ -863,25 +870,13 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
   }
 
   String _roleLabel(String role) {
-    switch (role) {
-      case 'college_admin':
-        return 'College Admin';
-      case 'campus_admin':
-        return 'Campus Admin';
-      case 'university_admin':
-        return 'University Admin';
-      case 'super_admin':
-        return 'Super Admin';
-      case 'inspection_team':
-        return 'Inspection Team';
-      default:
-        return role;
-    }
+    final parsed = AppRole.fromValue(role);
+    return parsed == AppRole.unknown ? role : parsed.label;
   }
 
   Widget _toolbar() {
     return AppCard(
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       child: LayoutBuilder(
         builder: (_, constraints) {
           final actions = <Widget>[
@@ -915,20 +910,21 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
               label: const Text('Scan QR'),
             ),
           ];
-          if (constraints.maxWidth < 560) {
+          if (AppBreakpoints.isPhone(constraints.maxWidth)) {
             return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 for (var index = 0; index < actions.length; index++) ...[
                   actions[index],
-                  if (index < actions.length - 1) const SizedBox(height: 10),
+                  if (index < actions.length - 1)
+                    const SizedBox(height: AppSpacing.sm),
                 ],
               ],
             );
           }
           return Wrap(
-            spacing: 12,
-            runSpacing: 12,
+            spacing: AppSpacing.md,
+            runSpacing: AppSpacing.md,
             crossAxisAlignment: WrapCrossAlignment.end,
             children: actions,
           );
@@ -1036,8 +1032,7 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
         child: Column(
           children: [
             _listHeader(),
-            const SizedBox(
-              height: 220,
+            const Expanded(
               child: Center(
                 child: CircularProgressIndicator(color: AppColors.green),
               ),
@@ -1051,8 +1046,7 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
         child: Column(
           children: [
             _listHeader(),
-            const SizedBox(
-              height: 180,
+            const Expanded(
               child: Center(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -1062,7 +1056,7 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
                       size: 46,
                       color: AppColors.textSecondary,
                     ),
-                    SizedBox(height: 10),
+                    SizedBox(height: AppSpacing.sm),
                     Text('No QR tags found.'),
                   ],
                 ),
@@ -1074,38 +1068,39 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
     }
 
     return AppCard(
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _listHeader(),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.md),
           if (_visibleTags.isEmpty)
-            const SizedBox(
-              height: 140,
+            const Expanded(
               child: Center(child: Text('No QR tags match your search.')),
             )
           else
-            LayoutBuilder(
-              builder: (_, constraints) {
-                if (constraints.maxWidth >= 760) return _tagTable();
-                return Column(
-                  children: [
-                    for (
-                      var index = 0;
-                      index < _visibleTags.length;
-                      index++
-                    ) ...[
-                      _tagTile(_visibleTags[index]),
-                      if (index < _visibleTags.length - 1)
-                        const Divider(height: 1),
-                    ],
-                  ],
-                );
-              },
+            Expanded(
+              child: LayoutBuilder(
+                builder: (_, constraints) {
+                  if (AppBreakpoints.isPhone(constraints.maxWidth)) {
+                    return ListView.separated(
+                      keyboardDismissBehavior:
+                          ScrollViewKeyboardDismissBehavior.onDrag,
+                      itemCount: _visibleTags.length,
+                      separatorBuilder: (_, _) => const Divider(height: 1),
+                      itemBuilder: (_, index) => _tagTile(_visibleTags[index]),
+                    );
+                  }
+                  return SingleChildScrollView(
+                    keyboardDismissBehavior:
+                        ScrollViewKeyboardDismissBehavior.onDrag,
+                    child: _tagTable(),
+                  );
+                },
+              ),
             ),
           if (_hasMore) ...[
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.lg),
             Center(
               child: OutlinedButton.icon(
                 onPressed: _loadingMore ? null : () => _loadTags(more: true),
@@ -1146,14 +1141,17 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
       isDense: true,
       filled: true,
       fillColor: AppColors.background,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: AppColors.border),
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg,
+        vertical: AppSpacing.lg,
       ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: AppColors.green, width: 1.4),
+      enabledBorder: const OutlineInputBorder(
+        borderRadius: AppRadii.medium,
+        borderSide: AppBorders.subtleSide,
+      ),
+      focusedBorder: const OutlineInputBorder(
+        borderRadius: AppRadii.medium,
+        borderSide: AppBorders.focusedSide,
       ),
     ),
   );
@@ -1169,7 +1167,7 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
       side: BorderSide(
         color: _activeFilterCount > 0 ? AppColors.green : AppColors.border,
       ),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      shape: const RoundedRectangleBorder(borderRadius: AppRadii.medium),
     ),
     child: Row(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -1184,7 +1182,7 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
             decoration: BoxDecoration(
               color: AppColors.green,
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: AppRadii.fullyRounded,
             ),
             child: Text(
               '$_activeFilterCount',
@@ -1204,7 +1202,7 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
     decoration: BoxDecoration(
       color: AppColors.primaryContainer,
-      borderRadius: BorderRadius.circular(20),
+      borderRadius: AppRadii.fullyRounded,
       border: Border.all(color: AppColors.green.withValues(alpha: .35)),
     ),
     child: Row(
@@ -1234,7 +1232,7 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
             height: 40,
             decoration: BoxDecoration(
               color: AppColors.primaryContainer,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: AppRadii.medium,
             ),
             child: const Icon(
               Icons.qr_code_2_rounded,
@@ -1269,24 +1267,24 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
           ),
         ],
       );
-      if (constraints.maxWidth < 760) {
+      if (!AppBreakpoints.isDesktop(constraints.maxWidth)) {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             title,
-            const SizedBox(height: 14),
+            const SizedBox(height: AppSpacing.lg),
             _searchField(),
-            const SizedBox(height: 10),
+            const SizedBox(height: AppSpacing.sm),
             Row(
               children: [
                 Expanded(child: _mobileFilterButton()),
-                const SizedBox(width: 8),
+                const SizedBox(width: AppSpacing.sm),
                 OutlinedButton(
                   onPressed: _hasActiveFilters ? _resetFilters : null,
                   style: OutlinedButton.styleFrom(
                     minimumSize: const Size(82, 48),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                    shape: const RoundedRectangleBorder(
+                      borderRadius: AppRadii.medium,
                     ),
                   ),
                   child: const Text('Reset'),
@@ -1336,7 +1334,7 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
               Row(
                 children: [
                   const CircleAvatar(
-                    backgroundColor: Color(0xFFE6F5EB),
+                    backgroundColor: AppColors.primaryContainer,
                     child: Icon(
                       Icons.qr_code_2_rounded,
                       color: AppColors.green,
@@ -1366,7 +1364,7 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
       leading: const CircleAvatar(
-        backgroundColor: Color(0xFFE6F5EB),
+        backgroundColor: AppColors.primaryContainer,
         child: Icon(Icons.qr_code_2_rounded, color: AppColors.green),
       ),
       title: Text(
@@ -1483,21 +1481,21 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
     final foreground = value == 'available'
         ? AppColors.green
         : assigned
-        ? const Color(0xFF246BCE)
+        ? AppColors.info
         : warning
-        ? const Color(0xFFB86A00)
+        ? AppColors.warning
         : replaced
-        ? const Color(0xFF7C3AED)
+        ? AppColors.accentPurple
         : AppColors.textSecondary;
     final background = value == 'available'
-        ? const Color(0xFFE2F7ED)
+        ? AppColors.primaryContainer
         : assigned
-        ? const Color(0xFFE6F0FF)
+        ? AppColors.infoContainer
         : warning
-        ? const Color(0xFFFFF1D8)
+        ? AppColors.warningContainer
         : replaced
-        ? const Color(0xFFF1EAFE)
-        : const Color(0xFFEEF1EF);
+        ? AppColors.accentPurpleContainer
+        : AppColors.surfaceDisabled;
     final label = status.isEmpty
         ? 'Unknown'
         : '${status[0].toUpperCase()}${status.substring(1)}';
@@ -1505,7 +1503,7 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
       decoration: BoxDecoration(
         color: background,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: AppRadii.fullyRounded,
       ),
       child: Text(
         label,
@@ -1525,7 +1523,7 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
       ..showSnackBar(
         SnackBar(
           content: Text(text),
-          backgroundColor: error ? Colors.red : AppColors.green,
+          backgroundColor: error ? AppColors.danger : AppColors.green,
         ),
       );
   }

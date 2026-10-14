@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../theme/app_colors.dart';
+import '../../../theme/app_layout.dart';
 import '../../../widgets/app_card.dart';
 
 class CampusOverviewCard extends StatelessWidget {
@@ -17,7 +18,7 @@ class CampusOverviewCard extends StatelessWidget {
       (value, item) => item.value > value ? item.value : value,
     );
     return AppCard(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -34,7 +35,7 @@ class CampusOverviewCard extends StatelessWidget {
             'Registered plants by campus',
             style: TextStyle(fontSize: 10, color: AppColors.green),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: AppSpacing.lg),
           if (entries.isEmpty)
             const Padding(
               padding: EdgeInsets.symmetric(vertical: 30),
@@ -64,7 +65,7 @@ class CampusOverviewCard extends StatelessWidget {
                         minHeight: 8,
                         borderRadius: BorderRadius.circular(8),
                         color: AppColors.green,
-                        backgroundColor: const Color(0xFFE2F7ED),
+                        backgroundColor: AppColors.primaryContainer,
                       ),
                     ),
                     const SizedBox(width: 10),

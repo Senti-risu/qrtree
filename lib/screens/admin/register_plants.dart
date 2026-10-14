@@ -4,14 +4,17 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../models/app_role.dart';
-import 'plant_service.dart';
 import '../../services/qr_print_service.dart';
+import '../../theme/app_colors.dart';
+import '../../theme/app_layout.dart';
 import '../../utils/user_facing_error.dart';
+import '../../widgets/app_card.dart';
 import '../../widgets/app_error_state.dart';
 import '../../widgets/app_page_header.dart';
 import '../../widgets/app_shell.dart';
 import '../../widgets/forms/app_searchable_dropdown.dart';
 import '../../widgets/forms/app_text_field.dart';
+import 'plant_service.dart';
 import 'registration widgets/plant_image_picker_field.dart';
 
 class RegisterPlantScreen extends StatefulWidget {
@@ -41,9 +44,6 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
   final QrPrintService _qrPrintService = QrPrintService();
   final ImagePicker _imagePicker = ImagePicker();
 
-  static const Color _green = Color(0xFF168B47);
-  static const Color _darkGreen = Color(0xFF075E38);
-  static const Color _borderColor = Color(0xFFDCE8DF);
   static const int _maxVarietyLength = 100;
   static const int _maxPlanterLength = 120;
 
@@ -589,7 +589,7 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
               title: const Text('Choose from gallery'),
               onTap: () => Navigator.pop(context, ImageSource.gallery),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.sm),
           ],
         ),
       ),
@@ -708,7 +708,7 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
           builder: (dialogContext) => AlertDialog(
             icon: const Icon(
               Icons.content_copy_rounded,
-              color: Color(0xFFE58A00),
+              color: AppColors.warning,
             ),
             title: const Text('Possible duplicate plant'),
             content: ConstrainedBox(
@@ -720,7 +720,7 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
                   Text(
                     '${candidates.length} similar ${candidates.length == 1 ? 'record was' : 'records were'} found in this location. Review them before creating another plant.',
                   ),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: AppSpacing.lg),
                   ...preview.map((candidate) {
                     final id = candidate['plant_id']?.toString() ?? 'Unknown';
                     final name =
@@ -735,7 +735,7 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
                       if (planted.isNotEmpty) planted,
                     ].join(' · ');
                     return Padding(
-                      padding: const EdgeInsets.only(bottom: 7),
+                      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
                       child: Text(
                         'Plant #$id${details.isEmpty ? '' : ' — $details'}',
                         maxLines: 2,
@@ -747,7 +747,7 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
                   if (candidates.length > preview.length)
                     Text(
                       'And ${candidates.length - preview.length} more similar records.',
-                      style: const TextStyle(color: Colors.black54),
+                      style: const TextStyle(color: AppColors.textSecondary),
                     ),
                 ],
               ),
@@ -759,7 +759,6 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
               ),
               FilledButton(
                 onPressed: () => Navigator.pop(dialogContext, true),
-                style: FilledButton.styleFrom(backgroundColor: _green),
                 child: const Text('Continue anyway'),
               ),
             ],
@@ -919,7 +918,7 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
             children: [
               Text('Plant ID: ${result['plant_id']}'),
 
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSpacing.sm),
 
               Text(
                 _usingExistingQr
@@ -927,7 +926,7 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
                     : 'New QR generated:',
               ),
 
-              const SizedBox(height: 4),
+              const SizedBox(height: AppSpacing.xs),
 
               SelectableText(qrCode),
             ],
@@ -1009,7 +1008,7 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
               FilledButton(
                 onPressed: () => Navigator.pop(context, true),
                 style: FilledButton.styleFrom(
-                  backgroundColor: Colors.red.shade700,
+                  backgroundColor: AppColors.danger,
                 ),
                 child: const Text('Discard'),
               ),
@@ -1021,7 +1020,10 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final desktop = MediaQuery.sizeOf(context).width >= 900;
+    final media = MediaQuery.of(context);
+    final width = media.size.width;
+    final phone = width < AppBreakpoints.phone;
+    final desktop = width >= AppBreakpoints.desktop;
 
     Widget body;
 
@@ -1035,12 +1037,12 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
       body = const SizedBox(
         height: 400,
 
-        child: Center(child: CircularProgressIndicator(color: _green)),
+        child: Center(child: CircularProgressIndicator()),
       );
     } else if (_loadError != null) {
       body = _errorCard();
     } else {
-      body = _form(showHeader: desktop);
+      body = _form(useMobileStepper: phone, showHeader: desktop);
     }
 
     return PopScope(
@@ -1064,26 +1066,23 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
         userName: widget.username,
         userRole: _roleLabel(widget.role),
         onRefresh: _loadData,
-        child: body,
+        // Scanning is a separate task. Hiding the docked scanner here keeps it
+        // from covering the form's primary action and avoids losing edits.
+        showQrButton: false,
+        child: SingleChildScrollView(
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          padding: EdgeInsets.only(
+            bottom: media.viewInsets.bottom + AppSpacing.xl,
+          ),
+          child: body,
+        ),
       ),
     );
   }
 
   String _roleLabel(String role) {
-    switch (role) {
-      case 'college_admin':
-        return 'College Admin';
-      case 'campus_admin':
-        return 'Campus Admin';
-      case 'university_admin':
-        return 'University Admin';
-      case 'super_admin':
-        return 'Super Admin';
-      case 'inspection_team':
-        return 'Inspection Team';
-      default:
-        return role;
-    }
+    final parsed = AppRole.fromValue(role);
+    return parsed == AppRole.unknown ? role : parsed.label;
   }
 
   Widget _errorCard() {
@@ -1105,115 +1104,146 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
   // FORM
   // ============================================================
 
-  Widget _form({required bool showHeader}) {
-    if (!showHeader) return _mobileForm();
+  Widget _form({required bool useMobileStepper, required bool showHeader}) {
+    if (useMobileStepper) return _mobileForm();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const AppPageHeader(
-          title: 'Registration',
-          subtitle: 'Register and profile a new campus plant',
-        ),
-        const SizedBox(height: 18),
+        if (showHeader) ...[
+          const AppPageHeader(
+            title: 'Registration',
+            subtitle: 'Register and profile a new campus plant',
+          ),
+          const SizedBox(height: AppSpacing.xl),
+        ],
         _qrCard(),
-        const SizedBox(height: 18),
+        const SizedBox(height: AppSpacing.xl),
         LayoutBuilder(
-          builder: (context, constraints) => constraints.maxWidth >= 850
+          builder: (context, constraints) =>
+              constraints.maxWidth >= AppBreakpoints.desktop
               ? Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Expanded(child: _plantSection()),
-                    const SizedBox(width: 18),
+                    const SizedBox(width: AppSpacing.xl),
                     Expanded(child: _locationSection()),
                   ],
                 )
               : Column(
                   children: [
                     _plantSection(),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: AppSpacing.xl),
                     _locationSection(),
                   ],
                 ),
         ),
-        const SizedBox(height: 20),
-        Align(
-          alignment: Alignment.centerRight,
-          child: SizedBox(width: 190, height: 48, child: _registerButton()),
+        const SizedBox(height: AppSpacing.xl),
+        AppCard(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          child: Align(
+            alignment: Alignment.centerRight,
+            child: SizedBox(width: 200, height: 52, child: _registerButton()),
+          ),
         ),
       ],
     );
   }
 
-  Widget _mobileForm() => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      _mobileSteps(),
-      const SizedBox(height: 14),
-      if (_mobileStep == 0) ...[
-        _qrCard(),
-        const SizedBox(height: 14),
-        _plantSection(),
-      ] else if (_mobileStep == 1)
-        _locationSection()
-      else
-        _reviewSection(),
-      const SizedBox(height: 18),
-      Row(
-        children: [
-          if (_mobileStep > 0) ...[
-            Expanded(
-              child: OutlinedButton.icon(
-                onPressed: _saving ? null : _previousMobileStep,
-                icon: const Icon(Icons.arrow_back_rounded),
-                label: const Text('Back'),
-                style: OutlinedButton.styleFrom(
-                  minimumSize: const Size.fromHeight(50),
-                ),
-              ),
-            ),
-            const SizedBox(width: 10),
-          ],
-          Expanded(
-            flex: 2,
-            child: _mobileStep < 2
-                ? FilledButton.icon(
-                    onPressed: _saving ? null : _nextMobileStep,
-                    icon: const Icon(Icons.arrow_forward_rounded),
-                    label: Text(
-                      _mobileStep == 0
-                          ? 'Continue to location'
-                          : 'Review plant',
-                    ),
-                    style: FilledButton.styleFrom(
-                      minimumSize: const Size.fromHeight(50),
-                      backgroundColor: _green,
-                    ),
-                  )
-                : SizedBox(height: 50, child: _registerButton()),
-          ),
-        ],
+  Widget _mobileForm() {
+    final media = MediaQuery.of(context);
+    final textScale = media.textScaler.scale(1);
+    final compactHeight = media.size.height < 720;
+    final stackActions = media.size.width < 360 || textScale > 1.25;
+    final sectionGap = compactHeight ? AppSpacing.md : AppSpacing.lg;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _mobileSteps(compact: compactHeight),
+        SizedBox(height: sectionGap),
+        if (_mobileStep == 0) ...[
+          _qrCard(),
+          SizedBox(height: sectionGap),
+          _plantSection(),
+        ] else if (_mobileStep == 1)
+          _locationSection()
+        else
+          _reviewSection(compact: compactHeight),
+        SizedBox(height: sectionGap),
+        _mobileActions(stack: stackActions, compact: compactHeight),
+      ],
+    );
+  }
+
+  Widget _mobileActions({required bool stack, required bool compact}) {
+    final backButton = OutlinedButton.icon(
+      onPressed: _saving ? null : _previousMobileStep,
+      icon: const Icon(Icons.arrow_back_rounded),
+      label: const Text('Back'),
+      style: OutlinedButton.styleFrom(
+        minimumSize: const Size.fromHeight(AppLayout.minimumTapTarget),
       ),
-    ],
-  );
+    );
+    final primaryButton = _mobileStep < 2
+        ? FilledButton.icon(
+            onPressed: _saving ? null : _nextMobileStep,
+            icon: const Icon(Icons.arrow_forward_rounded),
+            label: Text(
+              _mobileStep == 0 ? 'Continue to location' : 'Review plant',
+              maxLines: 2,
+              textAlign: TextAlign.center,
+            ),
+            style: FilledButton.styleFrom(
+              minimumSize: const Size.fromHeight(52),
+            ),
+          )
+        : SizedBox(height: 52, child: _registerButton());
+
+    return AppCard(
+      padding: EdgeInsets.all(compact ? AppSpacing.sm : AppSpacing.md),
+      child: stack
+          ? Column(
+              children: [
+                SizedBox(width: double.infinity, child: primaryButton),
+                if (_mobileStep > 0) ...[
+                  const SizedBox(height: AppSpacing.sm),
+                  SizedBox(width: double.infinity, child: backButton),
+                ],
+              ],
+            )
+          : Row(
+              children: [
+                if (_mobileStep > 0) ...[
+                  Expanded(child: backButton),
+                  const SizedBox(width: AppSpacing.sm),
+                ],
+                Expanded(flex: 2, child: primaryButton),
+              ],
+            ),
+    );
+  }
 
   Widget _registerButton() => FilledButton.icon(
     onPressed: _saving ? null : _registerPlant,
-    style: FilledButton.styleFrom(backgroundColor: _green),
     icon: _saving
         ? const SizedBox(
             width: 17,
             height: 17,
             child: CircularProgressIndicator(
               strokeWidth: 2,
-              color: Colors.white,
+              color: AppColors.onPrimary,
             ),
           )
         : const Icon(Icons.check_circle_outline_rounded),
     label: Text(_saving ? 'Registering…' : 'Register Plant'),
   );
 
-  Widget _mobileSteps() => _card(
+  Widget _mobileSteps({required bool compact}) => AppCard(
+    padding: EdgeInsets.symmetric(
+      horizontal: compact ? AppSpacing.md : AppSpacing.lg,
+      vertical: compact ? AppSpacing.sm : AppSpacing.md,
+    ),
     child: Row(
       children: [
         _stepBadge(0, 'Plant'),
@@ -1231,26 +1261,34 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
         CircleAvatar(
           radius: 14,
           backgroundColor: step <= _mobileStep
-              ? _green
-              : const Color(0xFFE2F7ED),
+              ? AppColors.primary
+              : AppColors.primaryContainer,
           child: step < _mobileStep
-              ? const Icon(Icons.check_rounded, size: 16, color: Colors.white)
+              ? const Icon(
+                  Icons.check_rounded,
+                  size: 16,
+                  color: AppColors.onPrimary,
+                )
               : Text(
                   '${step + 1}',
                   style: TextStyle(
-                    color: step == _mobileStep ? Colors.white : _darkGreen,
+                    color: step == _mobileStep
+                        ? AppColors.onPrimary
+                        : AppColors.darkGreen,
                     fontSize: 11,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
         ),
-        const SizedBox(height: 5),
+        const SizedBox(height: AppSpacing.xs),
         Text(
           label,
           style: TextStyle(
             fontSize: 11,
             fontWeight: step == _mobileStep ? FontWeight.w800 : FontWeight.w600,
-            color: step <= _mobileStep ? _darkGreen : Colors.grey.shade600,
+            color: step <= _mobileStep
+                ? AppColors.darkGreen
+                : AppColors.textSecondary,
           ),
         ),
       ],
@@ -1260,138 +1298,188 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
   Widget _stepLine(int beforeStep) => Container(
     width: 22,
     height: 2,
-    color: beforeStep < _mobileStep ? _green : const Color(0xFFC9DED0),
+    color: beforeStep < _mobileStep ? AppColors.primary : AppColors.border,
   );
 
-  Widget _validationBanner(String message) => Container(
-    width: double.infinity,
-    margin: const EdgeInsets.only(bottom: 14),
-    padding: const EdgeInsets.all(12),
-    decoration: BoxDecoration(
-      color: const Color(0xFFFFECEA),
-      borderRadius: BorderRadius.circular(10),
-      border: Border.all(color: const Color(0xFFF0B8B3)),
-    ),
-    child: Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Icon(Icons.error_outline_rounded, color: Color(0xFFB3261E)),
-        const SizedBox(width: 9),
-        Expanded(
-          child: Text(
-            message,
-            style: const TextStyle(
-              color: Color(0xFF8C1D18),
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ),
-      ],
-    ),
-  );
-
-  Widget _reviewSection() => _card(
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Review Plant',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w800,
-            color: _darkGreen,
-          ),
-        ),
-        const SizedBox(height: 4),
-        const Text(
-          'Confirm these details before creating the plant and QR record.',
-          style: TextStyle(color: Color(0xFF6F7E74)),
-        ),
-        const SizedBox(height: 18),
-        _reviewGroup('Plant', {
-          'Common name': _commonName ?? 'Not selected',
-          'Scientific name': _scientificNameController.text.trim().isEmpty
-              ? 'Not available'
-              : _scientificNameController.text.trim(),
-          'Variety': _varietyController.text.trim().isEmpty
-              ? 'Not provided'
-              : _varietyController.text.trim(),
-          'Growth stage': _growthStage ?? 'Not selected',
-          'Health': _friendlyHealth(_healthStatus),
-          'Date planted': _datePlanted == null
-              ? 'Not provided'
-              : _displayDate(_datePlanted!),
-        }),
-        const Divider(height: 28),
-        _reviewGroup('Location', {
-          'Campus': _campus ?? 'Not selected',
-          'College': _college ?? 'Not selected',
-          'Town': _town ?? 'Not selected',
-          'Barangay': _barangay ?? 'Not selected',
-          'ZIP code': _zipCodeController.text.trim().isEmpty
-              ? 'Not available'
-              : _zipCodeController.text.trim(),
-        }),
-        const Divider(height: 28),
-        Row(
-          children: [
-            Icon(
-              _selectedImageBytes == null
-                  ? Icons.image_not_supported_outlined
-                  : Icons.image_outlined,
-              color: _green,
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                _selectedImageBytes == null
-                    ? 'No plant photo added'
-                    : 'Plant photo ready to upload',
-              ),
-            ),
-          ],
-        ),
-      ],
-    ),
-  );
-
-  Widget _reviewGroup(String title, Map<String, String> values) => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Text(
-        title,
-        style: const TextStyle(fontWeight: FontWeight.w800, color: _darkGreen),
+  Widget _validationBanner(String message) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: AppSpacing.lg),
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: AppColors.danger.withValues(alpha: 0.08),
+        borderRadius: AppRadii.medium,
+        border: Border.all(color: AppColors.danger.withValues(alpha: 0.28)),
       ),
-      const SizedBox(height: 10),
-      ...values.entries.map(
-        (entry) => Padding(
-          padding: const EdgeInsets.only(bottom: 8),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SizedBox(
-                width: 110,
-                child: Text(
-                  entry.key,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Color(0xFF6F7E74),
-                  ),
-                ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.error_outline_rounded, color: AppColors.danger),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Text(
+              message,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: AppColors.danger,
+                fontWeight: FontWeight.w700,
               ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _reviewSection({required bool compact}) {
+    final theme = Theme.of(context);
+
+    return _card(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Review Plant',
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.w800,
+              color: AppColors.darkGreen,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            'Confirm these details before creating the plant and QR record.',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: AppColors.textSecondary,
+            ),
+          ),
+          SizedBox(height: compact ? AppSpacing.md : AppSpacing.xl),
+          _reviewGroup('Plant', {
+            'Common name': _commonName ?? 'Not selected',
+            'Scientific name': _scientificNameController.text.trim().isEmpty
+                ? 'Not available'
+                : _scientificNameController.text.trim(),
+            'Variety': _varietyController.text.trim().isEmpty
+                ? 'Not provided'
+                : _varietyController.text.trim(),
+            'Growth stage': _growthStage ?? 'Not selected',
+            'Health': _friendlyHealth(_healthStatus),
+            'Date planted': _datePlanted == null
+                ? 'Not provided'
+                : _displayDate(_datePlanted!),
+          }, compact: compact),
+          Divider(height: compact ? AppSpacing.lg : AppSpacing.xl),
+          _reviewGroup('Location', {
+            'Campus': _campus ?? 'Not selected',
+            'College': _college ?? 'Not selected',
+            'Town': _town ?? 'Not selected',
+            'Barangay': _barangay ?? 'Not selected',
+            'ZIP code': _zipCodeController.text.trim().isEmpty
+                ? 'Not available'
+                : _zipCodeController.text.trim(),
+          }, compact: compact),
+          Divider(height: compact ? AppSpacing.lg : AppSpacing.xl),
+          Row(
+            children: [
+              Icon(
+                _selectedImageBytes == null
+                    ? Icons.image_not_supported_outlined
+                    : Icons.image_outlined,
+                color: AppColors.primary,
+              ),
+              const SizedBox(width: AppSpacing.md),
               Expanded(
                 child: Text(
-                  entry.value,
-                  style: const TextStyle(fontWeight: FontWeight.w600),
+                  _selectedImageBytes == null
+                      ? 'No plant photo added'
+                      : 'Plant photo ready to upload',
                 ),
               ),
             ],
           ),
-        ),
+        ],
       ),
-    ],
-  );
+    );
+  }
+
+  Widget _reviewGroup(
+    String title,
+    Map<String, String> values, {
+    required bool compact,
+  }) {
+    final theme = Theme.of(context);
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final textScale = MediaQuery.textScalerOf(context).scale(1);
+        final stackRows = constraints.maxWidth < 300 || textScale > 1.3;
+        final labelWidth = (constraints.maxWidth * 0.34)
+            .clamp(92.0, 124.0)
+            .toDouble();
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w800,
+                color: AppColors.darkGreen,
+              ),
+            ),
+            SizedBox(height: compact ? AppSpacing.sm : AppSpacing.md),
+            ...values.entries.map(
+              (entry) => Padding(
+                padding: EdgeInsets.only(
+                  bottom: compact ? AppSpacing.xs : AppSpacing.sm,
+                ),
+                child: stackRows
+                    ? Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            entry.key,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                          const SizedBox(height: AppSpacing.xs),
+                          Text(
+                            entry.value,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
+                      )
+                    : Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SizedBox(
+                            width: labelWidth,
+                            child: Text(
+                              entry.key,
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: AppSpacing.sm),
+                          Expanded(
+                            child: Text(
+                              entry.value,
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
   // ============================================================
   // QR INFORMATION
@@ -1404,10 +1492,10 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
           Icon(
             _usingExistingQr ? Icons.qr_code_scanner : Icons.qr_code_2,
 
-            color: _green,
+            color: AppColors.primary,
           ),
 
-          const SizedBox(width: 12),
+          const SizedBox(width: AppSpacing.md),
 
           Expanded(
             child: Text(
@@ -1426,32 +1514,30 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
   // ============================================================
 
   Widget _plantSection() {
+    final theme = Theme.of(context);
+
     return _card(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
 
         children: [
-          const Text(
+          Text(
             'Plant Classification',
-
-            style: TextStyle(
-              fontSize: 18,
-
+            style: theme.textTheme.titleLarge?.copyWith(
               fontWeight: FontWeight.w700,
-
-              color: _darkGreen,
+              color: AppColors.darkGreen,
             ),
           ),
 
           if (_showPlantErrors) ...[
-            const SizedBox(height: 14),
+            const SizedBox(height: AppSpacing.lg),
             _validationBanner(
               _plantValidationError ??
                   'Select the plant type and common name, growth stage, and health status.',
             ),
           ],
 
-          const SizedBox(height: 22),
+          const SizedBox(height: AppSpacing.xl),
 
           _twoFields(
             AppSearchableDropdown(
@@ -1477,7 +1563,7 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
             ),
           ),
 
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.lg),
 
           _twoFields(
             AppTextField(
@@ -1495,7 +1581,7 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
             ),
           ),
 
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.lg),
 
           _twoFields(
             AppSearchableDropdown(
@@ -1519,7 +1605,7 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
             ),
           ),
 
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.lg),
 
           _twoFields(
             _dateField(),
@@ -1533,7 +1619,7 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
             ),
           ),
 
-          const SizedBox(height: 20),
+          const SizedBox(height: AppSpacing.xl),
 
           PlantImagePickerField(
             imageBytes: _selectedImageBytes,
@@ -1554,31 +1640,29 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
   // ============================================================
 
   Widget _locationSection() {
+    final theme = Theme.of(context);
+
     return _card(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
 
         children: [
-          const Text(
+          Text(
             'Location',
-
-            style: TextStyle(
-              fontSize: 18,
-
+            style: theme.textTheme.titleLarge?.copyWith(
               fontWeight: FontWeight.w700,
-
-              color: _darkGreen,
+              color: AppColors.darkGreen,
             ),
           ),
 
           if (_showLocationErrors) ...[
-            const SizedBox(height: 14),
+            const SizedBox(height: AppSpacing.lg),
             _validationBanner(
               'Select the campus, college, town, and barangay.',
             ),
           ],
 
-          const SizedBox(height: 22),
+          const SizedBox(height: AppSpacing.xl),
 
           // CAMPUS FIRST
           AppSearchableDropdown(
@@ -1593,7 +1677,7 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
             onChanged: _selectCampus,
           ),
 
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.lg),
 
           // COLLEGE FILTERED BY CAMPUS
           AppSearchableDropdown(
@@ -1608,7 +1692,7 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
             onChanged: _selectCollege,
           ),
 
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.lg),
 
           // TOWN FIRST
           AppSearchableDropdown(
@@ -1621,7 +1705,7 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
             onChanged: _selectTown,
           ),
 
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.lg),
 
           // BARANGAY FILTERED BY TOWN
           AppSearchableDropdown(
@@ -1636,7 +1720,7 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
             onChanged: _selectBarangay,
           ),
 
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.lg),
 
           SizedBox(
             width: 180,
@@ -1659,60 +1743,44 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
   // ============================================================
 
   Widget _dateField() {
+    final theme = Theme.of(context);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
 
       children: [
-        const Text(
+        Text(
           'Date Planted',
-
-          style: TextStyle(
-            color: _darkGreen,
-
-            fontSize: 12,
-
+          style: theme.textTheme.labelMedium?.copyWith(
+            color: AppColors.darkGreen,
             fontWeight: FontWeight.w600,
           ),
         ),
 
-        const SizedBox(height: 6),
+        const SizedBox(height: AppSpacing.sm),
 
         InkWell(
           onTap: _pickDate,
-
-          borderRadius: BorderRadius.circular(9),
-
-          child: Container(
-            height: 54,
-
-            padding: const EdgeInsets.symmetric(horizontal: 13),
-
-            decoration: BoxDecoration(
-              color: Colors.white,
-
-              borderRadius: BorderRadius.circular(9),
-
-              border: Border.all(color: _borderColor),
-            ),
-
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    _datePlanted == null
-                        ? 'Select date'
-                        : _displayDate(_datePlanted!),
+          child: InputDecorator(
+            decoration: const InputDecoration(),
+            child: SizedBox(
+              height: 24,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      _datePlanted == null
+                          ? 'Select date'
+                          : _displayDate(_datePlanted!),
+                    ),
                   ),
-                ),
-
-                const Icon(
-                  Icons.calendar_today_outlined,
-
-                  color: _green,
-
-                  size: 17,
-                ),
-              ],
+                  const Icon(
+                    Icons.calendar_today_outlined,
+                    color: AppColors.primary,
+                    size: 17,
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -1727,8 +1795,14 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
   Widget _twoFields(Widget first, Widget second) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        if (constraints.maxWidth < 520) {
-          return Column(children: [first, const SizedBox(height: 16), second]);
+        if (constraints.maxWidth < AppBreakpoints.phone) {
+          return Column(
+            children: [
+              first,
+              const SizedBox(height: AppSpacing.lg),
+              second,
+            ],
+          );
         }
 
         return Row(
@@ -1737,7 +1811,7 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
           children: [
             Expanded(child: first),
 
-            const SizedBox(width: 16),
+            const SizedBox(width: AppSpacing.lg),
 
             Expanded(child: second),
           ],
@@ -1747,19 +1821,12 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
   }
 
   Widget _card({required Widget child}) {
-    return Container(
+    final width = MediaQuery.sizeOf(context).width;
+    return AppCard(
       width: double.infinity,
-
-      padding: const EdgeInsets.all(22),
-
-      decoration: BoxDecoration(
-        color: Colors.white,
-
-        borderRadius: BorderRadius.circular(14),
-
-        border: Border.all(color: _borderColor),
+      padding: EdgeInsets.all(
+        AppBreakpoints.isPhone(width) ? AppSpacing.lg : AppSpacing.xl,
       ),
-
       child: child,
     );
   }
@@ -1833,13 +1900,39 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
       return;
     }
 
+    final width = MediaQuery.sizeOf(context).width;
+    final phone = AppBreakpoints.isPhone(width);
+
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(
         SnackBar(
-          content: Text(text),
-
-          backgroundColor: error ? Colors.red : _green,
+          behavior: SnackBarBehavior.floating,
+          width: phone ? null : 560,
+          margin: phone
+              ? const EdgeInsets.fromLTRB(
+                  AppSpacing.lg,
+                  0,
+                  AppSpacing.lg,
+                  AppSpacing.lg,
+                )
+              : null,
+          shape: const RoundedRectangleBorder(borderRadius: AppRadii.medium),
+          showCloseIcon: true,
+          closeIconColor: AppColors.onPrimary,
+          content: Row(
+            children: [
+              Icon(
+                error
+                    ? Icons.error_outline_rounded
+                    : Icons.check_circle_outline_rounded,
+                color: AppColors.onPrimary,
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(child: Text(text)),
+            ],
+          ),
+          backgroundColor: error ? AppColors.danger : AppColors.primary,
         ),
       );
   }

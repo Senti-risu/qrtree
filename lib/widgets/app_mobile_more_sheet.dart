@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 
+import '../models/app_role.dart';
 import '../services/account_profile_service.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_layout.dart';
 
 enum AppMobileMoreAction {
   profile,
@@ -21,6 +23,7 @@ Future<AppMobileMoreAction?> showAppMobileMoreSheet(
   required String displayRole,
   required String role,
 }) {
+  final resolvedDisplayRole = _roleLabel(role, displayRole);
   final groups = <_MoreGroup>[
     const _MoreGroup(
       label: 'Account',
@@ -124,13 +127,20 @@ Future<AppMobileMoreAction?> showAppMobileMoreSheet(
             maxHeight: size.height * 0.96,
           ),
           child: Material(
-            color: Colors.white,
+            color: AppColors.surface,
             clipBehavior: Clip.antiAlias,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            borderRadius: const BorderRadius.vertical(
+              top: Radius.circular(AppSpacing.xl),
+            ),
             child: ListView(
               shrinkWrap: true,
               scrollCacheExtent: const ScrollCacheExtent.pixels(2000),
-              padding: const EdgeInsets.fromLTRB(16, 10, 16, 20),
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.lg,
+                AppSpacing.sm,
+                AppSpacing.lg,
+                AppSpacing.xl,
+              ),
               children: [
                 Center(
                   child: Container(
@@ -142,7 +152,7 @@ Future<AppMobileMoreAction?> showAppMobileMoreSheet(
                     ),
                   ),
                 ),
-                const SizedBox(height: 18),
+                const SizedBox(height: AppSpacing.lg),
                 Row(
                   children: [
                     const Expanded(
@@ -162,14 +172,14 @@ Future<AppMobileMoreAction?> showAppMobileMoreSheet(
                     ),
                   ],
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: AppSpacing.sm),
                 _AccountHeader(
                   displayName: displayName,
-                  displayRole: displayRole,
+                  displayRole: resolvedDisplayRole,
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: AppSpacing.lg),
                 const Divider(height: 1, color: AppColors.border),
-                const SizedBox(height: 10),
+                const SizedBox(height: AppSpacing.sm),
                 for (final group in groups) ...[
                   _MoreSectionLabel(group.label),
                   for (final item in group.items)
@@ -177,7 +187,7 @@ Future<AppMobileMoreAction?> showAppMobileMoreSheet(
                       item: item,
                       onTap: () => Navigator.pop(sheetContext, item.action),
                     ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: AppSpacing.xs),
                 ],
               ],
             ),
@@ -196,6 +206,7 @@ Future<void> showAppMobileProfileSheet(
   required String role,
   required Future<AccountScopeNames> Function() loadScopeNames,
 }) {
+  final resolvedDisplayRole = _roleLabel(role, displayRole);
   return showModalBottomSheet<void>(
     context: context,
     useSafeArea: true,
@@ -205,7 +216,7 @@ Future<void> showAppMobileProfileSheet(
       return _MobileProfileSheet(
         username: username,
         displayName: displayName,
-        displayRole: displayRole,
+        displayRole: resolvedDisplayRole,
         role: role,
         loadScopeNames: loadScopeNames,
       );
@@ -277,11 +288,18 @@ class _MobileProfileSheetState extends State<_MobileProfileSheet> {
           maxHeight: size.height * 0.90,
         ),
         child: Material(
-          color: Colors.white,
+          color: AppColors.surface,
           clipBehavior: Clip.antiAlias,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          borderRadius: const BorderRadius.vertical(
+            top: Radius.circular(AppSpacing.xl),
+          ),
           child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.xl,
+              AppSpacing.md,
+              AppSpacing.xl,
+              AppSpacing.xl,
+            ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -296,13 +314,13 @@ class _MobileProfileSheetState extends State<_MobileProfileSheet> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 22),
+                const SizedBox(height: AppSpacing.xl),
                 _AccountHeader(
                   displayName: widget.displayName,
                   displayRole: widget.displayRole,
                   centered: true,
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: AppSpacing.xl),
                 _ProfileField(
                   icon: Icons.alternate_email_rounded,
                   label: 'Username',
@@ -342,7 +360,7 @@ class _MobileProfileSheetState extends State<_MobileProfileSheet> {
                               label: const Text('Try again'),
                             ),
                           ),
-                          const SizedBox(height: 4),
+                          const SizedBox(height: AppSpacing.xs),
                         ],
                       );
                     }
@@ -364,7 +382,7 @@ class _MobileProfileSheetState extends State<_MobileProfileSheet> {
                     );
                   },
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: AppSpacing.sm),
                 FilledButton(
                   onPressed: () => Navigator.pop(context),
                   child: const Text('Close'),
@@ -436,7 +454,7 @@ class _AccountHeader extends StatelessWidget {
             fontWeight: FontWeight.w700,
           ),
         ),
-        const SizedBox(height: 2),
+        const SizedBox(height: AppSpacing.xs),
         Text(
           displayRole,
           maxLines: 1,
@@ -460,13 +478,19 @@ class _AccountHeader extends StatelessWidget {
     );
 
     if (centered) {
-      return Column(children: [avatar, const SizedBox(height: 12), details]);
+      return Column(
+        children: [
+          avatar,
+          const SizedBox(height: AppSpacing.md),
+          details,
+        ],
+      );
     }
 
     return Row(
       children: [
         avatar,
-        const SizedBox(width: 14),
+        const SizedBox(width: AppSpacing.lg),
         Expanded(child: details),
       ],
     );
@@ -487,7 +511,12 @@ class _MoreSectionLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.fromLTRB(8, 12, 8, 2),
+    padding: const EdgeInsets.fromLTRB(
+      AppSpacing.sm,
+      AppSpacing.md,
+      AppSpacing.sm,
+      AppSpacing.xs,
+    ),
     child: Text(
       label.toUpperCase(),
       style: const TextStyle(
@@ -527,12 +556,12 @@ class _MoreTile extends StatelessWidget {
     final color = item.destructive ? AppColors.danger : AppColors.green;
 
     return Padding(
-      padding: const EdgeInsets.only(top: 6),
+      padding: const EdgeInsets.only(top: AppSpacing.xs),
       child: ListTile(
         dense: true,
         minTileHeight: 54,
-        minVerticalPadding: 6,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        minVerticalPadding: AppSpacing.xs,
+        shape: const RoundedRectangleBorder(borderRadius: AppRadii.large),
         tileColor: item.destructive
             ? AppColors.danger.withValues(alpha: 0.055)
             : Colors.transparent,
@@ -541,7 +570,7 @@ class _MoreTile extends StatelessWidget {
           height: 42,
           decoration: BoxDecoration(
             color: color.withValues(alpha: 0.10),
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: AppRadii.medium,
           ),
           child: Icon(item.icon, color: color, size: 22),
         ),
@@ -582,17 +611,20 @@ class _ProfileField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg,
+        vertical: AppSpacing.md,
+      ),
       decoration: BoxDecoration(
         color: AppColors.background,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: AppRadii.large,
         border: Border.all(color: AppColors.border),
       ),
       child: Row(
         children: [
           Icon(icon, color: AppColors.green, size: 21),
-          const SizedBox(width: 12),
+          const SizedBox(width: AppSpacing.md),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -604,7 +636,7 @@ class _ProfileField extends StatelessWidget {
                     fontSize: 11,
                   ),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: AppSpacing.xs),
                 Text(
                   value,
                   overflow: TextOverflow.ellipsis,
@@ -631,4 +663,14 @@ String _initialsOf(String name) {
   if (parts.isEmpty) return 'E';
   if (parts.length == 1) return parts.first[0].toUpperCase();
   return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+}
+
+String _roleLabel(String role, String fallback) {
+  final appRole = AppRole.fromValue(role);
+  if (appRole != AppRole.unknown) return appRole.label;
+
+  final fallbackRole = AppRole.fromValue(fallback);
+  if (fallbackRole != AppRole.unknown) return fallbackRole.label;
+
+  return fallback.trim().isNotEmpty ? fallback.trim() : role.trim();
 }

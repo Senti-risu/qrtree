@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../theme/app_colors.dart';
+import '../../../theme/app_layout.dart';
 import '../../../widgets/app_card.dart';
 
 class RegistrationPageHeader extends StatelessWidget {
@@ -8,26 +9,29 @@ class RegistrationPageHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return AppCard(
-      padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 22),
+      padding: const EdgeInsets.all(AppSpacing.xl),
       child: Row(
         children: [
-          const Expanded(
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   'Register Plant',
-                  style: TextStyle(
-                    fontSize: 26,
+                  style: theme.textTheme.headlineLarge?.copyWith(
                     fontWeight: FontWeight.w700,
                     color: AppColors.darkGreen,
                   ),
                 ),
-                SizedBox(height: 4),
+                const SizedBox(height: AppSpacing.xs),
                 Text(
                   'Add a new plant to the EcoTag Campus Plant Profiling System.',
-                  style: TextStyle(fontSize: 12, color: AppColors.green),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: AppColors.primary,
+                  ),
                 ),
               ],
             ),
@@ -36,12 +40,12 @@ class RegistrationPageHeader extends StatelessWidget {
             width: 42,
             height: 42,
             decoration: BoxDecoration(
-              color: const Color(0xFFE2F7ED),
-              borderRadius: BorderRadius.circular(12),
+              color: AppColors.primaryContainer,
+              borderRadius: AppRadii.medium,
             ),
             child: const Icon(
               Icons.add_circle_outline_rounded,
-              color: AppColors.green,
+              color: AppColors.primary,
               size: 22,
             ),
           ),

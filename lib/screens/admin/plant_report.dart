@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../theme/app_colors.dart';
+
 class PlantListPage extends StatefulWidget {
   const PlantListPage({super.key});
 
@@ -281,10 +283,12 @@ class _PlantListPageState extends State<PlantListPage> {
         });
       },
       style: OutlinedButton.styleFrom(
-        backgroundColor: selected ? const Color(0xFFE5F3E8) : Colors.white,
-        foregroundColor: selected ? const Color(0xFF2E7D32) : Colors.black87,
+        backgroundColor: selected
+            ? AppColors.primaryContainer
+            : AppColors.surface,
+        foregroundColor: selected ? AppColors.primary : Colors.black87,
         side: BorderSide(
-          color: selected ? const Color(0xFF2E7D32) : Colors.grey.shade400,
+          color: selected ? AppColors.primary : Colors.grey.shade400,
         ),
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 15),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
@@ -341,7 +345,7 @@ class _PlantListPageState extends State<PlantListPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F9F7),
+      backgroundColor: AppColors.surfaceSubtle,
 
       appBar: AppBar(
         backgroundColor: Colors.white,

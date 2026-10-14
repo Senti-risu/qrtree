@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 
+import '../models/app_role.dart';
 import '../services/account_profile_service.dart';
 import '../services/app_session.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_layout.dart';
 import 'app_mobile_more_sheet.dart';
 
 class AppMobileNavbar extends StatelessWidget {
@@ -133,8 +135,8 @@ class AppMobileNavbar extends StatelessWidget {
     return BottomAppBar(
       height: contentHeight + bottomInset,
       padding: EdgeInsets.zero,
-      color: Colors.white,
-      surfaceTintColor: Colors.white,
+      color: AppColors.surface,
+      surfaceTintColor: AppColors.surface,
       shape: canScanQr ? const CircularNotchedRectangle() : null,
       notchMargin: 7,
       elevation: 8,
@@ -194,7 +196,7 @@ class AppMobileNavbar extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(destination.icon, size: 24, color: color),
-                const SizedBox(height: 3),
+                const SizedBox(height: AppSpacing.xs),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 2),
                   child: Text(
@@ -275,7 +277,12 @@ class AppMobileNavbar extends StatelessWidget {
     showDragHandle: true,
     isScrollControlled: true,
     builder: (sheetContext) => SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.xl,
+        AppSpacing.xs,
+        AppSpacing.xl,
+        AppSpacing.xl,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
@@ -288,12 +295,12 @@ class AppMobileNavbar extends StatelessWidget {
               color: AppColors.darkGreen,
             ),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: AppSpacing.sm),
           const Text(
             'Start with the task you need. EcoTag will only show actions allowed for your account.',
             style: TextStyle(color: AppColors.textSecondary),
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: AppSpacing.lg),
           const _HelpStep(
             icon: Icons.qr_code_scanner_rounded,
             title: 'Scan a label',
@@ -318,7 +325,7 @@ class AppMobileNavbar extends StatelessWidget {
             body:
                 'Contact your College Admin. Open My Profile to confirm your role, campus, and college.',
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.sm),
           SizedBox(
             width: double.infinity,
             child: FilledButton(
@@ -388,26 +395,13 @@ class AppMobileNavbar extends StatelessWidget {
 
   String get _resolvedDisplayName {
     if (displayName.trim().isNotEmpty) return displayName.trim();
-    if (username.trim().isNotEmpty) return username.trim();
-    return 'EcoTag User';
+    return username.trim();
   }
 
   String get _resolvedDisplayRole {
     if (displayRole.trim().isNotEmpty) return displayRole.trim();
-    switch (role) {
-      case 'super_admin':
-        return 'Super Admin';
-      case 'university_admin':
-        return 'University Admin';
-      case 'campus_admin':
-        return 'Campus Admin';
-      case 'college_admin':
-        return 'College Admin';
-      case 'inspection_team':
-        return 'Inspection Team';
-      default:
-        return role;
-    }
+    final appRole = AppRole.fromValue(role);
+    return appRole == AppRole.unknown ? role.trim() : appRole.label;
   }
 
   // ============================================================
@@ -436,7 +430,7 @@ class _HelpStep extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.only(bottom: 14),
+    padding: const EdgeInsets.only(bottom: AppSpacing.lg),
     child: Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -445,11 +439,11 @@ class _HelpStep extends StatelessWidget {
           height: 42,
           decoration: BoxDecoration(
             color: AppColors.primaryContainer,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: AppRadii.medium,
           ),
           child: Icon(icon, color: AppColors.green),
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: AppSpacing.md),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../theme/app_colors.dart';
+import '../theme/app_layout.dart';
+
 class AppSidebar extends StatelessWidget {
   final String activeRoute;
   final int userId;
@@ -116,19 +119,25 @@ class AppSidebar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: 230,
-      color: Colors.white,
+      decoration: const BoxDecoration(
+        color: AppColors.surface,
+        border: Border(right: BorderSide(color: AppColors.navbarBorder)),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: 28),
+          const SizedBox(height: AppSpacing.xl),
           const Padding(
-            padding: EdgeInsets.only(left: 20, bottom: 8),
+            padding: EdgeInsets.only(
+              left: AppSpacing.xl,
+              bottom: AppSpacing.sm,
+            ),
             child: Text(
               'MANAGEMENT',
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF2E7D32),
+                color: AppColors.green,
                 letterSpacing: 0.5,
               ),
             ),
@@ -162,7 +171,7 @@ class AppSidebar extends StatelessWidget {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Your account has no assigned campus or college.'),
-          backgroundColor: Colors.red,
+          backgroundColor: AppColors.danger,
         ),
       );
       return;
@@ -202,38 +211,42 @@ class _NavItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.xs,
+      ),
       child: Material(
-        color: active ? const Color(0xFFEAF6EE) : Colors.transparent,
-        borderRadius: BorderRadius.circular(8),
+        color: active ? AppColors.primaryContainer : Colors.transparent,
+        borderRadius: AppRadii.medium,
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(8),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            child: Row(
-              children: [
-                Icon(
-                  data.icon,
-                  size: 18,
-                  color: active
-                      ? const Color(0xFF2E7D32)
-                      : Colors.grey.shade600,
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    data.label,
-                    style: TextStyle(
-                      fontSize: 13.5,
-                      fontWeight: active ? FontWeight.w600 : FontWeight.w500,
-                      color: active
-                          ? const Color(0xFF2E7D32)
-                          : const Color(0xFF1A1A1A),
+          borderRadius: AppRadii.medium,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(
+              minHeight: AppLayout.minimumTapTarget,
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+              child: Row(
+                children: [
+                  Icon(
+                    data.icon,
+                    size: 20,
+                    color: active ? AppColors.green : AppColors.inactiveNav,
+                  ),
+                  const SizedBox(width: AppSpacing.md),
+                  Expanded(
+                    child: Text(
+                      data.label,
+                      style: TextStyle(
+                        fontSize: 13.5,
+                        fontWeight: active ? FontWeight.w700 : FontWeight.w500,
+                        color: active ? AppColors.green : AppColors.textPrimary,
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

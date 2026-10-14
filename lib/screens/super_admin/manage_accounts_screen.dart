@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../models/admin_account.dart';
+import '../../models/app_role.dart';
 import '../../services/super_admin_service.dart';
 import '../../theme/app_colors.dart';
+import '../../theme/app_layout.dart';
 import '../../utils/user_facing_error.dart';
 import '../../widgets/app_card.dart';
 import '../../widgets/app_page_header.dart';
@@ -108,7 +110,7 @@ class _ManageAccountsScreenState extends State<ManageAccountsScreen> {
             selected: selected,
             showCheckmark: false,
             onSelected: (_) => onTap(),
-            selectedColor: const Color(0xFFE2F7ED),
+            selectedColor: AppColors.primaryContainer,
             backgroundColor: AppColors.background,
             side: BorderSide(
               color: selected ? AppColors.green : AppColors.border,
@@ -159,7 +161,7 @@ class _ManageAccountsScreenState extends State<ManageAccountsScreen> {
                             width: 42,
                             height: 42,
                             decoration: BoxDecoration(
-                              color: const Color(0xFFE2F7ED),
+                              color: AppColors.primaryContainer,
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: const Icon(
@@ -597,7 +599,7 @@ class _ManageAccountsScreenState extends State<ManageAccountsScreen> {
                                 vertical: 5,
                               ),
                               leading: const CircleAvatar(
-                                backgroundColor: Color(0xFFEEF1EF),
+                                backgroundColor: AppColors.surfaceDisabled,
                                 child: Icon(Icons.person_off_outlined),
                               ),
                               title: Text(
@@ -724,7 +726,9 @@ class _ManageAccountsScreenState extends State<ManageAccountsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDesktop = MediaQuery.sizeOf(context).width >= 900;
+    final isDesktop = AppBreakpoints.isDesktop(
+      MediaQuery.sizeOf(context).width,
+    );
     return AppShell(
       activeRoute: '/manage-accounts',
       mobileTitle: 'Manage Accounts',
@@ -733,7 +737,7 @@ class _ManageAccountsScreenState extends State<ManageAccountsScreen> {
       userId: widget.userId,
       username: widget.username,
       role: widget.role,
-      userRole: 'Super Admin',
+      userRole: AppRole.superAdmin.label,
       showQrButton: false,
       onRefresh: _load,
       child: Column(
@@ -764,7 +768,7 @@ class _ManageAccountsScreenState extends State<ManageAccountsScreen> {
                 ],
               ),
             ),
-            const SizedBox(height: 18),
+            const SizedBox(height: AppSpacing.xl),
           ],
           if (!isDesktop) ...[
             Row(
@@ -789,13 +793,16 @@ class _ManageAccountsScreenState extends State<ManageAccountsScreen> {
                 ),
               ],
             ),
-            const SizedBox(height: 18),
+            const SizedBox(height: AppSpacing.xl),
           ],
           _filterBar(),
-          const SizedBox(height: 14),
-          AppCard(
-            child: LayoutBuilder(
-              builder: (_, constraints) => _body(constraints.maxWidth >= 1000),
+          const SizedBox(height: AppSpacing.lg),
+          Expanded(
+            child: AppCard(
+              child: LayoutBuilder(
+                builder: (_, constraints) =>
+                    _body(!AppBreakpoints.isPhone(constraints.maxWidth)),
+              ),
             ),
           ),
         ],
@@ -807,7 +814,7 @@ class _ManageAccountsScreenState extends State<ManageAccountsScreen> {
     padding: const EdgeInsets.all(16),
     child: LayoutBuilder(
       builder: (_, constraints) {
-        final isMobile = constraints.maxWidth < 720;
+        final isMobile = !AppBreakpoints.isDesktop(constraints.maxWidth);
         final search = TextField(
           controller: _searchController,
           onChanged: (_) => setState(() {}),
@@ -831,7 +838,7 @@ class _ManageAccountsScreenState extends State<ManageAccountsScreen> {
                     icon: const Icon(Icons.close_rounded),
                   ),
             filled: true,
-            fillColor: const Color(0xFFF7FAF8),
+            fillColor: AppColors.surfaceSubtle,
             contentPadding: const EdgeInsets.symmetric(vertical: 14),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
@@ -901,8 +908,8 @@ class _ManageAccountsScreenState extends State<ManageAccountsScreen> {
                       padding: const EdgeInsets.symmetric(horizontal: 13),
                       foregroundColor: AppColors.darkGreen,
                       backgroundColor: _appliedFilterCount > 0
-                          ? const Color(0xFFE2F7ED)
-                          : Colors.white,
+                          ? AppColors.primaryContainer
+                          : AppColors.surface,
                       side: BorderSide(
                         color: _appliedFilterCount > 0
                             ? AppColors.green
@@ -957,7 +964,7 @@ class _ManageAccountsScreenState extends State<ManageAccountsScreen> {
                             onDeleted: () =>
                                 setState(() => _roleFilter = 'all'),
                             deleteIconColor: AppColors.green,
-                            backgroundColor: const Color(0xFFEAF7EE),
+                            backgroundColor: AppColors.primaryContainer,
                             side: const BorderSide(color: AppColors.border),
                           ),
                         ),
@@ -971,7 +978,7 @@ class _ManageAccountsScreenState extends State<ManageAccountsScreen> {
                           onDeleted: () =>
                               setState(() => _statusFilter = 'all'),
                           deleteIconColor: AppColors.green,
-                          backgroundColor: const Color(0xFFEAF7EE),
+                          backgroundColor: AppColors.primaryContainer,
                           side: const BorderSide(color: AppColors.border),
                         ),
                     ],
@@ -1001,7 +1008,7 @@ class _ManageAccountsScreenState extends State<ManageAccountsScreen> {
                       vertical: 8,
                     ),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFE2F7ED),
+                      color: AppColors.primaryContainer,
                       borderRadius: BorderRadius.circular(99),
                       border: Border.all(color: AppColors.border),
                     ),
@@ -1029,7 +1036,7 @@ class _ManageAccountsScreenState extends State<ManageAccountsScreen> {
     prefixIcon: Icon(icon, size: 20),
     isDense: true,
     filled: true,
-    fillColor: const Color(0xFFF7FAF8),
+    fillColor: AppColors.surfaceSubtle,
     contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 13),
     border: OutlineInputBorder(
       borderRadius: BorderRadius.circular(14),
@@ -1085,101 +1092,88 @@ class _ManageAccountsScreenState extends State<ManageAccountsScreen> {
     ),
   );
 
-  Widget _body(bool isDesktop) {
+  Widget _body(bool useTable) {
     if (_loading) {
-      return const Padding(
-        padding: EdgeInsets.all(60),
-        child: Center(child: CircularProgressIndicator()),
-      );
+      return const Center(child: CircularProgressIndicator());
     }
     if (_error != null) {
-      return Padding(
-        padding: const EdgeInsets.all(30),
-        child: Center(
-          child: Column(
-            children: [
-              const Icon(Icons.error_outline, color: Colors.red, size: 42),
-              const SizedBox(height: 8),
-              Text(_error!, textAlign: TextAlign.center),
-              const SizedBox(height: 12),
-              OutlinedButton.icon(
-                onPressed: _load,
-                icon: const Icon(Icons.refresh),
-                label: const Text('Retry'),
-              ),
-            ],
-          ),
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.error_outline, color: AppColors.danger, size: 42),
+            const SizedBox(height: AppSpacing.sm),
+            Text(_error!, textAlign: TextAlign.center),
+            const SizedBox(height: AppSpacing.md),
+            OutlinedButton.icon(
+              onPressed: _load,
+              icon: const Icon(Icons.refresh),
+              label: const Text('Retry'),
+            ),
+          ],
         ),
       );
     }
     if (_accounts.isEmpty) {
-      return const Padding(
-        padding: EdgeInsets.all(40),
-        child: Center(child: Text('No administrator accounts yet.')),
-      );
+      return const Center(child: Text('No administrator accounts yet.'));
     }
     final accounts = _visibleAccounts;
     if (accounts.isEmpty) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 42),
-        child: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(
-                Icons.manage_search_rounded,
-                size: 42,
-                color: AppColors.textSecondary,
-              ),
-              const SizedBox(height: 10),
-              const Text(
-                'No accounts match these filters.',
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 8),
-              TextButton(
-                onPressed: _resetFilters,
-                child: const Text('Reset filters'),
-              ),
-            ],
-          ),
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.manage_search_rounded,
+              size: 42,
+              color: AppColors.textSecondary,
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            const Text(
+              'No accounts match these filters.',
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            TextButton(
+              onPressed: _resetFilters,
+              child: const Text('Reset filters'),
+            ),
+          ],
         ),
       );
     }
-    if (isDesktop) return _desktopTable(accounts);
-    return Column(
-      children: accounts
-          .map(
-            (account) => Column(
-              children: [
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: CircleAvatar(
-                    backgroundColor: const Color(0xFFE6F5EB),
-                    child: Text(
-                      account.username.isEmpty
-                          ? '?'
-                          : account.username[0].toUpperCase(),
-                      style: const TextStyle(
-                        color: AppColors.darkGreen,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  title: Text(
-                    account.username,
-                    style: const TextStyle(fontWeight: FontWeight.w600),
-                  ),
-                  subtitle: Text(
-                    '${account.roleLabel} • ${account.scopeLabel} • ${account.isActive ? 'Active' : 'Inactive'}',
-                  ),
-                  trailing: _actions(account),
-                ),
-                const Divider(height: 1),
-              ],
+    if (useTable) {
+      return SingleChildScrollView(child: _desktopTable(accounts));
+    }
+    return ListView.separated(
+      itemCount: accounts.length,
+      separatorBuilder: (_, _) => const Divider(height: 1),
+      itemBuilder: (_, index) {
+        final account = accounts[index];
+        return ListTile(
+          contentPadding: EdgeInsets.zero,
+          leading: CircleAvatar(
+            backgroundColor: AppColors.primaryContainer,
+            child: Text(
+              account.username.isEmpty
+                  ? '?'
+                  : account.username[0].toUpperCase(),
+              style: const TextStyle(
+                color: AppColors.darkGreen,
+                fontWeight: FontWeight.bold,
+              ),
             ),
-          )
-          .toList(),
+          ),
+          title: Text(
+            account.username,
+            style: const TextStyle(fontWeight: FontWeight.w600),
+          ),
+          subtitle: Text(
+            '${account.roleLabel} • ${account.scopeLabel} • ${account.isActive ? 'Active' : 'Inactive'}',
+          ),
+          trailing: _actions(account),
+        );
+      },
     );
   }
 
@@ -1206,7 +1200,7 @@ class _ManageAccountsScreenState extends State<ManageAccountsScreen> {
                       Row(
                         children: [
                           CircleAvatar(
-                            backgroundColor: const Color(0xFFE6F5EB),
+                            backgroundColor: AppColors.primaryContainer,
                             child: Text(
                               account.username[0].toUpperCase(),
                               style: const TextStyle(
@@ -1245,15 +1239,15 @@ class _ManageAccountsScreenState extends State<ManageAccountsScreen> {
   Widget _statusChip(bool active) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
     decoration: BoxDecoration(
-      color: active ? const Color(0xFFE2F7ED) : const Color(0xFFFFE3E1),
-      borderRadius: BorderRadius.circular(20),
+      color: active ? AppColors.primaryContainer : AppColors.dangerContainer,
+      borderRadius: AppRadii.fullyRounded,
     ),
     child: Text(
       active ? 'Active' : 'Inactive',
       style: TextStyle(
         fontSize: 11,
         fontWeight: FontWeight.w700,
-        color: active ? AppColors.green : Colors.red.shade700,
+        color: active ? AppColors.green : AppColors.danger,
       ),
     ),
   );

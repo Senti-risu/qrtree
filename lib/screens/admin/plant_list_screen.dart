@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../models/app_role.dart';
 import '../../theme/app_colors.dart';
+import '../../theme/app_layout.dart';
 import '../../utils/user_facing_error.dart';
 import '../../widgets/app_card.dart';
 import '../../widgets/app_error_state.dart';
@@ -75,7 +76,7 @@ class _PlantListScreenState extends State<PlantListScreen> {
         plant_classification (common_name, scientific_name, plant_type),
         campus (campus_name), college (college_name),
         growth_status (growth_stage), health_status (status_name),
-        qr_tag (qr_code_string)
+        qr_tag:qr_tag!plant_qr_tag_id_fkey(qr_code_string)
       ''');
       if (widget.role == 'campus_admin' && widget.campusId != null) {
         query = query.eq('campus_id', widget.campusId!);
@@ -196,7 +197,9 @@ class _PlantListScreenState extends State<PlantListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDesktop = MediaQuery.sizeOf(context).width >= 900;
+    final isDesktop = AppBreakpoints.isDesktop(
+      MediaQuery.sizeOf(context).width,
+    );
     return AppShell(
       activeRoute: '/plant-list',
       mobileTitle: 'Plant Records',
@@ -212,7 +215,10 @@ class _PlantListScreenState extends State<PlantListScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (isDesktop) ...[_header(), const SizedBox(height: 18)],
+          if (isDesktop) ...[
+            _header(),
+            const SizedBox(height: AppSpacing.xl),
+          ],
           if (!isDesktop && _capabilities.canRegisterPlants) ...[
             SizedBox(
               width: double.infinity,
@@ -230,11 +236,11 @@ class _PlantListScreenState extends State<PlantListScreen> {
                 label: const Text('Register a plant'),
               ),
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: AppSpacing.lg),
           ],
           _filters(),
-          const SizedBox(height: 18),
-          _content(),
+          const SizedBox(height: AppSpacing.xl),
+          Expanded(child: _content()),
         ],
       ),
     );
@@ -258,10 +264,10 @@ class _PlantListScreenState extends State<PlantListScreen> {
   );
 
   Widget _filters() => AppCard(
-    padding: const EdgeInsets.all(16),
+    padding: const EdgeInsets.all(AppSpacing.lg),
     child: LayoutBuilder(
       builder: (context, constraints) {
-        final mobile = constraints.maxWidth < 700;
+        final mobile = !AppBreakpoints.isDesktop(constraints.maxWidth);
         return mobile ? _mobileFilters() : _desktopFilters();
       },
     ),
@@ -278,11 +284,11 @@ class _PlantListScreenState extends State<PlantListScreen> {
               width: 4,
               height: 30,
               decoration: BoxDecoration(
-                color: const Color(0xFFF59E0B),
-                borderRadius: BorderRadius.circular(8),
+                color: AppColors.filterAccent,
+                borderRadius: AppRadii.small,
               ),
             ),
-            const SizedBox(width: 10),
+            const SizedBox(width: AppSpacing.sm),
             const Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -303,7 +309,7 @@ class _PlantListScreenState extends State<PlantListScreen> {
             ),
             if (_capabilities.canRestorePlants) ...[
               _recordSelector(),
-              const SizedBox(width: 10),
+              const SizedBox(width: AppSpacing.sm),
             ],
             if (_hasActiveFilters) ...[
               _activeBadge(_activeFilterCount),
@@ -312,12 +318,12 @@ class _PlantListScreenState extends State<PlantListScreen> {
             ],
           ],
         ),
-        const SizedBox(height: 14),
+        const SizedBox(height: AppSpacing.lg),
         Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Expanded(flex: 4, child: _searchField()),
-            const SizedBox(width: 14),
+            const SizedBox(width: AppSpacing.lg),
             Expanded(
               flex: 6,
               child: SingleChildScrollView(
@@ -326,7 +332,7 @@ class _PlantListScreenState extends State<PlantListScreen> {
                   children: [
                     for (final value in _healthOptions) ...[
                       if (value != _healthOptions.first)
-                        const SizedBox(width: 7),
+                        const SizedBox(width: AppSpacing.sm),
                       _healthChoice(
                         value,
                         _healthCount(value, plants),
@@ -340,7 +346,7 @@ class _PlantListScreenState extends State<PlantListScreen> {
             ),
           ],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: AppSpacing.md),
         _resultSummary(),
       ],
     );
@@ -351,12 +357,12 @@ class _PlantListScreenState extends State<PlantListScreen> {
     children: [
       if (_capabilities.canRestorePlants) ...[
         _recordSelector(compact: true),
-        const SizedBox(height: 12),
+        const SizedBox(height: AppSpacing.md),
       ],
       Row(
         children: [
           Expanded(child: _searchField()),
-          const SizedBox(width: 8),
+          const SizedBox(width: AppSpacing.sm),
           SizedBox(
             height: 48,
             child: OutlinedButton(
@@ -368,9 +374,9 @@ class _PlantListScreenState extends State<PlantListScreen> {
                       ? AppColors.green
                       : AppColors.border,
                 ),
-                padding: const EdgeInsets.symmetric(horizontal: 13),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                shape: const RoundedRectangleBorder(
+                  borderRadius: AppRadii.medium,
                 ),
               ),
               child: Row(
@@ -393,7 +399,7 @@ class _PlantListScreenState extends State<PlantListScreen> {
         ],
       ),
       if (_healthFilter != 'All') ...[
-        const SizedBox(height: 10),
+        const SizedBox(height: AppSpacing.sm),
         InputChip(
           label: Text('Health: $_healthFilter'),
           avatar: Icon(
@@ -403,15 +409,15 @@ class _PlantListScreenState extends State<PlantListScreen> {
           ),
           onDeleted: () => setState(() => _healthFilter = 'All'),
           deleteIconColor: AppColors.textSecondary,
-          backgroundColor: const Color(0xFFF0FAF4),
-          side: const BorderSide(color: Color(0xFFCDE8D5)),
+          backgroundColor: AppColors.primaryContainer,
+          side: const BorderSide(color: AppColors.borderStrong),
           labelStyle: const TextStyle(
             color: AppColors.darkGreen,
             fontWeight: FontWeight.w700,
           ),
         ),
       ],
-      const SizedBox(height: 10),
+      const SizedBox(height: AppSpacing.sm),
       _resultSummary(),
     ],
   );
@@ -436,18 +442,21 @@ class _PlantListScreenState extends State<PlantListScreen> {
       filled: true,
       fillColor: AppColors.background,
       isDense: true,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: AppColors.border),
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg,
+        vertical: AppSpacing.lg,
       ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: AppColors.border),
+      border: const OutlineInputBorder(
+        borderRadius: AppRadii.medium,
+        borderSide: AppBorders.subtleSide,
       ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: AppColors.green, width: 1.4),
+      enabledBorder: const OutlineInputBorder(
+        borderRadius: AppRadii.medium,
+        borderSide: AppBorders.subtleSide,
+      ),
+      focusedBorder: const OutlineInputBorder(
+        borderRadius: AppRadii.medium,
+        borderSide: AppBorders.focusedSide,
       ),
     ),
   );
@@ -527,7 +536,7 @@ class _PlantListScreenState extends State<PlantListScreen> {
           boxShadow: selected
               ? const [
                   BoxShadow(
-                    color: Color(0x11000000),
+                    color: AppColors.softShadow,
                     blurRadius: 5,
                     offset: Offset(0, 1),
                   ),
@@ -563,9 +572,9 @@ class _PlantListScreenState extends State<PlantListScreen> {
       : plants.where((plant) => _health(plant) == value).length;
 
   Color _healthColor(String value) => value == 'Needs attention'
-      ? const Color(0xFFE58A00)
+      ? AppColors.warningAccent
       : value == 'Dead'
-      ? const Color(0xFFD83B3B)
+      ? AppColors.danger
       : value == 'Unknown'
       ? AppColors.textSecondary
       : AppColors.green;
@@ -601,10 +610,10 @@ class _PlantListScreenState extends State<PlantListScreen> {
       selectedColor: accent.withValues(alpha: .11),
       backgroundColor: Colors.white,
       side: BorderSide(
-        color: active ? accent : const Color(0xFFDCE8DF),
+        color: active ? accent : AppColors.border,
         width: active ? 1.3 : 1,
       ),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      shape: const RoundedRectangleBorder(borderRadius: AppRadii.medium),
       labelStyle: TextStyle(
         fontWeight: FontWeight.w700,
         color: active ? AppColors.darkGreen : AppColors.textSecondary,
@@ -615,16 +624,16 @@ class _PlantListScreenState extends State<PlantListScreen> {
   Widget _activeBadge(int count) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
     decoration: BoxDecoration(
-      color: const Color(0xFFFFF3DC),
-      borderRadius: BorderRadius.circular(20),
-      border: Border.all(color: const Color(0xFFFFD591)),
+      color: AppColors.warningContainer,
+      borderRadius: AppRadii.fullyRounded,
+      border: Border.all(color: AppColors.warningAccent),
     ),
     child: Text(
       '$count active',
       style: const TextStyle(
         fontSize: 11,
         fontWeight: FontWeight.w800,
-        color: Color(0xFFB76400),
+        color: AppColors.warning,
       ),
     ),
   );
@@ -634,7 +643,7 @@ class _PlantListScreenState extends State<PlantListScreen> {
     alignment: Alignment.center,
     padding: const EdgeInsets.symmetric(horizontal: 5),
     decoration: const BoxDecoration(
-      color: Color(0xFFF59E0B),
+      color: AppColors.filterAccent,
       shape: BoxShape.circle,
     ),
     child: Text(
@@ -658,8 +667,10 @@ class _PlantListScreenState extends State<PlantListScreen> {
       builder: (sheetContext) => StatefulBuilder(
         builder: (context, updateSheet) => Container(
           decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            color: AppColors.surface,
+            borderRadius: BorderRadius.vertical(
+              top: Radius.circular(AppRadii.xl),
+            ),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -669,7 +680,7 @@ class _PlantListScreenState extends State<PlantListScreen> {
                 width: 42,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFD7DED9),
+                  color: AppColors.borderStrong,
                   borderRadius: BorderRadius.circular(4),
                 ),
               ),
@@ -681,8 +692,8 @@ class _PlantListScreenState extends State<PlantListScreen> {
                       width: 38,
                       height: 38,
                       decoration: BoxDecoration(
-                        color: const Color(0xFFEAF7EF),
-                        borderRadius: BorderRadius.circular(11),
+                        color: AppColors.primaryContainer,
+                        borderRadius: AppRadii.medium,
                       ),
                       child: const Icon(
                         Icons.tune_rounded,
@@ -756,7 +767,7 @@ class _PlantListScreenState extends State<PlantListScreen> {
               Container(
                 padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
                 decoration: const BoxDecoration(
-                  color: Colors.white,
+                  color: AppColors.surface,
                   border: Border(top: BorderSide(color: AppColors.border)),
                 ),
                 child: Row(
@@ -800,9 +811,10 @@ class _PlantListScreenState extends State<PlantListScreen> {
 
   Widget _content() {
     if (_loading) {
-      return const SizedBox(
-        height: 360,
-        child: Center(child: CircularProgressIndicator(color: AppColors.green)),
+      return const AppCard(
+        child: Center(
+          child: CircularProgressIndicator(color: AppColors.green),
+        ),
       );
     }
     if (_error != null) {
@@ -822,48 +834,54 @@ class _PlantListScreenState extends State<PlantListScreen> {
     final plants = _visiblePlants;
     if (plants.isEmpty) {
       return AppCard(
-        child: SizedBox(
-          height: 280,
-          child: Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(
-                  Icons.local_florist_outlined,
-                  size: 56,
-                  color: AppColors.textSecondary,
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.local_florist_outlined,
+                size: 56,
+                color: AppColors.textSecondary,
+              ),
+              const SizedBox(height: AppSpacing.md),
+              Text(
+                _recordCount == 0
+                    ? _recordFilter == 'archived'
+                          ? 'No archived plants'
+                          : 'No plants registered yet'
+                    : 'No plants match your filters',
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
                 ),
-                const SizedBox(height: 12),
-                Text(
-                  _recordCount == 0
-                      ? _recordFilter == 'archived'
-                            ? 'No archived plants'
-                            : 'No plants registered yet'
-                      : 'No plants match your filters',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w700,
-                  ),
+              ),
+              if (_recordCount > 0 && _hasActiveFilters) ...[
+                const SizedBox(height: AppSpacing.md),
+                OutlinedButton.icon(
+                  onPressed: _clearFilters,
+                  icon: const Icon(Icons.filter_alt_off_rounded),
+                  label: const Text('Clear filters'),
                 ),
-                if (_recordCount > 0 && _hasActiveFilters) ...[
-                  const SizedBox(height: 12),
-                  OutlinedButton.icon(
-                    onPressed: _clearFilters,
-                    icon: const Icon(Icons.filter_alt_off_rounded),
-                    label: const Text('Clear filters'),
-                  ),
-                ],
               ],
-            ),
+            ],
           ),
         ),
       );
     }
     return LayoutBuilder(
-      builder: (context, constraints) => constraints.maxWidth < 720
-          ? Column(children: plants.map(_plantCard).toList())
-          : _plantTable(plants),
+      builder: (context, constraints) {
+        if (AppBreakpoints.isPhone(constraints.maxWidth)) {
+          return ListView.builder(
+            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+            itemCount: plants.length,
+            itemBuilder: (context, index) => _plantCard(plants[index]),
+          );
+        }
+        return SingleChildScrollView(
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          child: _plantTable(plants),
+        );
+      },
     );
   }
 
@@ -1161,7 +1179,7 @@ class _PlantListScreenState extends State<PlantListScreen> {
               fallback: 'The plant could not be restored. Try again.',
             ),
           ),
-          backgroundColor: Colors.red,
+          backgroundColor: AppColors.danger,
         ),
       );
     }
@@ -1174,7 +1192,7 @@ class _PlantListScreenState extends State<PlantListScreen> {
       child: Container(
         width: size,
         height: size,
-        color: const Color(0xFFE2F7ED),
+        color: AppColors.primaryContainer,
         child: url.isEmpty
             ? const Icon(Icons.local_florist_rounded, color: AppColors.green)
             : Image.network(
@@ -1193,22 +1211,22 @@ class _PlantListScreenState extends State<PlantListScreen> {
     final foreground = label == 'Healthy'
         ? AppColors.green
         : label == 'Needs attention'
-        ? const Color(0xFFB86A00)
+        ? AppColors.warning
         : label == 'Dead'
-        ? const Color(0xFFB3261E)
+        ? AppColors.danger
         : AppColors.textSecondary;
     final background = label == 'Healthy'
-        ? const Color(0xFFE2F7ED)
+        ? AppColors.primaryContainer
         : label == 'Needs attention'
-        ? const Color(0xFFFFF1D8)
+        ? AppColors.warningContainer
         : label == 'Dead'
-        ? const Color(0xFFFFE3E1)
-        : const Color(0xFFEEF1EF);
+        ? AppColors.dangerContainer
+        : AppColors.surfaceDisabled;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
       decoration: BoxDecoration(
         color: background,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: AppRadii.fullyRounded,
       ),
       child: Text(
         label,

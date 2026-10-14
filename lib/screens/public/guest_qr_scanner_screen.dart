@@ -230,11 +230,11 @@ class _GuestQrScannerScreenState extends State<GuestQrScannerScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF101713),
+      backgroundColor: AppColors.scannerBackground,
       appBar: AppBar(
         title: const Text('Scan EcoTag'),
         foregroundColor: Colors.white,
-        backgroundColor: const Color(0xFF101713),
+        backgroundColor: AppColors.scannerBackground,
         actions: [
           IconButton(
             tooltip: 'Toggle flashlight',
@@ -263,7 +263,7 @@ class _GuestQrScannerScreenState extends State<GuestQrScannerScreen>
                       errorBuilder: (context, error) =>
                           _CameraErrorView(onEnterCode: _showManualEntry),
                       placeholderBuilder: (_) => const ColoredBox(
-                        color: Color(0xFF101713),
+                        color: AppColors.scannerBackground,
                         child: Center(
                           child: CircularProgressIndicator(color: Colors.white),
                         ),
@@ -437,7 +437,7 @@ class _CameraErrorView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => ColoredBox(
-    color: const Color(0xFF101713),
+    color: AppColors.scannerBackground,
     child: Center(
       child: Padding(
         padding: const EdgeInsets.all(24),

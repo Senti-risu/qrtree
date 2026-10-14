@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../theme/app_colors.dart';
+import '../../theme/app_layout.dart';
 
 /// Lets a visitor choose the correct EcoTag access path before credentials or
 /// guest information are requested.
@@ -18,7 +19,8 @@ class AccessChoiceScreen extends StatelessWidget {
         child: LayoutBuilder(
           builder: (context, constraints) {
             final textScale = MediaQuery.textScalerOf(context).scale(1);
-            if (constraints.maxWidth >= 900 && textScale < 1.3) {
+            if (AppBreakpoints.isDesktop(constraints.maxWidth) &&
+                textScale < 1.3) {
               return Row(
                 children: [
                   const Expanded(flex: 5, child: _DesktopBrandPanel()),
@@ -96,7 +98,7 @@ class _DesktopBrandPanel extends StatelessWidget {
                 end: Alignment.bottomCenter,
                 colors: [
                   AppColors.darkGreen.withValues(alpha: 0.76),
-                  const Color(0xFF092E21).withValues(alpha: 0.94),
+                  AppColors.heroOverlayDark.withValues(alpha: 0.94),
                 ],
               ),
             ),
@@ -122,7 +124,7 @@ class _DesktopBrandPanel extends StatelessWidget {
               const Text(
                 'Choose the access option that matches how you use EcoTag.',
                 style: TextStyle(
-                  color: Color(0xFFE3EEE7),
+                  color: AppColors.heroMutedAlt,
                   fontSize: 17,
                   height: 1.45,
                 ),
@@ -269,7 +271,9 @@ class _ChoicePanel extends StatelessWidget {
           LayoutBuilder(
             builder: (context, constraints) {
               final textScale = MediaQuery.textScalerOf(context).scale(1);
-              final sideBySide = constraints.maxWidth >= 620 && textScale < 1.3;
+              final sideBySide =
+                  !AppBreakpoints.isPhone(constraints.maxWidth) &&
+                  textScale < 1.3;
               final staff = FocusTraversalOrder(
                 order: const NumericFocusOrder(2),
                 child: _AccessCard(
@@ -541,9 +545,7 @@ class _BrandMark extends StatelessWidget {
                 'Cagayan State University',
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  color: light
-                      ? const Color(0xFFDDEBE2)
-                      : AppColors.textSecondary,
+                  color: light ? AppColors.heroMuted : AppColors.textSecondary,
                   fontSize: 12,
                 ),
               ),

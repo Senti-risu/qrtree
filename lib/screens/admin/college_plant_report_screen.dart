@@ -8,6 +8,7 @@ import 'package:printing/printing.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../theme/app_colors.dart';
+import '../../theme/app_layout.dart';
 import '../../widgets/app_card.dart';
 import '../../widgets/app_page_header.dart';
 import '../../widgets/app_shell.dart';
@@ -47,10 +48,8 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
   String _healthStatus = 'All';
   String _growthStage = 'All';
 
-  static const _green = AppColors.green;
-  static const _orange = Color(0xFFE58A00);
-  static const _red = Color(0xFFD83B3B);
-  static const _blue = Color(0xFF2878C8);
+  // Readable aliases for the shared analytics palette. The actual color
+  // values remain centralized in AppColors.
 
   @override
   void initState() {
@@ -93,7 +92,7 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
         plant_classification (common_name, scientific_name, plant_type),
         campus (campus_name), college (college_name),
         growth_status (growth_stage), health_status (status_name),
-        qr_tag (qr_code_string)
+        qr_tag:qr_tag!plant_qr_tag_id_fkey(qr_code_string)
       ''')
           .isFilter('archived_at', null);
       if (widget.role == 'campus_admin') {
@@ -459,7 +458,7 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final desktop = MediaQuery.sizeOf(context).width >= 900;
+    final desktop = AppBreakpoints.isDesktop(MediaQuery.sizeOf(context).width);
     return AppShell(
       activeRoute: '/reports',
       mobileTitle: 'Reports',
@@ -471,82 +470,111 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
       collegeId: widget.collegeId,
       userName: widget.username,
       onRefresh: _loadReport,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (desktop) ...[
-            AppPageHeader(
-              title: 'Reports & Analytics',
-              subtitle: '$_scopeLabel · plant health, growth, and inspections',
-              trailing: Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  OutlinedButton.icon(
-                    onPressed: _loadReport,
-                    icon: const Icon(Icons.refresh_rounded),
-                    label: const Text('Refresh'),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          // On tall desktop windows the filters stay visible while report
+          // results scroll. On shorter windows they join the scroll area so
+          // the fixed controls can never crowd out the report content.
+          final keepFiltersFixed =
+              desktop && constraints.maxHeight >= AppBreakpoints.desktop;
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (desktop) ...[
+                AppPageHeader(
+                  title: 'Reports & Analytics',
+                  subtitle:
+                      '$_scopeLabel · plant health, growth, and inspections',
+                  trailing: Wrap(
+                    spacing: AppSpacing.sm,
+                    runSpacing: AppSpacing.sm,
+                    children: [
+                      OutlinedButton.icon(
+                        onPressed: _loadReport,
+                        icon: const Icon(Icons.refresh_rounded),
+                        label: const Text('Refresh'),
+                      ),
+                      FilledButton.icon(
+                        onPressed: _loading ? null : _exportPdf,
+                        icon: const Icon(Icons.picture_as_pdf_outlined),
+                        label: const Text('Export PDF'),
+                      ),
+                    ],
                   ),
-                  FilledButton.icon(
-                    onPressed: _exportPdf,
-                    style: FilledButton.styleFrom(backgroundColor: _green),
+                ),
+                const SizedBox(height: AppSpacing.lg),
+              ] else ...[
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: FilledButton.icon(
+                    onPressed: _loading ? null : _exportPdf,
                     icon: const Icon(Icons.picture_as_pdf_outlined),
                     label: const Text('Export PDF'),
                   ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+              ],
+              if (_loading)
+                const Expanded(
+                  child: Center(
+                    child: CircularProgressIndicator(color: AppColors.green),
+                  ),
+                )
+              else if (_error != null)
+                Expanded(
+                  child: Align(
+                    alignment: Alignment.topCenter,
+                    child: _errorCard(),
+                  ),
+                )
+              else ...[
+                if (keepFiltersFixed) ...[
+                  _filterCard(),
+                  const SizedBox(height: AppSpacing.lg),
                 ],
-              ),
-            ),
-            const SizedBox(height: 18),
-          ] else ...[
-            Align(
-              alignment: Alignment.centerRight,
-              child: FilledButton.icon(
-                onPressed: _loading ? null : _exportPdf,
-                style: FilledButton.styleFrom(backgroundColor: _green),
-                icon: const Icon(Icons.picture_as_pdf_outlined),
-                label: const Text('Export PDF'),
-              ),
-            ),
-            const SizedBox(height: 14),
-          ],
-          if (_loading)
-            const SizedBox(
-              height: 520,
-              child: Center(child: CircularProgressIndicator(color: _green)),
-            )
-          else if (_error != null)
-            _errorCard()
-          else ...[
-            _filterCard(),
-            const SizedBox(height: 18),
-            _kpiCards(),
-            const SizedBox(height: 18),
-            _analytics(),
-            const SizedBox(height: 18),
-            _inspectionAndScope(),
-            const SizedBox(height: 18),
-            _detailedReport(),
-          ],
-        ],
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: Padding(
+                      padding: const EdgeInsets.only(bottom: AppSpacing.xl),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (!keepFiltersFixed) ...[
+                            _filterCard(),
+                            const SizedBox(height: AppSpacing.lg),
+                          ],
+                          _kpiCards(),
+                          const SizedBox(height: AppSpacing.lg),
+                          _analytics(),
+                          const SizedBox(height: AppSpacing.lg),
+                          _inspectionAndScope(),
+                          const SizedBox(height: AppSpacing.lg),
+                          _detailedReport(),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          );
+        },
       ),
     );
   }
 
   Widget _filterCard() => AppCard(
-    padding: const EdgeInsets.all(16),
+    padding: const EdgeInsets.all(AppSpacing.lg),
     child: LayoutBuilder(
-      builder: (_, constraints) => constraints.maxWidth < 700
+      builder: (_, constraints) => AppBreakpoints.isPhone(constraints.maxWidth)
           ? _mobileReportFilters()
           : _desktopReportFilters(constraints.maxWidth),
     ),
   );
 
   Widget _desktopReportFilters(double maxWidth) {
-    final fieldWidth = maxWidth >= 1040
-        ? (maxWidth - 32) / 4
-        : maxWidth >= 680
-        ? (maxWidth - 20) / 3
-        : (maxWidth - 10) / 2;
+    final columns = AppBreakpoints.isDesktop(maxWidth) ? 3 : 2;
+    final fieldWidth = (maxWidth - (AppSpacing.md * (columns - 1))) / columns;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -556,7 +584,7 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
               width: 4,
               height: 32,
               decoration: BoxDecoration(
-                color: _orange,
+                color: AppColors.warningAccent,
                 borderRadius: BorderRadius.circular(8),
               ),
             ),
@@ -711,7 +739,9 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
               style: OutlinedButton.styleFrom(
                 foregroundColor: AppColors.darkGreen,
                 side: BorderSide(
-                  color: _advancedFilterCount > 0 ? _green : AppColors.border,
+                  color: _advancedFilterCount > 0
+                      ? AppColors.green
+                      : AppColors.border,
                 ),
                 padding: const EdgeInsets.symmetric(horizontal: 13),
                 shape: RoundedRectangleBorder(
@@ -742,14 +772,18 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
           decoration: BoxDecoration(
-            color: const Color(0xFFF0FAF4),
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: const Color(0xFFCDE8D5)),
+            color: AppColors.primaryContainer,
+            borderRadius: AppRadii.medium,
+            border: Border.all(color: AppColors.borderStrong),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.filter_alt_rounded, size: 16, color: _green),
+              const Icon(
+                Icons.filter_alt_rounded,
+                size: 16,
+                color: AppColors.green,
+              ),
               const SizedBox(width: 6),
               Text(
                 '$_advancedFilterCount ${_advancedFilterCount == 1 ? 'filter' : 'filters'} applied',
@@ -782,7 +816,10 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
       Container(
         width: 7,
         height: 7,
-        decoration: const BoxDecoration(color: _green, shape: BoxShape.circle),
+        decoration: const BoxDecoration(
+          color: AppColors.green,
+          shape: BoxShape.circle,
+        ),
       ),
       const SizedBox(width: 7),
       Expanded(
@@ -809,7 +846,7 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
     textInputAction: TextInputAction.search,
     decoration: InputDecoration(
       hintText: 'Search plant, QR, campus, college, or variety…',
-      prefixIcon: const Icon(Icons.search_rounded, color: _green),
+      prefixIcon: const Icon(Icons.search_rounded, color: AppColors.green),
       suffixIcon: _searchController.text.isEmpty
           ? null
           : IconButton(
@@ -834,7 +871,7 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: _green, width: 1.4),
+        borderSide: const BorderSide(color: AppColors.green, width: 1.4),
       ),
     ),
   );
@@ -907,12 +944,12 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
   ];
 
   Color _reportHealthColor(String value) => value == 'Dying'
-      ? _orange
+      ? AppColors.warningAccent
       : value == 'Dead'
-      ? _red
+      ? AppColors.danger
       : value == 'Unknown'
       ? AppColors.textSecondary
-      : _green;
+      : AppColors.green;
 
   IconData _reportHealthIcon(String value) => value == 'All'
       ? Icons.apps_rounded
@@ -944,10 +981,10 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
       selectedColor: accent.withValues(alpha: .11),
       backgroundColor: Colors.white,
       side: BorderSide(
-        color: active ? accent : const Color(0xFFDCE8DF),
+        color: active ? accent : AppColors.border,
         width: active ? 1.3 : 1,
       ),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      shape: const RoundedRectangleBorder(borderRadius: AppRadii.medium),
       labelStyle: TextStyle(
         fontWeight: FontWeight.w700,
         color: active ? AppColors.darkGreen : AppColors.textSecondary,
@@ -958,16 +995,16 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
   Widget _reportActiveBadge(int count) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
     decoration: BoxDecoration(
-      color: const Color(0xFFFFF3DC),
-      borderRadius: BorderRadius.circular(20),
-      border: Border.all(color: const Color(0xFFFFD591)),
+      color: AppColors.warningContainer,
+      borderRadius: AppRadii.fullyRounded,
+      border: Border.all(color: AppColors.warningAccent),
     ),
     child: Text(
       '$count active',
       style: const TextStyle(
         fontSize: 11,
         fontWeight: FontWeight.w800,
-        color: Color(0xFFB76400),
+        color: AppColors.warning,
       ),
     ),
   );
@@ -976,7 +1013,10 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
     constraints: const BoxConstraints(minWidth: 20, minHeight: 20),
     alignment: Alignment.center,
     padding: const EdgeInsets.symmetric(horizontal: 5),
-    decoration: const BoxDecoration(color: _orange, shape: BoxShape.circle),
+    decoration: const BoxDecoration(
+      color: AppColors.warningAccent,
+      shape: BoxShape.circle,
+    ),
     child: Text(
       count.toString(),
       style: const TextStyle(
@@ -1018,7 +1058,7 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
             ),
           ),
           if (value != null)
-            const Icon(Icons.check_circle, size: 18, color: _green),
+            const Icon(Icons.check_circle, size: 18, color: AppColors.green),
         ],
       ),
     ),
@@ -1052,7 +1092,7 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
                   width: 42,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFD7DED9),
+                    color: AppColors.borderStrong,
                     borderRadius: BorderRadius.circular(4),
                   ),
                 ),
@@ -1064,10 +1104,13 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
                         width: 38,
                         height: 38,
                         decoration: BoxDecoration(
-                          color: const Color(0xFFEAF7EF),
+                          color: AppColors.primaryContainer,
                           borderRadius: BorderRadius.circular(11),
                         ),
-                        child: const Icon(Icons.tune_rounded, color: _green),
+                        child: const Icon(
+                          Icons.tune_rounded,
+                          color: AppColors.green,
+                        ),
                       ),
                       const SizedBox(width: 11),
                       const Expanded(
@@ -1254,7 +1297,7 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
                           },
                           style: FilledButton.styleFrom(
                             minimumSize: const Size.fromHeight(48),
-                            backgroundColor: _green,
+                            backgroundColor: AppColors.green,
                           ),
                           child: const Text('Apply filters'),
                         ),
@@ -1291,7 +1334,7 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: _green, width: 1.4),
+          borderSide: const BorderSide(color: AppColors.green, width: 1.4),
         ),
       );
 
@@ -1316,46 +1359,60 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
 
   Widget _kpiCards() => LayoutBuilder(
     builder: (_, constraints) {
-      final width = constraints.maxWidth >= 1120
-          ? (constraints.maxWidth - 50) / 6
-          : constraints.maxWidth >= 720
-          ? (constraints.maxWidth - 20) / 3
-          : constraints.maxWidth >= 320
-          ? (constraints.maxWidth - 10) / 2
-          : constraints.maxWidth;
+      final columns = AppBreakpoints.isDesktop(constraints.maxWidth)
+          ? 3
+          : AppBreakpoints.isTablet(constraints.maxWidth)
+          ? 2
+          : constraints.maxWidth >= 360
+          ? 2
+          : 1;
+      final width =
+          (constraints.maxWidth - (AppSpacing.md * (columns - 1))) / columns;
       final inspected = _filteredPlants.where(_inspected).length;
       return Wrap(
-        spacing: 10,
-        runSpacing: 10,
+        spacing: AppSpacing.md,
+        runSpacing: AppSpacing.md,
         children: [
           _kpi(
             'Total Plants',
             _filteredPlants.length,
             Icons.park_rounded,
-            _green,
+            AppColors.green,
             width,
           ),
-          _kpi('Alive', _count('Alive'), Icons.eco_rounded, _green, width),
+          _kpi(
+            'Alive',
+            _count('Alive'),
+            Icons.eco_rounded,
+            AppColors.green,
+            width,
+          ),
           _kpi(
             'Dying',
             _count('Dying'),
             Icons.warning_amber_rounded,
-            _orange,
+            AppColors.warningAccent,
             width,
           ),
           _kpi(
             'Dead',
             _count('Dead'),
             Icons.local_florist_outlined,
-            _red,
+            AppColors.danger,
             width,
           ),
-          _kpi('Inspected', inspected, Icons.fact_check_outlined, _blue, width),
+          _kpi(
+            'Inspected',
+            inspected,
+            Icons.fact_check_outlined,
+            AppColors.info,
+            width,
+          ),
           _kpi(
             'Pending',
             _filteredPlants.length - inspected,
             Icons.pending_actions_outlined,
-            _orange,
+            AppColors.warningAccent,
             width,
           ),
         ],
@@ -1416,12 +1473,12 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
 
   Widget _analytics() => LayoutBuilder(
     builder: (_, constraints) {
-      final width = constraints.maxWidth >= 760
-          ? (constraints.maxWidth - 18) / 2
+      final width = !AppBreakpoints.isPhone(constraints.maxWidth)
+          ? (constraints.maxWidth - AppSpacing.lg) / 2
           : constraints.maxWidth;
       return Wrap(
-        spacing: 18,
-        runSpacing: 18,
+        spacing: AppSpacing.lg,
+        runSpacing: AppSpacing.lg,
         children: [
           SizedBox(width: width, child: _healthChart()),
           SizedBox(width: width, child: _growthChart()),
@@ -1458,9 +1515,9 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
 
   Widget _healthChart() {
     final values = [
-      ('Alive', _count('Alive'), _green),
-      ('Dying', _count('Dying'), _orange),
-      ('Dead', _count('Dead'), _red),
+      ('Alive', _count('Alive'), AppColors.green),
+      ('Dying', _count('Dying'), AppColors.warningAccent),
+      ('Dead', _count('Dead'), AppColors.danger),
       ('Unknown', _count('Unknown'), AppColors.textSecondary),
     ];
     final total = values.fold<int>(0, (sum, item) => sum + item.$2);
@@ -1538,7 +1595,7 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
     return _chartCard(
       'Growth Stage',
       'Plants by development stage',
-      counts.isEmpty ? _emptyChart() : _barChart(counts, _green),
+      counts.isEmpty ? _emptyChart() : _barChart(counts, AppColors.green),
     );
   }
 
@@ -1554,7 +1611,7 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
       _universityScope
           ? 'Registered plants per campus'
           : 'Registered plants per college',
-      counts.isEmpty ? _emptyChart() : _barChart(counts, _blue),
+      counts.isEmpty ? _emptyChart() : _barChart(counts, AppColors.info),
     );
   }
 
@@ -1699,13 +1756,13 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
                         FlSpot(item.key.toDouble(), item.value.toDouble()),
                   )
                   .toList(),
-              color: _green,
+              color: AppColors.green,
               barWidth: 3,
               isCurved: true,
               dotData: const FlDotData(show: true),
               belowBarData: BarAreaData(
                 show: true,
-                color: _green.withValues(alpha: .12),
+                color: AppColors.green.withValues(alpha: .12),
               ),
             ),
           ],
@@ -1723,12 +1780,12 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
 
   Widget _inspectionAndScope() => LayoutBuilder(
     builder: (_, constraints) {
-      final width = constraints.maxWidth >= 760
-          ? (constraints.maxWidth - 18) / 2
+      final width = !AppBreakpoints.isPhone(constraints.maxWidth)
+          ? (constraints.maxWidth - AppSpacing.lg) / 2
           : constraints.maxWidth;
       return Wrap(
-        spacing: 18,
-        runSpacing: 18,
+        spacing: AppSpacing.lg,
+        runSpacing: AppSpacing.lg,
         children: [
           SizedBox(width: width, child: _inspectionOverview()),
           SizedBox(width: width, child: _scopeSummary()),
@@ -1758,9 +1815,9 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
             ),
           ),
           const SizedBox(height: 18),
-          _metricRow('Inspected', inspected, _blue),
-          _metricRow('Pending inspection', pending, _orange),
-          _metricRow('Overdue (90+ days)', overdue, _red),
+          _metricRow('Inspected', inspected, AppColors.info),
+          _metricRow('Pending inspection', pending, AppColors.warningAccent),
+          _metricRow('Overdue (90+ days)', overdue, AppColors.danger),
           const SizedBox(height: 15),
           Row(
             children: [
@@ -1774,7 +1831,7 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
                 '${(completion * 100).round()}%',
                 style: const TextStyle(
                   fontWeight: FontWeight.w800,
-                  color: _green,
+                  color: AppColors.green,
                 ),
               ),
             ],
@@ -1784,8 +1841,8 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
             value: completion,
             minHeight: 9,
             borderRadius: BorderRadius.circular(10),
-            color: _green,
-            backgroundColor: const Color(0xFFE2EEE6),
+            color: AppColors.green,
+            backgroundColor: AppColors.primaryContainer,
           ),
         ],
       ),
@@ -1861,7 +1918,7 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
                             vertical: 4,
                           ),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFE2F7ED),
+                            color: AppColors.primaryContainer,
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
@@ -1910,7 +1967,7 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
           else
             LayoutBuilder(
               builder: (_, constraints) {
-                if (constraints.maxWidth < 700) {
+                if (AppBreakpoints.isPhone(constraints.maxWidth)) {
                   return _mobileDetailedReport(plants);
                 }
                 return SizedBox(
@@ -2069,12 +2126,12 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: _green.withValues(alpha: .11),
+                  color: AppColors.green.withValues(alpha: .11),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: const Icon(
                   Icons.local_florist_rounded,
-                  color: _green,
+                  color: AppColors.green,
                   size: 21,
                 ),
               ),
@@ -2202,11 +2259,11 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
 
   Widget _healthChip(String value) {
     final color = value == 'Alive'
-        ? _green
+        ? AppColors.green
         : value == 'Dying'
-        ? _orange
+        ? AppColors.warningAccent
         : value == 'Dead'
-        ? _red
+        ? AppColors.danger
         : AppColors.textSecondary;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
@@ -2232,7 +2289,11 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.error_outline_rounded, size: 48, color: _red),
+            const Icon(
+              Icons.error_outline_rounded,
+              size: 48,
+              color: AppColors.danger,
+            ),
             const SizedBox(height: 12),
             Text(_error!, textAlign: TextAlign.center),
             const SizedBox(height: 14),

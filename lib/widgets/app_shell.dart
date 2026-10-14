@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 
+import '../models/app_role.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_layout.dart';
 import 'app_sidebar.dart';
-import 'app_top_navbar.dart';
 import 'app_mobile_navbar.dart';
+import 'app_top_navbar.dart';
 
 class AppShell extends StatelessWidget {
   final String activeRoute;
@@ -65,9 +67,14 @@ class AppShell extends StatelessWidget {
     this.showMobileNavigation = true,
     this.showQrButton = true,
 
-    this.desktopPadding = const EdgeInsets.all(24),
+    this.desktopPadding = const EdgeInsets.all(AppSpacing.xl),
 
-    this.mobilePadding = const EdgeInsets.fromLTRB(14, 10, 14, 100),
+    this.mobilePadding = const EdgeInsets.fromLTRB(
+      AppSpacing.lg,
+      AppSpacing.sm,
+      AppSpacing.lg,
+      AppSpacing.lg,
+    ),
   });
 
   // ============================================================
@@ -96,7 +103,8 @@ class AppShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bool isDesktop = MediaQuery.sizeOf(context).width >= 900;
+    final bool isDesktop =
+        MediaQuery.sizeOf(context).width >= AppBreakpoints.desktop;
 
     if (isDesktop) {
       return _desktopLayout(context);
@@ -135,13 +143,17 @@ class AppShell extends StatelessWidget {
                 ),
 
                 Expanded(
-                  child: SingleChildScrollView(
-                    child: Padding(
-                      padding: desktopPadding,
-                      child: Align(
+                  child: Padding(
+                    padding: desktopPadding,
+                    child: LayoutBuilder(
+                      builder: (context, constraints) => Align(
                         alignment: Alignment.topCenter,
                         child: ConstrainedBox(
-                          constraints: const BoxConstraints(maxWidth: 1520),
+                          constraints: BoxConstraints(
+                            maxWidth: AppLayout.maxContentWidth,
+                            minHeight: constraints.maxHeight,
+                            maxHeight: constraints.maxHeight,
+                          ),
                           child: SizedBox(width: double.infinity, child: child),
                         ),
                       ),
@@ -179,7 +191,7 @@ class AppShell extends StatelessWidget {
 
         toolbarHeight: toolbarHeight,
 
-        titleSpacing: 16,
+        titleSpacing: AppSpacing.lg,
 
         title: Row(
           children: [
@@ -188,11 +200,15 @@ class AppShell extends StatelessWidget {
               height: 42,
               decoration: BoxDecoration(
                 color: AppColors.green,
-                borderRadius: BorderRadius.circular(11),
+                borderRadius: AppRadii.medium,
               ),
-              child: const Icon(Icons.eco, color: Colors.white, size: 24),
+              child: const Icon(
+                Icons.eco,
+                color: AppColors.onPrimary,
+                size: 24,
+              ),
             ),
-            const SizedBox(width: 10),
+            const SizedBox(width: AppSpacing.sm),
             Expanded(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -236,14 +252,13 @@ class AppShell extends StatelessWidget {
               icon: const Icon(Icons.refresh_rounded, color: AppColors.green),
             ),
 
-          const SizedBox(width: 8),
+          const SizedBox(width: AppSpacing.sm),
         ],
       ),
 
       body: SafeArea(
         top: false,
-
-        child: SingleChildScrollView(padding: mobilePadding, child: child),
+        child: Padding(padding: mobilePadding, child: child),
       ),
 
       // ========================================================
@@ -266,7 +281,7 @@ class AppShell extends StatelessWidget {
 
               backgroundColor: AppColors.green,
 
-              foregroundColor: Colors.white,
+              foregroundColor: AppColors.onPrimary,
 
               elevation: 4,
 
@@ -317,14 +332,10 @@ class AppShell extends StatelessWidget {
 
   String get _displayUserName {
     if (userName.trim().isNotEmpty) {
-      return userName;
+      return userName.trim();
     }
 
-    if (username.trim().isNotEmpty) {
-      return username;
-    }
-
-    return 'EcoTag User';
+    return username.trim();
   }
 
   // ============================================================
@@ -332,31 +343,15 @@ class AppShell extends StatelessWidget {
   // ============================================================
 
   String get _displayUserRole {
+    final appRole = AppRole.fromValue(role);
+    if (appRole != AppRole.unknown) {
+      return appRole.label;
+    }
+
     if (userRole.trim().isNotEmpty) {
-      return userRole;
+      return userRole.trim();
     }
 
-    switch (role) {
-      case 'super_admin':
-        return 'Super Admin';
-
-      case 'university_admin':
-        return 'University Admin';
-
-      case 'campus_admin':
-        return 'Campus Admin';
-
-      case 'college_admin':
-        return 'College Admin';
-
-      case 'inspection_team':
-        return 'Inspection Team';
-
-      case 'guest':
-        return 'Guest';
-
-      default:
-        return role;
-    }
+    return role.trim();
   }
 }

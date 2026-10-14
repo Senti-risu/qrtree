@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../../theme/app_colors.dart';
+import '../../../theme/app_layout.dart';
+
 class QuickActionButton extends StatelessWidget {
   final IconData icon;
   final String title;
@@ -22,16 +25,16 @@ class QuickActionButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: bgColor,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: AppRadii.medium,
       child: InkWell(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: AppRadii.medium,
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(AppSpacing.lg),
           child: Row(
             children: [
               Icon(icon, color: iconColor, size: 24),
-              const SizedBox(width: 16),
+              const SizedBox(width: AppSpacing.lg),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -43,15 +46,15 @@ class QuickActionButton extends StatelessWidget {
                       style: const TextStyle(
                         fontWeight: FontWeight.w600,
                         fontSize: 14,
-                        color: Color(0xFF1A1A1A),
+                        color: AppColors.textPrimary,
                       ),
                     ),
                     Text(
                       subtitle,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: Colors.grey.shade600,
+                      style: const TextStyle(
+                        color: AppColors.textSecondary,
                         fontSize: 12,
                       ),
                     ),

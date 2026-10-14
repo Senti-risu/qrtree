@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../../models/app_role.dart';
 import '../../services/inspection_account_service.dart';
 import '../../theme/app_colors.dart';
+import '../../theme/app_layout.dart';
 import '../../utils/user_facing_error.dart';
 import '../../widgets/app_card.dart';
 import '../../widgets/app_page_header.dart';
@@ -104,7 +106,7 @@ class _InspectionAccountsScreenState extends State<InspectionAccountsScreen> {
             selected: pendingStatus == value,
             showCheckmark: false,
             onSelected: (_) => setSheetState(() => pendingStatus = value),
-            selectedColor: const Color(0xFFE2F7ED),
+            selectedColor: AppColors.primaryContainer,
             backgroundColor: AppColors.background,
             side: BorderSide(
               color: pendingStatus == value
@@ -161,7 +163,7 @@ class _InspectionAccountsScreenState extends State<InspectionAccountsScreen> {
                             width: 42,
                             height: 42,
                             decoration: BoxDecoration(
-                              color: const Color(0xFFE2F7ED),
+                              color: AppColors.primaryContainer,
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: const Icon(
@@ -536,7 +538,7 @@ class _InspectionAccountsScreenState extends State<InspectionAccountsScreen> {
                                 vertical: 5,
                               ),
                               leading: const CircleAvatar(
-                                backgroundColor: Color(0xFFEEF1EF),
+                                backgroundColor: AppColors.surfaceDisabled,
                                 child: Icon(Icons.person_off_outlined),
                               ),
                               title: Text(
@@ -652,7 +654,9 @@ class _InspectionAccountsScreenState extends State<InspectionAccountsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDesktop = MediaQuery.sizeOf(context).width >= 900;
+    final isDesktop = AppBreakpoints.isDesktop(
+      MediaQuery.sizeOf(context).width,
+    );
     return AppShell(
       activeRoute: '/inspection-accounts',
       mobileTitle: 'Inspection Accounts',
@@ -664,7 +668,7 @@ class _InspectionAccountsScreenState extends State<InspectionAccountsScreen> {
       campusId: widget.campusId,
       collegeId: widget.collegeId,
       userName: widget.username,
-      userRole: 'College Admin',
+      userRole: AppRole.collegeAdmin.label,
       showQrButton: false,
       onRefresh: _loadAccounts,
       child: Column(
@@ -695,7 +699,7 @@ class _InspectionAccountsScreenState extends State<InspectionAccountsScreen> {
                 ],
               ),
             ),
-            const SizedBox(height: 18),
+            const SizedBox(height: AppSpacing.xl),
           ],
           if (!isDesktop) ...[
             Row(
@@ -720,11 +724,13 @@ class _InspectionAccountsScreenState extends State<InspectionAccountsScreen> {
                 ),
               ],
             ),
-            const SizedBox(height: 18),
+            const SizedBox(height: AppSpacing.xl),
           ],
-          LayoutBuilder(
-            builder: (_, constraints) =>
-                _accountsCard(constraints.maxWidth >= 760),
+          Expanded(
+            child: LayoutBuilder(
+              builder: (_, constraints) =>
+                  _accountsCard(!AppBreakpoints.isPhone(constraints.maxWidth)),
+            ),
           ),
         ],
       ),
@@ -755,59 +761,56 @@ class _InspectionAccountsScreenState extends State<InspectionAccountsScreen> {
             _filterBar(),
             const SizedBox(height: 14),
           ],
-          if (_loading)
-            const SizedBox(
-              height: 220,
-              child: Center(
-                child: CircularProgressIndicator(color: AppColors.green),
-              ),
-            )
-          else if (_error != null)
-            SizedBox(
-              height: 220,
-              child: Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(
-                      Icons.error_outline,
-                      color: Colors.red,
-                      size: 40,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(_error!, textAlign: TextAlign.center),
-                    const SizedBox(height: 10),
-                    OutlinedButton.icon(
-                      onPressed: _loadAccounts,
-                      icon: const Icon(Icons.refresh),
-                      label: const Text('Retry'),
-                    ),
-                  ],
-                ),
-              ),
-            )
-          else if (_accounts.isEmpty)
-            const SizedBox(
-              height: 220,
-              child: Center(child: Text('No Inspection Team accounts yet.')),
-            )
-          else if (visibleAccounts.isEmpty)
-            _noMatchingAccounts()
-          else if (isDesktop)
-            _desktopTable(visibleAccounts)
-          else
-            for (var index = 0; index < visibleAccounts.length; index++) ...[
-              _accountTile(visibleAccounts[index]),
-              if (index < visibleAccounts.length - 1) const Divider(height: 1),
-            ],
+          Expanded(child: _accountResults(visibleAccounts, isDesktop)),
         ],
       ),
     );
   }
 
+  Widget _accountResults(
+    List<Map<String, dynamic>> visibleAccounts,
+    bool useTable,
+  ) {
+    if (_loading) {
+      return const Center(
+        child: CircularProgressIndicator(color: AppColors.green),
+      );
+    }
+    if (_error != null) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.error_outline, color: AppColors.danger, size: 40),
+            const SizedBox(height: AppSpacing.sm),
+            Text(_error!, textAlign: TextAlign.center),
+            const SizedBox(height: AppSpacing.sm),
+            OutlinedButton.icon(
+              onPressed: _loadAccounts,
+              icon: const Icon(Icons.refresh),
+              label: const Text('Retry'),
+            ),
+          ],
+        ),
+      );
+    }
+    if (_accounts.isEmpty) {
+      return const Center(child: Text('No Inspection Team accounts yet.'));
+    }
+    if (visibleAccounts.isEmpty) return _noMatchingAccounts();
+    if (useTable) {
+      return SingleChildScrollView(child: _desktopTable(visibleAccounts));
+    }
+    return ListView.separated(
+      itemCount: visibleAccounts.length,
+      separatorBuilder: (_, _) => const Divider(height: 1),
+      itemBuilder: (_, index) => _accountTile(visibleAccounts[index]),
+    );
+  }
+
   Widget _filterBar() => LayoutBuilder(
     builder: (_, constraints) {
-      final isMobile = constraints.maxWidth < 680;
+      final isMobile = !AppBreakpoints.isDesktop(constraints.maxWidth);
       final search = TextField(
         controller: _searchController,
         onChanged: (_) => setState(() {}),
@@ -826,7 +829,7 @@ class _InspectionAccountsScreenState extends State<InspectionAccountsScreen> {
                   icon: const Icon(Icons.close_rounded),
                 ),
           filled: true,
-          fillColor: const Color(0xFFF7FAF8),
+          fillColor: AppColors.surfaceSubtle,
           contentPadding: const EdgeInsets.symmetric(vertical: 14),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(14),
@@ -896,8 +899,8 @@ class _InspectionAccountsScreenState extends State<InspectionAccountsScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 13),
                     foregroundColor: AppColors.darkGreen,
                     backgroundColor: _appliedFilterCount > 0
-                        ? const Color(0xFFE2F7ED)
-                        : Colors.white,
+                        ? AppColors.primaryContainer
+                        : AppColors.surface,
                     side: BorderSide(
                       color: _appliedFilterCount > 0
                           ? AppColors.green
@@ -946,7 +949,7 @@ class _InspectionAccountsScreenState extends State<InspectionAccountsScreen> {
                   label: Text(_statusFilterLabel),
                   onDeleted: () => setState(() => _statusFilter = 'all'),
                   deleteIconColor: AppColors.green,
-                  backgroundColor: const Color(0xFFEAF7EE),
+                  backgroundColor: AppColors.primaryContainer,
                   side: const BorderSide(color: AppColors.border),
                 ),
               ),
@@ -976,7 +979,7 @@ class _InspectionAccountsScreenState extends State<InspectionAccountsScreen> {
                     vertical: 8,
                   ),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFE2F7ED),
+                    color: AppColors.primaryContainer,
                     borderRadius: BorderRadius.circular(99),
                     border: Border.all(color: AppColors.border),
                   ),
@@ -1004,8 +1007,8 @@ class _InspectionAccountsScreenState extends State<InspectionAccountsScreen> {
     selected: _statusFilter == value,
     showCheckmark: false,
     onSelected: (_) => setState(() => _statusFilter = value),
-    selectedColor: const Color(0xFFE2F7ED),
-    backgroundColor: const Color(0xFFF7FAF8),
+    selectedColor: AppColors.primaryContainer,
+    backgroundColor: AppColors.surfaceSubtle,
     side: BorderSide(
       color: _statusFilter == value ? AppColors.green : AppColors.border,
     ),
@@ -1075,7 +1078,7 @@ class _InspectionAccountsScreenState extends State<InspectionAccountsScreen> {
                   Row(
                     children: [
                       CircleAvatar(
-                        backgroundColor: const Color(0xFFE6F5EB),
+                        backgroundColor: AppColors.primaryContainer,
                         child: Text(
                           username.isEmpty ? '?' : username[0].toUpperCase(),
                           style: const TextStyle(
@@ -1112,15 +1115,15 @@ class _InspectionAccountsScreenState extends State<InspectionAccountsScreen> {
   Widget _statusChip(bool active) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
     decoration: BoxDecoration(
-      color: active ? const Color(0xFFE2F7ED) : const Color(0xFFFFE3E1),
-      borderRadius: BorderRadius.circular(20),
+      color: active ? AppColors.primaryContainer : AppColors.dangerContainer,
+      borderRadius: AppRadii.fullyRounded,
     ),
     child: Text(
       active ? 'Active' : 'Inactive',
       style: TextStyle(
         fontSize: 11,
         fontWeight: FontWeight.w700,
-        color: active ? AppColors.green : Colors.red.shade700,
+        color: active ? AppColors.green : AppColors.danger,
       ),
     ),
   );
@@ -1131,7 +1134,7 @@ class _InspectionAccountsScreenState extends State<InspectionAccountsScreen> {
     return ListTile(
       contentPadding: EdgeInsets.zero,
       leading: CircleAvatar(
-        backgroundColor: const Color(0xFFE6F5EB),
+        backgroundColor: AppColors.primaryContainer,
         child: Text(
           username.isEmpty ? '?' : username[0].toUpperCase(),
           style: const TextStyle(
@@ -1222,7 +1225,7 @@ class _CreateInspectionAccountDialogState
 
   @override
   Widget build(BuildContext context) {
-    final compact = MediaQuery.sizeOf(context).width < 600;
+    final compact = AppBreakpoints.isPhone(MediaQuery.sizeOf(context).width);
     return AlertDialog(
       scrollable: true,
       insetPadding: EdgeInsets.symmetric(

@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 
 import '../../../theme/app_colors.dart';
+import '../../../theme/app_layout.dart';
 
 class PlantImagePickerField extends StatelessWidget {
   final Uint8List? imageBytes;
@@ -23,30 +24,30 @@ class PlantImagePickerField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hasImage = imageBytes != null;
+    final theme = Theme.of(context);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Upload Image',
-          style: TextStyle(
+          style: theme.textTheme.labelMedium?.copyWith(
             color: AppColors.darkGreen,
-            fontSize: 12,
             fontWeight: FontWeight.w600,
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: AppSpacing.sm),
         InkWell(
           onTap: isPicking ? null : onPick,
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: AppRadii.medium,
           child: Container(
             width: double.infinity,
             height: 180,
             clipBehavior: Clip.antiAlias,
             decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: const Color(0xFFB8C8BC), width: 1.2),
+              color: AppColors.surface,
+              borderRadius: AppRadii.medium,
+              border: Border.all(color: AppColors.border),
             ),
             child: hasImage
                 ? _ImagePreview(
@@ -58,12 +59,14 @@ class PlantImagePickerField extends StatelessWidget {
           ),
         ),
         if (imageName != null) ...[
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.sm),
           Text(
             imageName!,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(color: AppColors.green, fontSize: 10),
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: AppColors.primary,
+            ),
           ),
         ],
       ],
@@ -89,8 +92,8 @@ class _ImagePreview extends StatelessWidget {
       children: [
         Image.memory(imageBytes, fit: BoxFit.cover),
         Positioned(
-          top: 10,
-          right: 10,
+          top: AppSpacing.sm,
+          right: AppSpacing.sm,
           child: Row(
             children: [
               _ImageActionButton(
@@ -98,11 +101,11 @@ class _ImagePreview extends StatelessWidget {
                 icon: Icons.edit_outlined,
                 onPressed: onPick,
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: AppSpacing.sm),
               _ImageActionButton(
                 tooltip: 'Remove image',
                 icon: Icons.delete_outline,
-                iconColor: Colors.red,
+                iconColor: AppColors.danger,
                 onPressed: onRemove,
               ),
             ],
@@ -123,14 +126,14 @@ class _ImageActionButton extends StatelessWidget {
     required this.tooltip,
     required this.icon,
     required this.onPressed,
-    this.iconColor = AppColors.green,
+    this.iconColor = AppColors.primary,
   });
 
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(8),
+      color: AppColors.surface,
+      borderRadius: AppRadii.small,
       child: IconButton(
         tooltip: tooltip,
         onPressed: onPressed,
@@ -151,25 +154,25 @@ class _EmptyImageState extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         isPicking
-            ? const CircularProgressIndicator(color: AppColors.green)
+            ? const CircularProgressIndicator()
             : const Icon(
                 Icons.image_outlined,
                 size: 44,
-                color: Color(0xFF8D9990),
+                color: AppColors.textSecondary,
               ),
-        const SizedBox(height: 10),
+        const SizedBox(height: AppSpacing.md),
         Text(
           isPicking ? 'Opening gallery...' : 'Click to upload image',
           style: const TextStyle(
-            color: AppColors.green,
+            color: AppColors.primary,
             fontSize: 13,
             fontWeight: FontWeight.w600,
           ),
         ),
-        const SizedBox(height: 5),
+        const SizedBox(height: AppSpacing.xs),
         const Text(
           'PNG, JPG or JPEG',
-          style: TextStyle(color: Color(0xFF879188), fontSize: 10),
+          style: TextStyle(color: AppColors.textSecondary, fontSize: 10),
         ),
       ],
     );

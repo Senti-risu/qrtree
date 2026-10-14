@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../theme/app_colors.dart';
+import '../../../theme/app_layout.dart';
 import '../../../widgets/app_card.dart';
 import 'registration_form_fields.dart';
 
@@ -46,20 +47,21 @@ class PlantLocationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return AppCard(
-      padding: const EdgeInsets.fromLTRB(24, 26, 24, 24),
+      padding: const EdgeInsets.all(AppSpacing.xl),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Location',
-            style: TextStyle(
-              fontSize: 22,
+            style: theme.textTheme.titleLarge?.copyWith(
               fontWeight: FontWeight.w700,
               color: AppColors.darkGreen,
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: AppSpacing.xl),
 
           // Campus is selected first.
           RegistrationDropdownField(
@@ -69,7 +71,7 @@ class PlantLocationCard extends StatelessWidget {
             onChanged: onCampusChanged,
           ),
 
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.lg),
 
           RegistrationDropdownField(
             label: 'College',
@@ -78,7 +80,7 @@ class PlantLocationCard extends StatelessWidget {
             onChanged: onCollegeChanged,
           ),
 
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.lg),
 
           RegistrationDropdownField(
             label: 'Town',
@@ -87,7 +89,7 @@ class PlantLocationCard extends StatelessWidget {
             onChanged: onTownChanged,
           ),
 
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.lg),
 
           RegistrationDropdownField(
             label: 'Barangay',
@@ -96,7 +98,7 @@ class PlantLocationCard extends StatelessWidget {
             onChanged: onBarangayChanged,
           ),
 
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.lg),
 
           SizedBox(
             width: 150,
@@ -107,30 +109,22 @@ class PlantLocationCard extends StatelessWidget {
             ),
           ),
 
-          const SizedBox(height: 28),
+          const SizedBox(height: AppSpacing.xl),
 
           Align(
             alignment: Alignment.centerRight,
             child: SizedBox(
               width: 140,
               height: 50,
-              child: ElevatedButton(
+              child: FilledButton(
                 onPressed: saving ? null : onSave,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.green,
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
                 child: saving
                     ? const SizedBox(
                         width: 18,
                         height: 18,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          color: Colors.white,
+                          color: AppColors.onPrimary,
                         ),
                       )
                     : const Text(

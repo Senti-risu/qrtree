@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../../models/app_role.dart';
 import '../../services/activity_log_service.dart';
 import '../../theme/app_colors.dart';
+import '../../theme/app_layout.dart';
 import '../../utils/user_facing_error.dart';
 import '../../widgets/app_card.dart';
 import '../../widgets/app_error_state.dart';
@@ -86,7 +88,7 @@ class _ActivityLogScreenState extends State<ActivityLogScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final desktop = MediaQuery.sizeOf(context).width >= 900;
+    final desktop = AppBreakpoints.isDesktop(MediaQuery.sizeOf(context).width);
     return AppShell(
       activeRoute: '/activity-log',
       mobileTitle: 'Activity Log',
@@ -108,11 +110,11 @@ class _ActivityLogScreenState extends State<ActivityLogScreen> {
               title: 'Activity Log',
               subtitle: 'Review important changes made in EcoTag',
             ),
-            const SizedBox(height: 18),
+            const SizedBox(height: AppSpacing.xl),
           ],
           _filters(),
-          const SizedBox(height: 16),
-          _content(),
+          const SizedBox(height: AppSpacing.lg),
+          Expanded(child: _content()),
         ],
       ),
     );
@@ -156,7 +158,7 @@ class _ActivityLogScreenState extends State<ActivityLogScreen> {
           },
         );
 
-        if (constraints.maxWidth < 620) {
+        if (AppBreakpoints.isPhone(constraints.maxWidth)) {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -232,12 +234,7 @@ class _ActivityLogScreenState extends State<ActivityLogScreen> {
 
   Widget _content() {
     if (_loading) {
-      return const AppCard(
-        child: SizedBox(
-          height: 320,
-          child: Center(child: CircularProgressIndicator()),
-        ),
-      );
+      return const AppCard(child: Center(child: CircularProgressIndicator()));
     }
     if (_error != null) {
       return AppCard(
@@ -255,43 +252,40 @@ class _ActivityLogScreenState extends State<ActivityLogScreen> {
     }
     if (_events.isEmpty) {
       return const AppCard(
-        child: SizedBox(
-          height: 260,
-          child: Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.history_toggle_off_rounded,
-                  size: 52,
-                  color: AppColors.textSecondary,
-                ),
-                SizedBox(height: 10),
-                Text(
-                  'No activity found',
-                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800),
-                ),
-                SizedBox(height: 4),
-                Text(
-                  'New account and plant changes will appear here.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: AppColors.textSecondary),
-                ),
-              ],
-            ),
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.history_toggle_off_rounded,
+                size: 52,
+                color: AppColors.textSecondary,
+              ),
+              SizedBox(height: AppSpacing.sm),
+              Text(
+                'No activity found',
+                style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800),
+              ),
+              SizedBox(height: AppSpacing.xs),
+              Text(
+                'New account and plant changes will appear here.',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: AppColors.textSecondary),
+              ),
+            ],
           ),
         ),
       );
     }
 
-    return Column(
-      children: [
-        for (final event in _events) ...[
-          _eventCard(event),
-          const SizedBox(height: 10),
-        ],
-        if (_hasMore)
-          OutlinedButton.icon(
+    return ListView.separated(
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+      itemCount: _events.length + (_hasMore ? 1 : 0),
+      separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.sm),
+      itemBuilder: (context, index) {
+        if (index < _events.length) return _eventCard(_events[index]);
+        return Center(
+          child: OutlinedButton.icon(
             onPressed: _loadingMore ? null : () => _load(more: true),
             icon: _loadingMore
                 ? const SizedBox(
@@ -302,7 +296,8 @@ class _ActivityLogScreenState extends State<ActivityLogScreen> {
                 : const Icon(Icons.expand_more_rounded),
             label: Text(_loadingMore ? 'Loading…' : 'Load more'),
           ),
-      ],
+        );
+      },
     );
   }
 
@@ -386,8 +381,8 @@ class _ActivityLogScreenState extends State<ActivityLogScreen> {
   Color _actionColor(String action) => switch (action) {
     'archive' => AppColors.danger,
     'restore' || 'create' => AppColors.green,
-    'replace' => const Color(0xFF8B5CF6),
-    'inspect' => const Color(0xFF246BCE),
+    'replace' => AppColors.accentPurple,
+    'inspect' => AppColors.info,
     _ => AppColors.textSecondary,
   };
 
@@ -425,14 +420,10 @@ class _ActivityLogScreenState extends State<ActivityLogScreen> {
     _ => 'Updated',
   };
 
-  String _roleLabel(String role) => switch (role) {
-    'super_admin' => 'Super Admin',
-    'university_admin' => 'University Admin',
-    'campus_admin' => 'Campus Admin',
-    'college_admin' => 'College Admin',
-    'inspection_team' => 'Inspection Team',
-    _ => role,
-  };
+  String _roleLabel(String role) {
+    final parsed = AppRole.fromValue(role);
+    return parsed == AppRole.unknown ? role : parsed.label;
+  }
 
   String _formatDate(dynamic value) {
     final date = DateTime.tryParse(value?.toString() ?? '')?.toLocal();

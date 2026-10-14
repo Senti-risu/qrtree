@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../services/inspection_service.dart';
 import '../../theme/app_colors.dart';
+import '../../theme/app_layout.dart';
 import '../../utils/user_facing_error.dart';
 import '../../widgets/app_card.dart';
 import '../../widgets/app_error_state.dart';
@@ -472,7 +473,7 @@ class _InspectionHistoryScreenState extends State<InspectionHistoryScreen> {
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (MediaQuery.sizeOf(context).width >= 900) ...[
+        if (AppBreakpoints.isDesktop(MediaQuery.sizeOf(context).width)) ...[
           const AppCard(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -493,11 +494,13 @@ class _InspectionHistoryScreenState extends State<InspectionHistoryScreen> {
               ],
             ),
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: AppSpacing.xl),
         ],
         _queueSwitcher(),
-        const SizedBox(height: 14),
-        if (_queueFilter == 'history') _content() else _queueContent(),
+        const SizedBox(height: AppSpacing.lg),
+        Expanded(
+          child: _queueFilter == 'history' ? _content() : _queueContent(),
+        ),
       ],
     ),
   );
@@ -559,7 +562,7 @@ class _InspectionHistoryScreenState extends State<InspectionHistoryScreen> {
                         : AppColors.textSecondary,
                   ),
                   selectedColor: urgent
-                      ? const Color(0xFFFFECEA)
+                      ? AppColors.dangerContainer
                       : AppColors.primaryContainer,
                   backgroundColor: AppColors.background,
                   side: BorderSide(
@@ -569,9 +572,7 @@ class _InspectionHistoryScreenState extends State<InspectionHistoryScreen> {
                               : AppColors.green.withValues(alpha: .45)
                         : AppColors.border,
                   ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
+                  shape: RoundedRectangleBorder(borderRadius: AppRadii.medium),
                   onSelected: (_) => _selectQueueFilter(entry.key),
                 ),
               );
@@ -619,7 +620,10 @@ class _InspectionHistoryScreenState extends State<InspectionHistoryScreen> {
     }
     if (_queue.isEmpty) return _emptyQueue();
 
-    return Column(children: _queue.map(_queueCard).toList());
+    return ListView.builder(
+      itemCount: _queue.length,
+      itemBuilder: (_, index) => _queueCard(_queue[index]),
+    );
   }
 
   Widget _emptyQueue() {
@@ -690,7 +694,7 @@ class _InspectionHistoryScreenState extends State<InspectionHistoryScreen> {
         padding: const EdgeInsets.all(15),
         child: LayoutBuilder(
           builder: (context, constraints) {
-            final compact = constraints.maxWidth < 620;
+            final compact = AppBreakpoints.isPhone(constraints.maxWidth);
             final details = Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -868,13 +872,13 @@ class _InspectionHistoryScreenState extends State<InspectionHistoryScreen> {
         'Overdue',
         Icons.warning_amber_rounded,
         AppColors.danger,
-        const Color(0xFFFFE8E6),
+        AppColors.dangerContainer,
       ),
       'due_today' => (
         'Due today',
         Icons.today_rounded,
-        const Color(0xFF9A5B00),
-        const Color(0xFFFFF1D8),
+        AppColors.warning,
+        AppColors.warningContainer,
       ),
       'completed' => (
         'Completed',
@@ -885,21 +889,21 @@ class _InspectionHistoryScreenState extends State<InspectionHistoryScreen> {
       'upcoming' => (
         'Upcoming',
         Icons.upcoming_rounded,
-        const Color(0xFF246BCE),
-        const Color(0xFFE6F0FF),
+        AppColors.info,
+        AppColors.infoContainer,
       ),
       _ => (
         'Not scheduled',
         Icons.event_busy_outlined,
         AppColors.textSecondary,
-        const Color(0xFFEEF1EF),
+        AppColors.surfaceDisabled,
       ),
     };
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
       decoration: BoxDecoration(
         color: background,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: AppRadii.fullyRounded,
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -1006,8 +1010,7 @@ class _InspectionHistoryScreenState extends State<InspectionHistoryScreen> {
 
   Widget _content() {
     if (_loading) {
-      return const SizedBox(
-        height: 440,
+      return const AppCard(
         child: Center(child: CircularProgressIndicator(color: AppColors.green)),
       );
     }
@@ -1028,29 +1031,26 @@ class _InspectionHistoryScreenState extends State<InspectionHistoryScreen> {
     }
     if (_inspections.isEmpty) {
       return const AppCard(
-        child: SizedBox(
-          height: 280,
-          child: Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.history_rounded,
-                  size: 56,
-                  color: AppColors.textSecondary,
-                ),
-                SizedBox(height: 12),
-                Text(
-                  'No inspections recorded yet',
-                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
-                ),
-                SizedBox(height: 5),
-                Text(
-                  'Saved plant inspections will appear here.',
-                  style: TextStyle(color: AppColors.textSecondary),
-                ),
-              ],
-            ),
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.history_rounded,
+                size: 56,
+                color: AppColors.textSecondary,
+              ),
+              SizedBox(height: AppSpacing.md),
+              Text(
+                'No inspections recorded yet',
+                style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
+              ),
+              SizedBox(height: AppSpacing.xs),
+              Text(
+                'Saved plant inspections will appear here.',
+                style: TextStyle(color: AppColors.textSecondary),
+              ),
+            ],
           ),
         ),
       );
@@ -1059,11 +1059,18 @@ class _InspectionHistoryScreenState extends State<InspectionHistoryScreen> {
     return Column(
       children: [
         _filterBar(),
-        const SizedBox(height: 14),
+        const SizedBox(height: AppSpacing.lg),
         if (visibleInspections.isEmpty)
-          _noMatchingInspections()
+          Expanded(child: _noMatchingInspections())
         else
-          ...visibleInspections.map(_inspectionCard),
+          Expanded(
+            child: ListView.builder(
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+              itemCount: visibleInspections.length,
+              itemBuilder: (_, index) =>
+                  _inspectionCard(visibleInspections[index]),
+            ),
+          ),
       ],
     );
   }
@@ -1075,7 +1082,7 @@ class _InspectionHistoryScreenState extends State<InspectionHistoryScreen> {
         final healthOptions = _filterOptions('health_status', 'status_name');
         final growthOptions = _filterOptions('growth_status', 'growth_stage');
 
-        if (constraints.maxWidth < 760) {
+        if (!AppBreakpoints.isDesktop(constraints.maxWidth)) {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -1420,7 +1427,7 @@ class _InspectionHistoryScreenState extends State<InspectionHistoryScreen> {
         padding: const EdgeInsets.all(15),
         child: LayoutBuilder(
           builder: (_, constraints) {
-            final compact = constraints.maxWidth < 430;
+            final compact = AppBreakpoints.isPhone(constraints.maxWidth);
             if (compact) {
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -1518,7 +1525,7 @@ class _InspectionHistoryScreenState extends State<InspectionHistoryScreen> {
     child: Container(
       width: size,
       height: size,
-      color: const Color(0xFFE2F7ED),
+      color: AppColors.primaryContainer,
       child: photo.isEmpty
           ? const Icon(
               Icons.fact_check_outlined,
@@ -1565,8 +1572,8 @@ class _InspectionHistoryScreenState extends State<InspectionHistoryScreen> {
   Widget _chip(String text, IconData icon) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
     decoration: BoxDecoration(
-      color: const Color(0xFFE2F7ED),
-      borderRadius: BorderRadius.circular(20),
+      color: AppColors.primaryContainer,
+      borderRadius: AppRadii.fullyRounded,
     ),
     child: Row(
       mainAxisSize: MainAxisSize.min,

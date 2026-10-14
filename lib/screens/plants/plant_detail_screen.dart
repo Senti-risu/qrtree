@@ -115,13 +115,13 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
             Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: const Color(0xFFFFF1D8),
+                color: AppColors.warningContainer,
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: const Color(0xFFFFD591)),
+                border: Border.all(color: AppColors.warningBorder),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.archive_outlined, color: Color(0xFF9A5B00)),
+                  const Icon(Icons.archive_outlined, color: AppColors.warning),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
@@ -138,7 +138,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
             borderRadius: BorderRadius.circular(20),
             child: Container(
               height: 260,
-              color: const Color(0xFFE2F7ED),
+              color: AppColors.primaryContainer,
               child: url.isEmpty
                   ? const Icon(
                       Icons.local_florist,
@@ -451,7 +451,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
     decoration: BoxDecoration(
       color: Colors.white,
       borderRadius: BorderRadius.circular(18),
-      border: Border.all(color: const Color(0xFFDCE8DF)),
+      border: Border.all(color: AppColors.border),
     ),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -498,25 +498,25 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
         'Overdue',
         Icons.warning_amber_rounded,
         AppColors.danger,
-        const Color(0xFFFFE8E6),
+        AppColors.dangerContainer,
       ),
       'due_today' => (
         'Due today',
         Icons.today_rounded,
-        const Color(0xFF9A5B00),
-        const Color(0xFFFFF1D8),
+        AppColors.warning,
+        AppColors.warningContainer,
       ),
       'upcoming' => (
         'Upcoming',
         Icons.upcoming_rounded,
-        const Color(0xFF246BCE),
-        const Color(0xFFE6F0FF),
+        AppColors.info,
+        AppColors.infoContainer,
       ),
       _ => (
         'Not scheduled',
         Icons.event_busy_outlined,
         AppColors.textSecondary,
-        const Color(0xFFEEF1EF),
+        AppColors.surfaceDisabled,
       ),
     };
 
@@ -526,7 +526,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFFDCE8DF)),
+        border: Border.all(color: AppColors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

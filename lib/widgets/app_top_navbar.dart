@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../theme/app_colors.dart';
+import '../models/app_role.dart';
 import '../services/app_session.dart';
+import '../theme/app_colors.dart';
+import '../theme/app_layout.dart';
 
 class AppTopNavbar extends StatelessWidget {
   final String userName;
@@ -12,8 +14,8 @@ class AppTopNavbar extends StatelessWidget {
 
   const AppTopNavbar({
     super.key,
-    this.userName = 'Delacruz, Jumi',
-    this.userRole = 'College Admin',
+    this.userName = '',
+    this.userRole = '',
     this.onNotificationTap,
     this.onProfileTap,
     this.onLogoutTap,
@@ -25,7 +27,7 @@ class AppTopNavbar extends StatelessWidget {
         .where((part) => part.isNotEmpty)
         .toList();
 
-    if (parts.isEmpty) return '';
+    if (parts.isEmpty) return 'E';
 
     if (parts.length == 1) {
       return parts.first[0].toUpperCase();
@@ -36,11 +38,16 @@ class AppTopNavbar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final resolvedName = userName.trim();
+    final role = AppRole.fromValue(userRole);
+    final resolvedRole = role == AppRole.unknown ? userRole.trim() : role.label;
+    final hasIdentity = resolvedName.isNotEmpty || resolvedRole.isNotEmpty;
+
     return Container(
       height: 64,
-      padding: const EdgeInsets.symmetric(horizontal: 22),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
       decoration: const BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surface,
         border: Border(bottom: BorderSide(color: AppColors.navbarBorder)),
       ),
       child: Row(
@@ -50,11 +57,11 @@ class AppTopNavbar extends StatelessWidget {
             height: 36,
             decoration: BoxDecoration(
               color: AppColors.green,
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: AppRadii.medium,
             ),
-            child: const Icon(Icons.eco, color: Colors.white, size: 21),
+            child: const Icon(Icons.eco, color: AppColors.onPrimary, size: 21),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: AppSpacing.sm),
           const Column(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -74,64 +81,26 @@ class AppTopNavbar extends StatelessWidget {
             ],
           ),
           const Spacer(),
-          IconButton(
-            tooltip: 'Notifications',
-            onPressed: onNotificationTap,
-            icon: const Icon(
-              Icons.notifications_none_rounded,
-              color: AppColors.green,
-              size: 21,
+          if (onNotificationTap != null) ...[
+            IconButton(
+              tooltip: 'Notifications',
+              onPressed: onNotificationTap,
+              icon: const Icon(
+                Icons.notifications_none_rounded,
+                color: AppColors.green,
+                size: 21,
+              ),
             ),
-          ),
-          const SizedBox(width: 12),
-          InkWell(
-            onTap: onProfileTap,
-            borderRadius: BorderRadius.circular(30),
-            child: Row(
-              children: [
-                CircleAvatar(
-                  radius: 18,
-                  backgroundColor: AppColors.green,
-                  child: Text(
-                    _initialsOf(userName),
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      userName,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.darkGreen,
-                      ),
-                    ),
-                    Text(
-                      userRole,
-                      style: const TextStyle(
-                        fontSize: 10,
-                        color: AppColors.green,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(width: 5),
-                const Icon(
-                  Icons.keyboard_arrow_down_rounded,
-                  color: AppColors.green,
-                ),
-              ],
+            const SizedBox(width: AppSpacing.md),
+          ],
+          if (hasIdentity)
+            _ProfileSummary(
+              userName: resolvedName,
+              userRole: resolvedRole,
+              initials: _initialsOf(resolvedName),
+              onTap: onProfileTap,
             ),
-          ),
-          const SizedBox(width: 10),
+          if (hasIdentity) const SizedBox(width: AppSpacing.sm),
           IconButton(
             tooltip: 'Logout',
             onPressed:
@@ -152,6 +121,95 @@ class AppTopNavbar extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _ProfileSummary extends StatelessWidget {
+  final String userName;
+  final String userRole;
+  final String initials;
+  final VoidCallback? onTap;
+
+  const _ProfileSummary({
+    required this.userName,
+    required this.userRole,
+    required this.initials,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final content = ConstrainedBox(
+      constraints: const BoxConstraints(
+        minHeight: AppLayout.minimumTapTarget,
+        maxWidth: 260,
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          CircleAvatar(
+            radius: 18,
+            backgroundColor: AppColors.green,
+            child: Text(
+              initials,
+              style: const TextStyle(
+                color: AppColors.onPrimary,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Flexible(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (userName.isNotEmpty)
+                  Text(
+                    userName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.darkGreen,
+                    ),
+                  ),
+                if (userRole.isNotEmpty)
+                  Text(
+                    userRole,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 10,
+                      color: AppColors.green,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          if (onTap != null) ...[
+            const SizedBox(width: AppSpacing.xs),
+            const Icon(
+              Icons.keyboard_arrow_down_rounded,
+              color: AppColors.green,
+            ),
+          ],
+        ],
+      ),
+    );
+
+    if (onTap == null) return content;
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: AppRadii.fullyRounded,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
+        child: content,
       ),
     );
   }

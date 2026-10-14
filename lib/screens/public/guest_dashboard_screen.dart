@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../services/guest_service.dart';
 import '../../theme/app_colors.dart';
+import '../../theme/app_layout.dart';
 import '../../utils/user_facing_error.dart';
 import '../../widgets/app_card.dart';
 import '../../widgets/app_error_state.dart';
@@ -121,7 +122,7 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final mobile = MediaQuery.sizeOf(context).width < 700;
+    final mobile = AppBreakpoints.isPhone(MediaQuery.sizeOf(context).width);
     final showingAccount = mobile && _mobileDestination == 1;
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -334,7 +335,7 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
   }
 
   Widget _dashboardContent(GuestDashboardSummary summary) {
-    final mobile = MediaQuery.sizeOf(context).width < 700;
+    final mobile = AppBreakpoints.isPhone(MediaQuery.sizeOf(context).width);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -342,7 +343,7 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
           padding: const EdgeInsets.all(22),
           child: LayoutBuilder(
             builder: (context, constraints) {
-              final narrow = constraints.maxWidth < 680;
+              final narrow = AppBreakpoints.isPhone(constraints.maxWidth);
               final heading = Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -421,7 +422,7 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
               _healthOverview(summary),
               _aboutEcoTag(summary),
             ];
-            if (constraints.maxWidth >= 820) {
+            if (AppBreakpoints.isDesktop(constraints.maxWidth)) {
               return Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -448,7 +449,7 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
         description: 'Active EcoTag plant records',
         icon: Icons.park_rounded,
         color: AppColors.green,
-        background: const Color(0xFFE2F7ED),
+        background: AppColors.primaryContainer,
       ),
       _PublicStat(
         title: 'Healthy Plants',
@@ -456,7 +457,7 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
         description: 'Currently recorded as healthy',
         icon: Icons.eco_rounded,
         color: AppColors.healthy,
-        background: const Color(0xFFE8F5E9),
+        background: AppColors.primaryContainer,
       ),
       _PublicStat(
         title: 'Need Attention',
@@ -464,7 +465,7 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
         description: 'Marked for closer monitoring',
         icon: Icons.warning_amber_rounded,
         color: AppColors.warning,
-        background: const Color(0xFFFFF3DF),
+        background: AppColors.warningContainer,
       ),
       _PublicStat(
         title: 'Recorded Dead',
@@ -472,18 +473,19 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
         description: 'Historical monitoring status',
         icon: Icons.local_florist_outlined,
         color: AppColors.danger,
-        background: const Color(0xFFFFE8EA),
+        background: AppColors.dangerContainer,
       ),
     ];
 
     return LayoutBuilder(
       builder: (context, constraints) {
         final largeText = MediaQuery.textScalerOf(context).scale(1) >= 1.4;
-        final columns = largeText && constraints.maxWidth < 760
+        final columns =
+            largeText && !AppBreakpoints.isDesktop(constraints.maxWidth)
             ? 1
-            : constraints.maxWidth >= 900
+            : AppBreakpoints.isDesktop(constraints.maxWidth)
             ? 4
-            : constraints.maxWidth >= 480
+            : constraints.maxWidth >= 360
             ? 2
             : 1;
         const gap = 12.0;

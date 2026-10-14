@@ -397,7 +397,7 @@ class _InspectionFormScreenState extends State<InspectionFormScreen> {
             width: 48,
             height: 48,
             decoration: BoxDecoration(
-              color: const Color(0xFFE2F7ED),
+              color: AppColors.primaryContainer,
               borderRadius: BorderRadius.circular(13),
             ),
             child: const Icon(Icons.local_florist, color: AppColors.green),
@@ -565,7 +565,7 @@ class _InspectionFormScreenState extends State<InspectionFormScreen> {
                 _healthConfirmed = true;
                 _selectionError = null;
               }),
-        selectedColor: const Color(0xFFE2F7ED),
+        selectedColor: AppColors.primaryContainer,
         side: BorderSide(color: selected ? AppColors.green : AppColors.border),
         labelStyle: TextStyle(
           fontWeight: FontWeight.w700,

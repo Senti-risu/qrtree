@@ -3,6 +3,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../theme/app_colors.dart';
+import '../../theme/app_layout.dart';
 import '../../utils/user_facing_error.dart';
 import '../../widgets/app_error_state.dart';
 import '../../widgets/app_shell.dart';
@@ -361,7 +362,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDesktop = MediaQuery.sizeOf(context).width >= 900;
+    final isDesktop = AppBreakpoints.isDesktop(
+      MediaQuery.sizeOf(context).width,
+    );
     return AppShell(
       activeRoute: '/dashboard',
 
@@ -407,20 +410,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
         );
       },
 
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (isDesktop) ...[
-            DashboardPageHeader(
-              description: _dashboardDescription,
-              userRole: _userRole,
-              onRefresh: _loadDashboardData,
-            ),
-            const SizedBox(height: 18),
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (isDesktop) ...[
+              DashboardPageHeader(
+                description: _dashboardDescription,
+                userRole: _userRole,
+                onRefresh: _loadDashboardData,
+              ),
+              const SizedBox(height: AppSpacing.xl),
+            ],
+            _buildDashboardContent(),
           ],
-
-          _buildDashboardContent(),
-        ],
+        ),
       ),
     );
   }
@@ -514,15 +518,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
             if ((_role == 'college_admin' || _role == 'inspection_team') &&
                 _dyingCount > 0) ...[
               _buildPriorityTaskCard(),
-              const SizedBox(height: 14),
+              const SizedBox(height: AppSpacing.lg),
             ],
             _buildResponsiveStats(contentWidth),
 
-            const SizedBox(height: 18),
+            const SizedBox(height: AppSpacing.xl),
 
             _buildResponsiveAnalytics(contentWidth),
 
-            const SizedBox(height: 18),
+            const SizedBox(height: AppSpacing.xl),
 
             _buildResponsiveRecentPlants(contentWidth),
           ],
@@ -540,24 +544,24 @@ class _DashboardScreenState extends State<DashboardScreen> {
         padding: EdgeInsets.zero,
         child: InkWell(
           onTap: _openNeedsAttention,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: AppRadii.large,
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppSpacing.lg),
             child: Row(
               children: [
                 Container(
                   width: 46,
                   height: 46,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFFF3DF),
-                    borderRadius: BorderRadius.circular(13),
+                    color: AppColors.warningContainer,
+                    borderRadius: AppRadii.medium,
                   ),
                   child: const Icon(
                     Icons.warning_amber_rounded,
-                    color: Color(0xFFB76400),
+                    color: AppColors.warning,
                   ),
                 ),
-                const SizedBox(width: 13),
+                const SizedBox(width: AppSpacing.md),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -627,14 +631,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
   // ============================================================
 
   Widget _buildResponsiveStats(double contentWidth) {
-    const gap = 12.0;
+    const gap = AppSpacing.md;
     final largeText = MediaQuery.textScalerOf(context).scale(1) >= 1.4;
 
-    final columns = largeText && contentWidth < 700
+    final columns = largeText && !AppBreakpoints.isDesktop(contentWidth)
         ? 1
-        : contentWidth >= 850
+        : AppBreakpoints.isDesktop(contentWidth)
         ? 4
-        : contentWidth >= 320
+        : contentWidth >= 360
         ? 2
         : 1;
 
@@ -652,7 +656,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
         icon: Icons.park_rounded,
 
-        iconBgColor: const Color(0xFFE2F7ED),
+        iconBgColor: AppColors.primaryContainer,
 
         iconColor: AppColors.green,
       ),
@@ -668,7 +672,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
         icon: Icons.eco_rounded,
 
-        iconBgColor: const Color(0xFFE2F7ED),
+        iconBgColor: AppColors.primaryContainer,
 
         iconColor: AppColors.green,
 
@@ -688,9 +692,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
         icon: Icons.warning_amber_rounded,
 
-        iconBgColor: const Color(0xFFFFF3DF),
+        iconBgColor: AppColors.warningContainer,
 
-        iconColor: const Color(0xFFF08A00),
+        iconColor: AppColors.warningAccent,
       ),
 
       DashboardStatCard(
@@ -704,9 +708,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
         icon: Icons.local_florist_outlined,
 
-        iconBgColor: const Color(0xFFFFE8EA),
+        iconBgColor: AppColors.dangerContainer,
 
-        iconColor: const Color(0xFFE53935),
+        iconColor: AppColors.danger,
       ),
     ];
 
@@ -725,7 +729,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   // ============================================================
 
   Widget _buildResponsiveAnalytics(double contentWidth) {
-    if (contentWidth >= 800) {
+    if (!AppBreakpoints.isPhone(contentWidth)) {
       return Row(
         crossAxisAlignment: CrossAxisAlignment.start,
 
@@ -736,7 +740,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 : _buildQuickActionsCard(),
           ),
 
-          const SizedBox(width: 14),
+          const SizedBox(width: AppSpacing.lg),
 
           Expanded(child: _buildHealthChartCard()),
         ],
@@ -750,7 +754,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         else
           _buildQuickActionsCard(),
 
-        const SizedBox(height: 14),
+        const SizedBox(height: AppSpacing.lg),
 
         _buildHealthChartCard(),
       ],
@@ -773,7 +777,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
           subtitle: 'Add a new plant to EcoTag',
 
-          bgColor: const Color(0xFFECF9F0),
+          bgColor: AppColors.primaryContainer,
 
           iconColor: AppColors.green,
 
@@ -822,9 +826,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
           subtitle: 'Browse registered plants',
 
-          bgColor: const Color(0xFFEAF8F8),
+          bgColor: AppColors.secondaryContainer,
 
-          iconColor: const Color(0xFF00897B),
+          iconColor: AppColors.secondary,
 
           onTap: () {
             Navigator.pushNamed(
@@ -856,9 +860,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
           subtitle: 'Generate plant monitoring reports',
 
-          bgColor: const Color(0xFFEDF4FF),
+          bgColor: AppColors.infoContainer,
 
-          iconColor: const Color(0xFF2962FF),
+          iconColor: AppColors.info,
 
           onTap: () {
             Navigator.pushNamed(
@@ -882,7 +886,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
 
     return AppCard(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.lg),
 
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -903,10 +907,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
           const Text(
             'Common plant management tasks',
 
-            style: TextStyle(fontSize: 10, color: Color(0xFF00A651)),
+            style: TextStyle(fontSize: 10, color: AppColors.green),
           ),
 
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.md),
 
           if (actions.isEmpty)
             const Text(
@@ -940,7 +944,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Widget _buildHealthChartCard() {
     return AppCard(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.lg),
 
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -961,10 +965,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
           const Text(
             'Distribution of plant health status',
 
-            style: TextStyle(fontSize: 10, color: Color(0xFF00A651)),
+            style: TextStyle(fontSize: 10, color: AppColors.green),
           ),
 
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.md),
 
           SizedBox(
             height: 180,
@@ -1023,15 +1027,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
               runSpacing: 8,
 
               children: [
-                _buildLegend(const Color(0xFF43A047), 'Healthy', _healthyCount),
+                _buildLegend(AppColors.chartHealthy, 'Healthy', _healthyCount),
 
                 _buildLegend(
-                  const Color(0xFFFFA000),
+                  AppColors.chartAtRisk,
                   'Needs attention',
                   _dyingCount,
                 ),
 
-                _buildLegend(const Color(0xFFE53935), 'Dead', _deadCount),
+                _buildLegend(AppColors.chartDead, 'Dead', _deadCount),
               ],
             ),
           ),
@@ -1046,7 +1050,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         PieChartSectionData(
           value: 1,
 
-          color: Colors.grey.shade200,
+          color: AppColors.border,
 
           radius: 20,
 
@@ -1059,7 +1063,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       PieChartSectionData(
         value: _healthyCount.toDouble(),
 
-        color: const Color(0xFF43A047),
+        color: AppColors.chartHealthy,
 
         radius: 22,
 
@@ -1069,7 +1073,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       PieChartSectionData(
         value: _dyingCount.toDouble(),
 
-        color: const Color(0xFFFFA000),
+        color: AppColors.chartAtRisk,
 
         radius: 20,
 
@@ -1079,7 +1083,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       PieChartSectionData(
         value: _deadCount.toDouble(),
 
-        color: const Color(0xFFE53935),
+        color: AppColors.chartDead,
 
         radius: 20,
 
@@ -1131,7 +1135,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         Text(
           '$title  $value',
 
-          style: const TextStyle(fontSize: 9, color: Color(0xFF505A54)),
+          style: const TextStyle(fontSize: 9, color: AppColors.textSecondary),
         ),
       ],
     );

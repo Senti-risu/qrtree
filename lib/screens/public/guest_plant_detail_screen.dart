@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../services/guest_service.dart';
 import '../../theme/app_colors.dart';
+import '../../theme/app_layout.dart';
 import '../../widgets/app_card.dart';
 
 /// Curated public plant profile shown to guests after a successful scan.
@@ -24,7 +25,7 @@ class GuestPlantDetailScreen extends StatelessWidget {
       top: false,
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final compact = constraints.maxWidth < 700;
+          final compact = AppBreakpoints.isPhone(constraints.maxWidth);
           return ListView(
             padding: EdgeInsets.fromLTRB(
               compact ? 16 : 28,
@@ -223,7 +224,7 @@ class _PlantPhotoPlaceholder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => const ColoredBox(
-    color: Color(0xFFE2F7ED),
+    color: AppColors.primaryContainer,
     child: Center(
       child: Icon(
         Icons.local_florist_rounded,

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'config/supabase_config.dart';
+import 'theme/app_colors.dart';
 import 'theme/app_theme.dart';
 
 import 'screens/auth/login_screen.dart';
@@ -434,7 +435,7 @@ class MyApp extends StatelessWidget {
     return MaterialPageRoute(
       builder: (context) {
         return Scaffold(
-          backgroundColor: const Color(0xFFF3F7F4),
+          backgroundColor: AppColors.background,
 
           body: Center(
             child: Padding(
@@ -452,7 +453,7 @@ class MyApp extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 30,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF236B2D),
+                      color: AppColors.darkGreen,
                     ),
                   ),
 

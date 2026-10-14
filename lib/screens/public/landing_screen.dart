@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../theme/app_colors.dart';
+import '../../theme/app_layout.dart';
 
 /// Public introduction to CSU EcoTag.
 ///
@@ -37,7 +38,7 @@ class LandingScreen extends StatelessWidget {
           SafeArea(
             child: LayoutBuilder(
               builder: (context, constraints) {
-                final compact = constraints.maxWidth < 700;
+                final compact = AppBreakpoints.isPhone(constraints.maxWidth);
                 final horizontalPadding = compact ? 20.0 : 48.0;
 
                 return SingleChildScrollView(
@@ -71,7 +72,7 @@ class LandingScreen extends StatelessWidget {
                               'Cagayan State University  •  Campus Plant Profiling and Monitoring',
                               textAlign: TextAlign.center,
                               style: TextStyle(
-                                color: Color(0xFFDDEBE2),
+                                color: AppColors.heroMuted,
                                 fontSize: 12,
                                 fontWeight: FontWeight.w500,
                                 height: 1.4,
@@ -104,8 +105,8 @@ class _ForestOverlay extends StatelessWidget {
           end: Alignment.bottomRight,
           colors: [
             AppColors.darkGreen.withValues(alpha: 0.96),
-            const Color(0xFF075E38).withValues(alpha: 0.78),
-            const Color(0xFF102D20).withValues(alpha: 0.88),
+            AppColors.darkGreen.withValues(alpha: 0.78),
+            AppColors.heroOverlay.withValues(alpha: 0.88),
           ],
           stops: const [0, 0.55, 1],
         ),
@@ -206,7 +207,7 @@ class _LandingHeader extends StatelessWidget {
                 const Text(
                   'Cagayan State University',
                   style: TextStyle(
-                    color: Color(0xFFDDEBE2),
+                    color: AppColors.heroMuted,
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
                   ),
@@ -288,7 +289,7 @@ class _HeroContent extends StatelessWidget {
               'system. Discover campus plants, view verified profiles, and '
               'support timely care and conservation.',
               style: TextStyle(
-                color: Color(0xFFF2F7F3),
+                color: AppColors.heroSurface,
                 fontSize: 18,
                 height: 1.55,
                 fontWeight: FontWeight.w400,
@@ -327,7 +328,7 @@ class _FeatureList extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final stacked = constraints.maxWidth < 760;
+        final stacked = !AppBreakpoints.isDesktop(constraints.maxWidth);
         const features = [
           _FeatureData(
             icon: Icons.qr_code_scanner_rounded,
@@ -383,7 +384,7 @@ class _FeatureCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: const Color(0xFF062F20).withValues(alpha: 0.76),
+        color: AppColors.heroOverlayStrong.withValues(alpha: 0.76),
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: Colors.white.withValues(alpha: 0.20)),
       ),
@@ -416,7 +417,7 @@ class _FeatureCard extends StatelessWidget {
                 Text(
                   data.description,
                   style: const TextStyle(
-                    color: Color(0xFFDDEBE2),
+                    color: AppColors.heroMuted,
                     fontSize: 13,
                     height: 1.4,
                   ),

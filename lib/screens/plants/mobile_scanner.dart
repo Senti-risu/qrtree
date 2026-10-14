@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
+import '../../theme/app_colors.dart';
+
 class ScanScreen extends StatefulWidget {
   const ScanScreen({super.key});
 
@@ -48,8 +50,8 @@ class _ScanScreenState extends State<ScanScreen> with WidgetsBindingObserver {
       appBar: AppBar(
         title: const Text('Scan QR Tag'),
         centerTitle: true,
-        backgroundColor: Colors.green,
-        foregroundColor: Colors.white,
+        backgroundColor: AppColors.green,
+        foregroundColor: AppColors.onPrimary,
         actions: [
           // Flashlight toggle button
           IconButton(

@@ -279,11 +279,11 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF101713),
+      backgroundColor: AppColors.scannerBackground,
       appBar: AppBar(
         title: const Text('Scan EcoTag'),
         foregroundColor: Colors.white,
-        backgroundColor: const Color(0xFF101713),
+        backgroundColor: AppColors.scannerBackground,
         actions: [
           IconButton(
             tooltip: 'Toggle flashlight',

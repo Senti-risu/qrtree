@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../theme/app_colors.dart';
+import '../../theme/app_layout.dart';
+
 class AppSearchableDropdown extends StatelessWidget {
   final String label;
   final String? value;
@@ -18,10 +21,6 @@ class AppSearchableDropdown extends StatelessWidget {
     this.hintText = 'Type or select',
   });
 
-  static const Color _green = Color(0xFF168B47);
-  static const Color _darkGreen = Color(0xFF075E38);
-  static const Color _borderColor = Color(0xFFDCE8DF);
-
   @override
   Widget build(BuildContext context) {
     final validValue = value != null && items.contains(value) ? value : null;
@@ -32,7 +31,7 @@ class AppSearchableDropdown extends StatelessWidget {
         Text(
           label,
           style: const TextStyle(
-            color: _darkGreen,
+            color: AppColors.darkGreen,
             fontSize: 12,
             fontWeight: FontWeight.w600,
           ),
@@ -53,7 +52,7 @@ class AppSearchableDropdown extends StatelessWidget {
               trailingIcon: const Icon(Icons.keyboard_arrow_down_rounded),
               selectedTrailingIcon: const Icon(
                 Icons.keyboard_arrow_up_rounded,
-                color: _green,
+                color: AppColors.green,
               ),
               dropdownMenuEntries: items
                   .map(
@@ -64,18 +63,20 @@ class AppSearchableDropdown extends StatelessWidget {
               onSelected: enabled ? onChanged : null,
               inputDecorationTheme: InputDecorationTheme(
                 filled: true,
-                fillColor: enabled ? Colors.white : const Color(0xFFF0F2F0),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(9),
-                  borderSide: const BorderSide(color: _borderColor),
+                fillColor: enabled
+                    ? AppColors.surface
+                    : AppColors.surfaceDisabled,
+                border: const OutlineInputBorder(
+                  borderRadius: AppRadii.medium,
+                  borderSide: AppBorders.subtleSide,
                 ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(9),
-                  borderSide: const BorderSide(color: _borderColor),
+                enabledBorder: const OutlineInputBorder(
+                  borderRadius: AppRadii.medium,
+                  borderSide: AppBorders.subtleSide,
                 ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(9),
-                  borderSide: const BorderSide(color: _green, width: 1.5),
+                focusedBorder: const OutlineInputBorder(
+                  borderRadius: AppRadii.medium,
+                  borderSide: AppBorders.focusedSide,
                 ),
               ),
             );

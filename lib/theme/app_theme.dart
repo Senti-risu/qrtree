@@ -1,11 +1,35 @@
 import 'package:flutter/material.dart';
 
 import 'app_colors.dart';
+import 'app_layout.dart';
 
 class AppTheme {
   AppTheme._();
 
   static const String fontFamily = 'EcoTagRoboto';
+  static const EdgeInsets controlPadding = EdgeInsets.symmetric(
+    horizontal: AppSpacing.lg,
+    vertical: AppSpacing.md,
+  );
+  static const RoundedRectangleBorder controlShape = RoundedRectangleBorder(
+    borderRadius: AppRadii.medium,
+  );
+  static const RoundedRectangleBorder cardShape = RoundedRectangleBorder(
+    borderRadius: AppRadii.large,
+    side: AppBorders.subtleSide,
+  );
+  static const OutlineInputBorder inputBorder = OutlineInputBorder(
+    borderRadius: AppRadii.medium,
+    borderSide: AppBorders.subtleSide,
+  );
+  static const OutlineInputBorder focusedInputBorder = OutlineInputBorder(
+    borderRadius: AppRadii.medium,
+    borderSide: AppBorders.focusedSide,
+  );
+  static const OutlineInputBorder errorInputBorder = OutlineInputBorder(
+    borderRadius: AppRadii.medium,
+    borderSide: AppBorders.errorSide,
+  );
   static const List<FontFeature> _compactFontFeatures = [
     FontFeature.proportionalFigures(),
   ];
@@ -40,18 +64,21 @@ class AppTheme {
   }
 
   static ThemeData get light {
+    final colorScheme = ColorScheme.fromSeed(
+      seedColor: AppColors.primary,
+      brightness: Brightness.light,
+      primary: AppColors.primary,
+      onPrimary: AppColors.onPrimary,
+      secondary: AppColors.secondary,
+      surface: AppColors.surface,
+      surfaceContainerHighest: AppColors.surfaceVariant,
+      error: AppColors.danger,
+      outline: AppColors.border,
+    );
     final base = ThemeData(
       useMaterial3: true,
       fontFamily: fontFamily,
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: AppColors.primary,
-        brightness: Brightness.light,
-        primary: AppColors.primary,
-        secondary: AppColors.secondary,
-        surface: AppColors.surface,
-        surfaceContainerHighest: AppColors.surfaceVariant,
-        outline: AppColors.border,
-      ),
+      colorScheme: colorScheme,
       scaffoldBackgroundColor: AppColors.background,
     );
     final compactTextTheme = _compactTextTheme(base.textTheme);
@@ -87,43 +114,141 @@ class AppTheme {
         backgroundColor: AppColors.surface,
         foregroundColor: AppColors.textPrimary,
         elevation: 0,
+        centerTitle: false,
         surfaceTintColor: Colors.transparent,
+      ),
+      cardTheme: const CardThemeData(
+        color: AppColors.surface,
+        surfaceTintColor: Colors.transparent,
+        shadowColor: AppColors.cardShadow,
+        elevation: 0,
+        margin: EdgeInsets.zero,
+        shape: cardShape,
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
           backgroundColor: AppColors.primary,
-          foregroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+          foregroundColor: AppColors.onPrimary,
+          disabledBackgroundColor: AppColors.surfaceDisabled,
+          disabledForegroundColor: AppColors.textDisabled,
+          minimumSize: const Size(
+            AppLayout.minimumTapTarget,
+            AppLayout.minimumTapTarget,
+          ),
+          padding: controlPadding,
+          shape: controlShape,
+          textStyle: compactTextTheme.labelLarge?.copyWith(
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.primary,
+          foregroundColor: AppColors.onPrimary,
+          disabledBackgroundColor: AppColors.surfaceDisabled,
+          disabledForegroundColor: AppColors.textDisabled,
+          elevation: 0,
+          minimumSize: const Size(
+            AppLayout.minimumTapTarget,
+            AppLayout.minimumTapTarget,
+          ),
+          padding: controlPadding,
+          shape: controlShape,
+          textStyle: compactTextTheme.labelLarge?.copyWith(
+            fontWeight: FontWeight.w700,
           ),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: AppColors.primary,
-          side: const BorderSide(color: AppColors.border),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+          disabledForegroundColor: AppColors.textDisabled,
+          minimumSize: const Size(
+            AppLayout.minimumTapTarget,
+            AppLayout.minimumTapTarget,
+          ),
+          padding: controlPadding,
+          side: AppBorders.subtleSide,
+          shape: controlShape,
+          textStyle: compactTextTheme.labelLarge?.copyWith(
+            fontWeight: FontWeight.w700,
           ),
         ),
       ),
-      inputDecorationTheme: InputDecorationTheme(
-        filled: true,
-        fillColor: AppColors.surface,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.border),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.border),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          foregroundColor: AppColors.primary,
+          disabledForegroundColor: AppColors.textDisabled,
+          minimumSize: const Size(
+            AppLayout.minimumTapTarget,
+            AppLayout.minimumTapTarget,
+          ),
+          padding: controlPadding,
+          shape: controlShape,
+          textStyle: compactTextTheme.labelLarge?.copyWith(
+            fontWeight: FontWeight.w700,
+          ),
         ),
       ),
+      iconButtonTheme: IconButtonThemeData(
+        style: IconButton.styleFrom(
+          foregroundColor: AppColors.inactiveNav,
+          disabledForegroundColor: AppColors.textDisabled,
+          minimumSize: const Size.square(AppLayout.minimumTapTarget),
+          shape: controlShape,
+        ),
+      ),
+      inputDecorationTheme: const InputDecorationTheme(
+        filled: true,
+        fillColor: AppColors.surface,
+        contentPadding: EdgeInsets.symmetric(
+          horizontal: AppSpacing.lg,
+          vertical: AppSpacing.lg,
+        ),
+        border: inputBorder,
+        enabledBorder: inputBorder,
+        disabledBorder: inputBorder,
+        focusedBorder: focusedInputBorder,
+        errorBorder: errorInputBorder,
+        focusedErrorBorder: errorInputBorder,
+        labelStyle: TextStyle(color: AppColors.textSecondary),
+        floatingLabelStyle: TextStyle(
+          color: AppColors.darkGreen,
+          fontWeight: FontWeight.w600,
+        ),
+        hintStyle: TextStyle(color: AppColors.textSecondary),
+        helperStyle: TextStyle(color: AppColors.textSecondary),
+        prefixIconColor: AppColors.inactiveNav,
+        suffixIconColor: AppColors.inactiveNav,
+      ),
       dividerTheme: const DividerThemeData(color: AppColors.border),
+      dialogTheme: const DialogThemeData(
+        backgroundColor: AppColors.surface,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(borderRadius: AppRadii.extraLarge),
+      ),
+      bottomSheetTheme: const BottomSheetThemeData(
+        backgroundColor: AppColors.surface,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(AppRadii.xl),
+          ),
+        ),
+      ),
+      snackBarTheme: const SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: AppRadii.medium),
+        contentTextStyle: TextStyle(
+          fontFamily: fontFamily,
+          color: AppColors.onPrimary,
+        ),
+      ),
+      progressIndicatorTheme: const ProgressIndicatorThemeData(
+        color: AppColors.primary,
+        linearTrackColor: AppColors.border,
+      ),
     );
   }
 }
