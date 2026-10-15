@@ -281,6 +281,50 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('every staff role has the mobile QR scanner action', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    const staff = <({String role, int? campusId, int? collegeId})>[
+      (role: 'super_admin', campusId: null, collegeId: null),
+      (role: 'university_admin', campusId: null, collegeId: null),
+      (role: 'campus_admin', campusId: 2, collegeId: null),
+      (role: 'college_admin', campusId: 2, collegeId: 4),
+      (role: 'inspection_team', campusId: 2, collegeId: 4),
+    ];
+
+    for (final account in staff) {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.light,
+          home: AppShell(
+            activeRoute: account.role == 'super_admin'
+                ? '/super-admin'
+                : '/dashboard',
+            mobileTitle: 'Dashboard',
+            userId: 12,
+            username: 'staff.user',
+            role: account.role,
+            campusId: account.campusId,
+            collegeId: account.collegeId,
+            child: const Text('Staff mobile content'),
+          ),
+        ),
+      );
+
+      expect(
+        find.byTooltip('Scan QR code'),
+        findsOneWidget,
+        reason: account.role,
+      );
+      expect(tester.takeException(), isNull, reason: account.role);
+    }
+  });
+
   testWidgets('guest mobile navigation only shows Home, Scan, and Account', (
     tester,
   ) async {

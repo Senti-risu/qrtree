@@ -154,6 +154,10 @@ class AppMobileNavbar extends StatelessWidget {
               ),
               if (canScanQr && index == 1) const SizedBox(width: 56),
             ],
+            // Super Admin currently has three destinations. Reserve a fourth
+            // destination-sized space so the center scanner stays visually
+            // centered with two navigation actions on either side.
+            if (canScanQr && destinations.length.isOdd) const Spacer(),
           ],
         ),
       ),

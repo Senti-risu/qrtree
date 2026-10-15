@@ -92,10 +92,7 @@ class AppShell extends StatelessWidget {
   }
 
   bool get _canScanQr =>
-      showQrButton &&
-      (role == 'college_admin' || role == 'inspection_team') &&
-      campusId != null &&
-      collegeId != null;
+      showQrButton && RoleCapabilities.fromValue(role).canScanQr;
 
   // ============================================================
   // BUILD

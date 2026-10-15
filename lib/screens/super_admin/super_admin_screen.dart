@@ -68,7 +68,6 @@ class _SuperAdminScreenState extends State<SuperAdminScreen> {
       username: widget.username,
       role: widget.role,
       userRole: AppRole.superAdmin.label,
-      showQrButton: false,
       onRefresh: _load,
       child: SingleChildScrollView(
         child: Column(

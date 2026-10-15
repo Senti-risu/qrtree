@@ -669,7 +669,6 @@ class _InspectionAccountsScreenState extends State<InspectionAccountsScreen> {
       collegeId: widget.collegeId,
       userName: widget.username,
       userRole: AppRole.collegeAdmin.label,
-      showQrButton: false,
       onRefresh: _loadAccounts,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

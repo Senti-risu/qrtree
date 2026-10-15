@@ -48,6 +48,13 @@ class RoleCapabilities {
 
   bool get canInspectPlants => role == AppRole.inspectionTeam;
 
+  /// Every recognized EcoTag staff role can scan a label.
+  ///
+  /// What happens after a scan remains role-aware. For example, only a
+  /// College Admin can assign an available label while the other roles get a
+  /// read-only result.
+  bool get canScanQr => role != AppRole.unknown;
+
   bool get hasAssignedCampusScope =>
       role == AppRole.campusAdmin ||
       role == AppRole.collegeAdmin ||

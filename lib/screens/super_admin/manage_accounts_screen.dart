@@ -738,7 +738,6 @@ class _ManageAccountsScreenState extends State<ManageAccountsScreen> {
       username: widget.username,
       role: widget.role,
       userRole: AppRole.superAdmin.label,
-      showQrButton: false,
       onRefresh: _load,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

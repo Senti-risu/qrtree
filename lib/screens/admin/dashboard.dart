@@ -390,7 +390,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
       onRefresh: _loadDashboardData,
 
-      showQrButton: _role == 'college_admin' || _role == 'inspection_team',
+      showQrButton: true,
 
       onQrPressed: () {
         Navigator.pushNamed(

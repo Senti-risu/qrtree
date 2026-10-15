@@ -101,7 +101,6 @@ class _ActivityLogScreenState extends State<ActivityLogScreen> {
       userName: widget.username,
       userRole: _roleLabel(widget.role),
       onRefresh: _load,
-      showQrButton: false,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [

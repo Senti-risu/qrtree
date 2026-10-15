@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'config/supabase_config.dart';
+import 'models/app_role.dart';
 import 'theme/app_colors.dart';
 import 'theme/app_theme.dart';
 
@@ -385,19 +386,13 @@ class MyApp extends StatelessWidget {
           final campusId = args['campus_id'];
           final collegeId = args['college_id'];
 
-          if (userId == null ||
-              username == null ||
-              role == null ||
-              campusId == null ||
-              collegeId == null) {
+          if (userId == null || username == null || role == null) {
             return _errorRoute('Incomplete QR Scanner user information.');
           }
 
-          final normalizedRole = role.toString().toLowerCase();
-          if (normalizedRole != 'college_admin' &&
-              normalizedRole != 'inspection_team') {
+          if (!RoleCapabilities.fromValue(role.toString()).canScanQr) {
             return _errorRoute(
-              'Only College Admin and Inspection Team accounts can scan QR codes.',
+              'A recognized EcoTag staff account is required to scan QR codes.',
             );
           }
 

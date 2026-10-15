@@ -739,7 +739,6 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
       userName: widget.username,
       userRole: _roleLabel(widget.role),
       onRefresh: _loadTags,
-      showQrButton: false,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

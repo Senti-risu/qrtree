@@ -40,6 +40,16 @@ void main() {
       }
     });
 
+    test('allows every recognized staff role to scan QR codes', () {
+      for (final role in AppRole.values) {
+        expect(
+          RoleCapabilities(role).canScanQr,
+          role != AppRole.unknown,
+          reason: role.value,
+        );
+      }
+    });
+
     test('models campus and college data scopes', () {
       expect(
         const RoleCapabilities(AppRole.universityAdmin).hasAssignedCampusScope,
