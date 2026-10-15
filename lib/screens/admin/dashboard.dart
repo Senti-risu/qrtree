@@ -556,9 +556,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             if (_role == 'college_admin') ...[
               DashboardPriorityLayout(
                 work: _buildMonitoringWork(),
-                recent: _recentPlants.isEmpty
-                    ? null
-                    : _buildRecentPlantShortlist(),
+                recent: _totalPlants > 1 ? _buildHealthChartCard() : null,
               ),
               const SizedBox(height: AppSpacing.lg),
             ],
@@ -575,8 +573,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
             const SizedBox(height: AppSpacing.xl),
 
-            if (_role != 'college_admin')
-              _buildResponsiveRecentPlants(contentWidth),
+            if (_role != 'college_admin' && _totalPlants > 1)
+              _buildHealthChartCard(),
           ],
         );
       },
@@ -1004,39 +1002,34 @@ class _DashboardScreenState extends State<DashboardScreen> {
   // ============================================================
 
   Widget _buildResponsiveAnalytics(double contentWidth) {
-    if (_totalPlants <= 1) {
-      return _role == 'university_admin'
-          ? CampusOverviewCard(counts: _campusPlantCounts)
-          : _buildQuickActionsCard();
-    }
+    final recentPlants = _role == 'college_admin'
+        ? (_recentPlants.isEmpty ? null : _buildRecentPlantShortlist())
+        : _buildResponsiveRecentPlants(contentWidth);
+    final actions = _role == 'university_admin'
+        ? CampusOverviewCard(counts: _campusPlantCounts)
+        : _buildQuickActionsCard();
+    if (recentPlants == null) return actions;
     if (!AppBreakpoints.isPhone(contentWidth)) {
       return Row(
         crossAxisAlignment: CrossAxisAlignment.start,
 
         children: [
-          Expanded(
-            child: _role == 'university_admin'
-                ? CampusOverviewCard(counts: _campusPlantCounts)
-                : _buildQuickActionsCard(),
-          ),
+          Expanded(child: actions),
 
           const SizedBox(width: AppSpacing.lg),
 
-          Expanded(child: _buildHealthChartCard()),
+          Expanded(child: recentPlants),
         ],
       );
     }
 
     return Column(
       children: [
-        if (_role == 'university_admin')
-          CampusOverviewCard(counts: _campusPlantCounts)
-        else
-          _buildQuickActionsCard(),
+        actions,
 
         const SizedBox(height: AppSpacing.lg),
 
-        _buildHealthChartCard(),
+        recentPlants,
       ],
     );
   }

@@ -217,7 +217,9 @@ class _PlantListScreenState extends State<PlantListScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (isDesktop) ...[_header(), const SizedBox(height: AppSpacing.xl)],
+          _filters(),
           if (!isDesktop && _capabilities.canRegisterPlants) ...[
+            const SizedBox(height: AppSpacing.lg),
             SizedBox(
               width: double.infinity,
               child: FilledButton.icon(
@@ -234,9 +236,7 @@ class _PlantListScreenState extends State<PlantListScreen> {
                 label: const Text('Register a plant'),
               ),
             ),
-            const SizedBox(height: AppSpacing.lg),
           ],
-          _filters(),
           const SizedBox(height: AppSpacing.xl),
           Expanded(child: _content()),
         ],

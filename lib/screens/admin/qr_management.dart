@@ -10,6 +10,7 @@ import '../../utils/user_facing_error.dart';
 import '../../widgets/app_card.dart';
 import '../../widgets/app_page_header.dart';
 import '../../widgets/app_shell.dart';
+import '../../widgets/qr_mobile_tag_list.dart';
 import '../qr/qr_problem_reports_screen.dart';
 
 class QrManagementScreen extends StatefulWidget {
@@ -72,9 +73,9 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
   List<Map<String, dynamic>> get _visibleTags => _tags;
 
   bool get _hasActiveFilters =>
-      _searchController.text.trim().isNotEmpty || _filter != 'available';
+      _searchController.text.trim().isNotEmpty || _filter != 'all';
 
-  int get _activeFilterCount => _filter == 'available' ? 0 : 1;
+  int get _activeFilterCount => _filter == 'all' ? 0 : 1;
 
   static const Map<String, String> _statusFilters = {
     'available': 'Available',
@@ -364,7 +365,7 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
                       Expanded(
                         child: OutlinedButton(
                           onPressed: () =>
-                              setSheetState(() => draftFilter = 'available'),
+                              setSheetState(() => draftFilter = 'all'),
                           style: OutlinedButton.styleFrom(
                             minimumSize: const Size.fromHeight(48),
                             side: const BorderSide(color: AppColors.green),
@@ -740,42 +741,50 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
       userName: widget.username,
       userRole: _roleLabel(widget.role),
       onRefresh: _loadTags,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (isDesktop) ...[
-            AppPageHeader(
-              title: 'QR Management',
-              subtitle: 'Generate, print, scan, and monitor EcoTag QR codes',
-              trailing: useHeaderActions ? _headerActions() : null,
-            ),
-            const SizedBox(height: AppSpacing.xl),
-          ],
-          if (!useHeaderActions) ...[
-            _toolbar(),
-            const SizedBox(height: AppSpacing.xl),
-          ],
-          Expanded(child: _tagList()),
-          Align(
-            alignment: Alignment.centerRight,
-            child: TextButton.icon(
-              onPressed: () async {
-                await Navigator.push(
-                  context,
-                  MaterialPageRoute<void>(
-                    builder: (_) =>
-                        const QrProblemReportsScreen(canReview: true),
+      child: !isDesktop
+          ? QrMobileTagList(
+              toolbar: _toolbar(),
+              header: _listHeader(),
+              itemCount: _visibleTags.length,
+              itemBuilder: (_, index) => _tagTile(_visibleTags[index]),
+              loading: _loading,
+              loadingMore: _loadingMore,
+              hasMore: _hasMore,
+              onLoadMore: () => _loadTags(more: true),
+              emptyMessage: _hasActiveFilters
+                  ? 'No QR tags match your filters.'
+                  : 'No QR tags found.',
+            )
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (isDesktop) ...[
+                  AppPageHeader(
+                    title: 'QR Management',
+                    subtitle:
+                        'Generate, print, scan, and monitor EcoTag QR codes',
+                    trailing: useHeaderActions ? _headerActions() : null,
                   ),
-                );
-                if (mounted) _loadTags();
-              },
-              icon: const Icon(Icons.report_problem_outlined),
-              label: const Text('QR problem reports'),
+                  const SizedBox(height: AppSpacing.xl),
+                ],
+                if (!useHeaderActions) ...[
+                  _toolbar(),
+                  const SizedBox(height: AppSpacing.xl),
+                ],
+                Expanded(child: _tagList()),
+              ],
             ),
-          ),
-        ],
+    );
+  }
+
+  Future<void> _openProblemReports() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute<void>(
+        builder: (_) => const QrProblemReportsScreen(canReview: true),
       ),
     );
+    if (mounted) _loadTags();
   }
 
   Future<void> _openGenerateDialog() async {
@@ -1242,47 +1251,65 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
   Widget _listHeader() => LayoutBuilder(
     builder: (context, constraints) {
       final visibleCount = _visibleTags.length;
-      final title = Row(
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: AppColors.primaryContainer,
-              borderRadius: AppRadii.medium,
+      final title = LayoutBuilder(
+        builder: (context, titleConstraints) => Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: AppColors.primaryContainer,
+                borderRadius: AppRadii.medium,
+              ),
+              child: const Icon(
+                Icons.qr_code_2_rounded,
+                color: AppColors.green,
+                size: 22,
+              ),
             ),
-            child: const Icon(
-              Icons.qr_code_2_rounded,
-              color: AppColors.green,
-              size: 22,
-            ),
-          ),
-          const SizedBox(width: 11),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text(
-                  'QR tags',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.darkGreen,
+            const SizedBox(width: 11),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    'QR tags',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.darkGreen,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  '$visibleCount of ${_tags.length} results',
-                  style: const TextStyle(
-                    fontSize: 11,
-                    color: AppColors.textSecondary,
+                  const SizedBox(height: 2),
+                  Text(
+                    '$visibleCount of ${_tags.length} results',
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: AppColors.textSecondary,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ],
+            const SizedBox(width: AppSpacing.sm),
+            if (titleConstraints.maxWidth >= 600 &&
+                MediaQuery.textScalerOf(context).scale(1) < 1.6)
+              TextButton.icon(
+                onPressed: _openProblemReports,
+                icon: const Icon(Icons.report_problem_outlined),
+                label: const Text('QR problem reports'),
+              )
+            else
+              IconButton(
+                onPressed: _openProblemReports,
+                tooltip: 'QR problem reports',
+                color: AppColors.green,
+                constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+                icon: const Icon(Icons.report_problem_outlined),
+              ),
+          ],
+        ),
       );
       if (!AppBreakpoints.isDesktop(constraints.maxWidth)) {
         return Column(
@@ -1384,12 +1411,7 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
         backgroundColor: AppColors.primaryContainer,
         child: Icon(Icons.qr_code_2_rounded, color: AppColors.green),
       ),
-      title: Text(
-        code,
-        maxLines: 2,
-        overflow: TextOverflow.ellipsis,
-        style: const TextStyle(fontWeight: FontWeight.w600),
-      ),
+      title: Text(code, style: const TextStyle(fontWeight: FontWeight.w600)),
       subtitle: Wrap(
         spacing: 8,
         crossAxisAlignment: WrapCrossAlignment.center,
