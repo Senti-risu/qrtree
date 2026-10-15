@@ -281,6 +281,7 @@ class MyApp extends StatelessWidget {
               role: args['role'].toString(),
               campusId: args['campus_id'] as int?,
               collegeId: args['college_id'] as int?,
+              initialQueueFilter: args['queue_filter']?.toString(),
             ),
           );
         }

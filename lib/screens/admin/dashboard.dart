@@ -47,6 +47,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
   int _healthyCount = 0;
   int _dyingCount = 0;
   int _deadCount = 0;
+  int _overdueCount = 0;
+  int _dueTodayCount = 0;
+  int _unscheduledCount = 0;
+  DateTime? _lastInspection;
 
   List<Map<String, dynamic>> _recentPlants = [];
   Map<String, int> _campusPlantCounts = {};
@@ -230,6 +234,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         plant_id,
         campus_id,
         college_id,
+        next_inspection_due_on, last_inspected_on,
 
         campus (
           campus_name
@@ -250,6 +255,32 @@ class _DashboardScreenState extends State<DashboardScreen> {
       }
 
       final healthRows = await healthQuery;
+
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+      int overdue = 0, dueToday = 0, unscheduled = 0;
+      DateTime? lastInspection;
+      for (final row in healthRows) {
+        final due = DateTime.tryParse(
+          row['next_inspection_due_on']?.toString() ?? '',
+        );
+        if (due == null) {
+          unscheduled++;
+        } else if (due.isBefore(today)) {
+          overdue++;
+        } else if (due.year == today.year &&
+            due.month == today.month &&
+            due.day == today.day) {
+          dueToday++;
+        }
+        final inspected = DateTime.tryParse(
+          row['last_inspected_on']?.toString() ?? '',
+        );
+        if (inspected != null &&
+            (lastInspection == null || inspected.isAfter(lastInspection))) {
+          lastInspection = inspected;
+        }
+      }
 
       int healthy = 0;
       int dying = 0;
@@ -330,6 +361,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
       setState(() {
         _totalPlants = healthRows.length;
+        _overdueCount = overdue;
+        _dueTodayCount = dueToday;
+        _unscheduledCount = unscheduled;
+        _lastInspection = lastInspection;
 
         _healthyCount = healthy;
 
@@ -392,8 +427,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
       showQrButton: true,
 
-      onQrPressed: () {
-        Navigator.pushNamed(
+      onQrPressed: () async {
+        await Navigator.pushNamed(
           context,
           '/qr-scanner',
           arguments: {
@@ -408,9 +443,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
             'college_id': _currentCollegeId,
           },
         );
+        if (mounted) _loadDashboardData();
       },
 
       child: SingleChildScrollView(
+        padding: EdgeInsets.only(bottom: isDesktop ? 0 : 48),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -515,6 +552,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            if (_role == 'college_admin') ...[
+              _buildMonitoringWork(),
+              const SizedBox(height: AppSpacing.md),
+              if (_recentPlants.isNotEmpty) ...[
+                _buildRecentPlantShortlist(),
+                const SizedBox(height: AppSpacing.md),
+              ],
+            ],
             if ((_role == 'college_admin' || _role == 'inspection_team') &&
                 _dyingCount > 0) ...[
               _buildPriorityTaskCard(),
@@ -528,7 +573,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
             const SizedBox(height: AppSpacing.xl),
 
-            _buildResponsiveRecentPlants(contentWidth),
+            if (_role != 'college_admin')
+              _buildResponsiveRecentPlants(contentWidth),
           ],
         );
       },
@@ -594,8 +640,185 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  void _openNeedsAttention() {
-    Navigator.pushNamed(
+  Map<String, dynamic> get _navigationArguments => {
+    'user_id': widget.userId,
+    'username': _userName,
+    'role': _role,
+    'campus_id': _currentCampusId,
+    'college_id': _currentCollegeId,
+  };
+
+  Future<void> _openInspectionQueue(String filter) async {
+    await Navigator.pushNamed(
+      context,
+      '/inspections',
+      arguments: {..._navigationArguments, 'queue_filter': filter},
+    );
+    if (mounted) _loadDashboardData();
+  }
+
+  Widget _buildMonitoringWork() {
+    final last = _lastInspection;
+    final needsFirstInspection = _totalPlants > 0 && last == null;
+    return AppCard(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'What needs doing',
+            style: TextStyle(
+              fontSize: 17,
+              fontWeight: FontWeight.w800,
+              color: AppColors.darkGreen,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              ActionChip(
+                avatar: const Icon(Icons.schedule, size: 18),
+                label: Text('Overdue $_overdueCount'),
+                onPressed: () => _openInspectionQueue('overdue'),
+              ),
+              ActionChip(
+                avatar: const Icon(Icons.today, size: 18),
+                label: Text('Due today $_dueTodayCount'),
+                onPressed: () => _openInspectionQueue('due_today'),
+              ),
+              if (_unscheduledCount > 0)
+                ActionChip(
+                  label: Text('No schedule $_unscheduledCount'),
+                  onPressed: _openPlantList,
+                ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            last == null
+                ? 'No inspection recorded yet.'
+                : 'Latest college inspection: ${MaterialLocalizations.of(context).formatMediumDate(last)}',
+            style: const TextStyle(
+              fontSize: 12,
+              color: AppColors.textSecondary,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            _totalPlants == 0
+                ? 'Start your college’s plant record.'
+                : _overdueCount > 0
+                ? 'Review overdue plants and arrange an inspection with your team.'
+                : _dueTodayCount > 0
+                ? 'Your team has inspections due today.'
+                : needsFirstInspection
+                ? 'Open a plant to review its schedule and arrange the first inspection.'
+                : 'Scan a tag to review health, or register another plant.',
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              if (_totalPlants > 0)
+                FilledButton.icon(
+                  onPressed: _overdueCount + _dueTodayCount > 0
+                      ? () => _openInspectionQueue('action')
+                      : _openPlantList,
+                  icon: const Icon(Icons.fact_check_outlined, size: 18),
+                  label: Text(
+                    _overdueCount + _dueTodayCount > 0
+                        ? 'Review inspections'
+                        : needsFirstInspection || _unscheduledCount > 0
+                        ? 'Schedule inspection'
+                        : 'Review plants',
+                  ),
+                ),
+              if (_totalPlants <= 1)
+                OutlinedButton.icon(
+                  onPressed: () async {
+                    await Navigator.pushNamed(
+                      context,
+                      '/register-plant',
+                      arguments: _navigationArguments,
+                    );
+                    if (mounted) _loadDashboardData();
+                  },
+                  icon: const Icon(Icons.add, size: 18),
+                  label: Text(
+                    _totalPlants == 0
+                        ? 'Register first plant'
+                        : 'Register another plant',
+                  ),
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRecentPlantShortlist() => AppCard(
+    padding: const EdgeInsets.all(AppSpacing.sm),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+          child: Row(
+            children: [
+              const Expanded(
+                child: Text(
+                  'Recent plants',
+                  style: TextStyle(fontWeight: FontWeight.w700),
+                ),
+              ),
+              TextButton(
+                onPressed: _openPlantList,
+                child: const Text('View all'),
+              ),
+            ],
+          ),
+        ),
+        for (final plant in _recentPlants.take(3))
+          ListTile(
+            dense: true,
+            visualDensity: VisualDensity.compact,
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.sm,
+            ),
+            title: Text(
+              (plant['plant_classification'] as Map?)?['common_name']
+                      ?.toString() ??
+                  'Plant',
+            ),
+            subtitle: Text(
+              (plant['health_status'] as Map?)?['status_name']?.toString() ??
+                  'Health not recorded',
+            ),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () async {
+              await Navigator.pushNamed(
+                context,
+                '/plant-details',
+                arguments: {
+                  ..._navigationArguments,
+                  'plant_id': plant['plant_id'],
+                },
+              );
+              if (mounted) _loadDashboardData();
+            },
+          ),
+      ],
+    ),
+  );
+
+  void _openNeedsAttention() => _openFilteredPlants('Needs attention');
+
+  Future<void> _openFilteredPlants(String filter) async {
+    await Navigator.pushNamed(
       context,
       '/plant-list',
       arguments: {
@@ -604,9 +827,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
         'role': _role,
         'campus_id': _currentCampusId,
         'college_id': _currentCollegeId,
-        'health_filter': 'Needs attention',
+        'health_filter': filter,
       },
     );
+    if (mounted) _loadDashboardData();
   }
 
   // ============================================================
@@ -634,11 +858,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
     const gap = AppSpacing.md;
     final largeText = MediaQuery.textScalerOf(context).scale(1) >= 1.4;
 
-    final columns = largeText && !AppBreakpoints.isDesktop(contentWidth)
+    final columns = largeText && contentWidth < 400
         ? 1
         : AppBreakpoints.isDesktop(contentWidth)
         ? 4
-        : contentWidth >= 360
+        : contentWidth >= 250
         ? 2
         : 1;
 
@@ -649,6 +873,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final cards = <Widget>[
       DashboardStatCard(
         title: 'Total Plants',
+        compact: !AppBreakpoints.isDesktop(contentWidth),
+        onTap: () => _openFilteredPlants('All'),
 
         value: '$_totalPlants',
 
@@ -663,6 +889,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
       DashboardStatCard(
         title: 'Healthy Plants',
+        compact: !AppBreakpoints.isDesktop(contentWidth),
+        onTap: () => _openFilteredPlants('Healthy'),
 
         value: '$_healthyCount',
 
@@ -676,15 +904,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
         iconColor: AppColors.green,
 
-        percentage: _totalPlants == 0
-            ? ''
-            : '${_healthyPercent.toStringAsFixed(0)}%',
-
         progress: _totalPlants == 0 ? 0 : _healthyPercent / 100,
       ),
 
       DashboardStatCard(
         title: 'At Risk',
+        compact: !AppBreakpoints.isDesktop(contentWidth),
+        onTap: _openNeedsAttention,
 
         value: '$_dyingCount',
 
@@ -699,14 +925,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
       DashboardStatCard(
         title: 'Dead Plants',
+        compact: !AppBreakpoints.isDesktop(contentWidth),
+        onTap: () => _openFilteredPlants('Dead'),
 
         value: '$_deadCount',
 
         subtext: _totalPlants == 0
             ? ''
-            : '${_deadPercent.toStringAsFixed(1)}% of total plants',
+            : '${_deadPercent.toStringAsFixed(0)}% of total plants',
 
-        icon: Icons.local_florist_outlined,
+        icon: Icons.cancel_outlined,
 
         iconBgColor: AppColors.dangerContainer,
 
@@ -729,6 +957,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
   // ============================================================
 
   Widget _buildResponsiveAnalytics(double contentWidth) {
+    if (_totalPlants <= 1) {
+      return _role == 'university_admin'
+          ? CampusOverviewCard(counts: _campusPlantCounts)
+          : _buildQuickActionsCard();
+    }
     if (!AppBreakpoints.isPhone(contentWidth)) {
       return Row(
         crossAxisAlignment: CrossAxisAlignment.start,

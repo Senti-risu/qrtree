@@ -13,6 +13,8 @@ class DashboardStatCard extends StatelessWidget {
   final Color iconColor;
   final String? percentage;
   final double? progress;
+  final VoidCallback? onTap;
+  final bool compact;
 
   const DashboardStatCard({
     super.key,
@@ -24,92 +26,109 @@ class DashboardStatCard extends StatelessWidget {
     required this.iconColor,
     this.percentage,
     this.progress,
+    this.onTap,
+    this.compact = false,
   });
 
   @override
   Widget build(BuildContext context) {
     final largeText = MediaQuery.textScalerOf(context).scale(1) >= 1.4;
-    return ConstrainedBox(
-      constraints: const BoxConstraints(minHeight: 142),
-      child: AppCard(
-        padding: const EdgeInsets.all(AppSpacing.lg),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
+    return Semantics(
+      button: onTap != null,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: AppRadii.large,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minHeight: compact ? 106 : 142),
+          child: AppCard(
+            padding: EdgeInsets.all(compact ? AppSpacing.sm : AppSpacing.lg),
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  width: 42,
-                  height: 42,
-                  decoration: BoxDecoration(
-                    color: iconBgColor,
-                    borderRadius: AppRadii.medium,
-                  ),
-                  child: Icon(icon, color: iconColor, size: 23),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: compact ? 30 : 42,
+                      height: compact ? 30 : 42,
+                      decoration: BoxDecoration(
+                        color: iconBgColor,
+                        borderRadius: AppRadii.medium,
+                      ),
+                      child: Icon(
+                        icon,
+                        color: iconColor,
+                        size: compact ? 19 : 23,
+                      ),
+                    ),
+                    const Spacer(),
+                    Flexible(
+                      child: Text(
+                        value,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 26,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-                const Spacer(),
-                Text(
-                  value,
-                  style: const TextStyle(
-                    fontSize: 26,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.textPrimary,
-                  ),
+                const SizedBox(height: AppSpacing.sm),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        title,
+                        maxLines: compact || largeText ? 2 : 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: AppColors.darkGreen,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    if (percentage != null && percentage!.isNotEmpty)
+                      Text(
+                        percentage!,
+                        style: TextStyle(
+                          color: iconColor,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 11,
+                        ),
+                      ),
+                  ],
                 ),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    title,
-                    maxLines: largeText ? 2 : 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: AppColors.darkGreen,
-                      fontWeight: FontWeight.w700,
+                if (subtext.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2),
+                    child: Text(
+                      subtext,
+                      maxLines: compact || largeText ? 2 : 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: AppColors.textSecondary,
+                      ),
                     ),
                   ),
-                ),
-                if (percentage != null && percentage!.isNotEmpty)
-                  Text(
-                    percentage!,
-                    style: TextStyle(
+                if (progress != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 5),
+                    child: LinearProgressIndicator(
+                      value: progress!.clamp(0, 1),
+                      minHeight: 3,
                       color: iconColor,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 11,
+                      backgroundColor: AppColors.border,
+                      borderRadius: AppRadii.small,
                     ),
                   ),
               ],
             ),
-            if (subtext.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(top: 2),
-                child: Text(
-                  subtext,
-                  maxLines: largeText ? 2 : 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 11,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-              ),
-            if (progress != null)
-              Padding(
-                padding: const EdgeInsets.only(top: 5),
-                child: LinearProgressIndicator(
-                  value: progress!.clamp(0, 1),
-                  minHeight: 3,
-                  color: iconColor,
-                  backgroundColor: AppColors.border,
-                  borderRadius: AppRadii.small,
-                ),
-              ),
-          ],
+          ),
         ),
       ),
     );

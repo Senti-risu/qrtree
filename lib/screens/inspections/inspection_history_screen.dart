@@ -17,6 +17,7 @@ class InspectionHistoryScreen extends StatefulWidget {
   final String role;
   final int? campusId;
   final int? collegeId;
+  final String? initialQueueFilter;
 
   const InspectionHistoryScreen({
     super.key,
@@ -25,6 +26,7 @@ class InspectionHistoryScreen extends StatefulWidget {
     required this.role,
     this.campusId,
     this.collegeId,
+    this.initialQueueFilter,
   });
 
   @override
@@ -64,6 +66,9 @@ class _InspectionHistoryScreenState extends State<InspectionHistoryScreen> {
   @override
   void initState() {
     super.initState();
+    if (_queueFilters.containsKey(widget.initialQueueFilter)) {
+      _queueFilter = widget.initialQueueFilter!;
+    }
     _loadHistory();
     _loadQueue();
   }
