@@ -10,6 +10,7 @@ enum AppMobileMoreAction {
   profile,
   registerPlant,
   qrManagement,
+  qrReports,
   userManagement,
   reports,
   activityLog,
@@ -57,6 +58,18 @@ Future<AppMobileMoreAction?> showAppMobileMoreSheet(
             icon: Icons.manage_accounts_outlined,
             title: 'User Management',
             subtitle: 'Manage Inspection Team accounts',
+          ),
+        ],
+      ),
+    if (role == 'inspection_team' || role == 'college_admin')
+      const _MoreGroup(
+        label: 'QR labels',
+        items: [
+          _MoreItem(
+            action: AppMobileMoreAction.qrReports,
+            icon: Icons.report_problem_outlined,
+            title: 'QR problem reports',
+            subtitle: 'Track damaged, faded, missing, or incorrect labels',
           ),
         ],
       ),

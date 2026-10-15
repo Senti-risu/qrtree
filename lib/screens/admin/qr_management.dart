@@ -10,6 +10,7 @@ import '../../utils/user_facing_error.dart';
 import '../../widgets/app_card.dart';
 import '../../widgets/app_page_header.dart';
 import '../../widgets/app_shell.dart';
+import '../qr/qr_problem_reports_screen.dart';
 
 class QrManagementScreen extends StatefulWidget {
   final int userId;
@@ -755,6 +756,23 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
             const SizedBox(height: AppSpacing.xl),
           ],
           Expanded(child: _tagList()),
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton.icon(
+              onPressed: () async {
+                await Navigator.push(
+                  context,
+                  MaterialPageRoute<void>(
+                    builder: (_) =>
+                        const QrProblemReportsScreen(canReview: true),
+                  ),
+                );
+                if (mounted) _loadTags();
+              },
+              icon: const Icon(Icons.report_problem_outlined),
+              label: const Text('QR problem reports'),
+            ),
+          ),
         ],
       ),
     );

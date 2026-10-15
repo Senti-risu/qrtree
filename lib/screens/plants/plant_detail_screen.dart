@@ -5,8 +5,10 @@ import '../../services/inspection_service.dart';
 import '../../theme/app_colors.dart';
 import '../../utils/user_facing_error.dart';
 import '../../widgets/app_error_state.dart';
+import '../../widgets/qr_problem_dialog.dart';
 import '../admin/plant_service.dart';
 import '../inspections/inspection_form_screen.dart';
+import '../qr/qr_problem_reports_screen.dart';
 
 class PlantDetailScreen extends StatefulWidget {
   final int plantId;
@@ -197,6 +199,26 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
             'Town': _value(_map(plant['town'])['town_name']),
           }),
           if (_history.isNotEmpty) _historySection(),
+          if ((canInspect || canArchive) && !archived)
+            Padding(
+              padding: const EdgeInsets.only(top: 8, bottom: 8),
+              child: OutlinedButton.icon(
+                onPressed: () => showQrProblemDialog(context, widget.plantId),
+                icon: const Icon(Icons.report_problem_outlined),
+                label: const Text('Report QR problem'),
+              ),
+            ),
+          if (canInspect || canArchive)
+            TextButton.icon(
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute<void>(
+                  builder: (_) => QrProblemReportsScreen(canReview: canArchive),
+                ),
+              ),
+              icon: const Icon(Icons.history_rounded),
+              label: Text(canArchive ? 'Review QR reports' : 'My QR reports'),
+            ),
           if (canInspect && !archived)
             Padding(
               padding: const EdgeInsets.only(top: 8),

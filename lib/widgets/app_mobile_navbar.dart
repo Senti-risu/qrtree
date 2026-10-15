@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/app_role.dart';
+import '../screens/qr/qr_problem_reports_screen.dart';
 import '../services/account_profile_service.dart';
 import '../services/app_session.dart';
 import '../theme/app_colors.dart';
@@ -252,6 +253,15 @@ class AppMobileNavbar extends StatelessWidget {
         return;
       case AppMobileMoreAction.qrManagement:
         _navigate(context, '/qr-management');
+        return;
+      case AppMobileMoreAction.qrReports:
+        await Navigator.push(
+          context,
+          MaterialPageRoute<void>(
+            builder: (_) =>
+                QrProblemReportsScreen(canReview: role == 'college_admin'),
+          ),
+        );
         return;
       case AppMobileMoreAction.userManagement:
         _navigate(context, '/inspection-accounts');

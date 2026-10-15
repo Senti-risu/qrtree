@@ -130,6 +130,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Reports'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('Sign out'), 120);
+    await tester.pumpAndSettle();
     expect(find.text('Sign out'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
