@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../widgets/plant_details_presentation.dart';
 import 'package:flutter/services.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
@@ -132,7 +133,7 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
         if (!mounted) return;
         await Navigator.push(
           context,
-          MaterialPageRoute(
+          plantDetailsRoute(
             builder: (_) => PlantDetailScreen(
               plantId: plantId,
               userId: widget.userId,

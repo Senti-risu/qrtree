@@ -115,7 +115,7 @@ class _PlantListPageState extends State<PlantListPage> {
         created_at,
         campus_id,
         college_id,
-        campus:campus!campus_id (
+        campus:campus!plant_campus_id_fkey (
           campus_name
         ),
         college (

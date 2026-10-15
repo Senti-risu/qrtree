@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'config/supabase_config.dart';
 import 'models/app_role.dart';
+import 'widgets/plant_details_presentation.dart';
 import 'theme/app_colors.dart';
 import 'theme/app_theme.dart';
 
@@ -234,7 +235,7 @@ class MyApp extends StatelessWidget {
               args['role'] == null) {
             return _errorRoute('Plant details information is missing.');
           }
-          return MaterialPageRoute(
+          return plantDetailsRoute(
             settings: settings,
             builder: (_) => PlantDetailScreen(
               plantId: args['plant_id'] as int,

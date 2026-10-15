@@ -4,6 +4,7 @@ import '../../services/guest_service.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_layout.dart';
 import '../../widgets/app_card.dart';
+import '../../widgets/plant_details_presentation.dart';
 
 /// Curated public plant profile shown to guests after a successful scan.
 ///
@@ -19,6 +20,13 @@ class GuestPlantDetailScreen extends StatelessWidget {
     backgroundColor: AppColors.background,
     appBar: AppBar(
       title: const Text('Plant Details'),
+      leading: PlantDetailsPresentation.floatsFor(MediaQuery.sizeOf(context))
+          ? IconButton(
+              tooltip: 'Close plant details',
+              onPressed: () => Navigator.maybePop(context),
+              icon: const Icon(Icons.close_rounded),
+            )
+          : const BackButton(),
       backgroundColor: AppColors.background,
     ),
     body: SafeArea(
@@ -80,7 +88,7 @@ class GuestPlantDetailScreen extends StatelessWidget {
                                 top: Radius.circular(16),
                               ),
                               child: SizedBox(
-                                height: compact ? 230 : 330,
+                                height: compact ? 200 : 240,
                                 child: _PlantPhoto(url: plant.photoUrl),
                               ),
                             ),
@@ -221,7 +229,7 @@ class _PlantPhoto extends StatelessWidget {
     if (normalized.isEmpty) return const _PlantPhotoPlaceholder();
     return Image.network(
       normalized,
-      fit: BoxFit.cover,
+      fit: BoxFit.contain,
       errorBuilder: (_, _, _) => const _PlantPhotoPlaceholder(),
     );
   }

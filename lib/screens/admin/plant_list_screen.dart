@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../widgets/plant_details_presentation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../models/app_role.dart';
@@ -74,7 +75,7 @@ class _PlantListScreenState extends State<PlantListScreen> {
         plant_id, variety, date_planted, tree_planter, photo_url, created_at, campus_id, college_id,
         archived_at, archive_reason,
         plant_classification (common_name, scientific_name, plant_type),
-        campus:campus!campus_id (campus_name), college (college_name),
+        campus:campus!plant_campus_id_fkey (campus_name), college (college_name),
         growth_status (growth_stage), health_status (status_name),
         qr_tag:qr_tag!plant_qr_tag_id_fkey(qr_code_string)
       ''');
@@ -215,10 +216,7 @@ class _PlantListScreenState extends State<PlantListScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (isDesktop) ...[
-            _header(),
-            const SizedBox(height: AppSpacing.xl),
-          ],
+          if (isDesktop) ...[_header(), const SizedBox(height: AppSpacing.xl)],
           if (!isDesktop && _capabilities.canRegisterPlants) ...[
             SizedBox(
               width: double.infinity,
@@ -812,9 +810,7 @@ class _PlantListScreenState extends State<PlantListScreen> {
   Widget _content() {
     if (_loading) {
       return const AppCard(
-        child: Center(
-          child: CircularProgressIndicator(color: AppColors.green),
-        ),
+        child: Center(child: CircularProgressIndicator(color: AppColors.green)),
       );
     }
     if (_error != null) {
@@ -851,9 +847,9 @@ class _PlantListScreenState extends State<PlantListScreen> {
                           : 'No plants registered yet'
                     : 'No plants match your filters',
                 textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
               ),
               if (_recordCount > 0 && _hasActiveFilters) ...[
                 const SizedBox(height: AppSpacing.md),
@@ -1125,7 +1121,7 @@ class _PlantListScreenState extends State<PlantListScreen> {
   Future<void> _openPlant(Map<String, dynamic> plant) async {
     await Navigator.push(
       context,
-      MaterialPageRoute(
+      plantDetailsRoute(
         builder: (_) => PlantDetailScreen(
           plantId: plant['plant_id'] as int,
           userId: widget.userId,

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import '../../widgets/plant_details_presentation.dart';
 import 'package:flutter/services.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
@@ -96,7 +97,7 @@ class _GuestQrScannerScreenState extends State<GuestQrScannerScreen>
 
         await Navigator.push(
           context,
-          MaterialPageRoute(
+          plantDetailsRoute(
             builder: (_) => GuestPlantDetailScreen(plant: plant),
           ),
         );

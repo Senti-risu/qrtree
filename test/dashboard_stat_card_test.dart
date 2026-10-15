@@ -49,6 +49,10 @@ void main() {
       final healthy = tester.getRect(find.byType(DashboardStatCard).at(1));
       expect(total.top, healthy.top);
       expect(total.height, lessThan(142));
+      expect(
+        tester.getRect(find.text('0').first).right,
+        closeTo(total.right - 9, .01), // 8px padding + 1px card border.
+      );
       await tester.tap(find.text('At Risk'));
       expect(selected, 'At Risk');
       expect(tester.takeException(), isNull);

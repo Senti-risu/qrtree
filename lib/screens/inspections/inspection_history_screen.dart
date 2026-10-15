@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../widgets/plant_details_presentation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../services/inspection_service.dart';
@@ -965,7 +966,7 @@ class _InspectionHistoryScreenState extends State<InspectionHistoryScreen> {
   Future<void> _openQueuePlant(int plantId) async {
     await Navigator.push(
       context,
-      MaterialPageRoute(
+      plantDetailsRoute(
         builder: (_) => PlantDetailScreen(
           plantId: plantId,
           userId: widget.userId,

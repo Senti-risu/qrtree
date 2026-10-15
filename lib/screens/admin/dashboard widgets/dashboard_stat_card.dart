@@ -39,7 +39,7 @@ class DashboardStatCard extends StatelessWidget {
         onTap: onTap,
         borderRadius: AppRadii.large,
         child: ConstrainedBox(
-          constraints: BoxConstraints(minHeight: compact ? 106 : 142),
+          constraints: BoxConstraints(minHeight: compact ? 106 : 120),
           child: AppCard(
             padding: EdgeInsets.all(compact ? AppSpacing.sm : AppSpacing.lg),
             child: Column(
@@ -61,10 +61,11 @@ class DashboardStatCard extends StatelessWidget {
                         size: compact ? 19 : 23,
                       ),
                     ),
-                    const Spacer(),
-                    Flexible(
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(
                       child: Text(
                         value,
+                        textAlign: TextAlign.end,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(

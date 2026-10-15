@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../theme/app_colors.dart';
 
 /// Physical planting location; deliberately independent of account ownership.
 class PlantingCampusDropdown extends StatelessWidget {
@@ -17,29 +18,46 @@ class PlantingCampusDropdown extends StatelessWidget {
       value == outside ? null : int.tryParse(value ?? '');
 
   @override
-  Widget build(BuildContext context) => DropdownButtonFormField<String>(
-    key: ValueKey(value),
-    initialValue: value,
-    isExpanded: true,
-    decoration: const InputDecoration(
-      labelText: 'Planting campus / outside campus',
-      helperText:
-          'Where this plant is physically planted. Your managing college stays the same.',
-      helperMaxLines: 3,
-    ),
-    items: [
-      const DropdownMenuItem(value: outside, child: Text('Outside campus')),
-      for (final campus in campuses)
-        DropdownMenuItem(
-          value: '${campus['campus_id']}',
-          child: Text(
-            '${campus['campus_name']}',
-            overflow: TextOverflow.ellipsis,
-          ),
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      const Text(
+        'Planting campus',
+        style: TextStyle(
+          color: AppColors.darkGreen,
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
         ),
+      ),
+      const SizedBox(height: 6),
+      DropdownButtonFormField<String>(
+        key: ValueKey(value),
+        initialValue: value,
+        isExpanded: true,
+        style: const TextStyle(fontSize: 14, color: AppColors.textPrimary),
+        hint: const Text(
+          'Select campus or Outside campus',
+          style: TextStyle(fontSize: 14),
+        ),
+        decoration: const InputDecoration(
+          helperText: 'Select a CSU campus or Outside campus.',
+          helperMaxLines: 2,
+        ),
+        items: [
+          const DropdownMenuItem(value: outside, child: Text('Outside campus')),
+          for (final campus in campuses)
+            DropdownMenuItem(
+              value: '${campus['campus_id']}',
+              child: Text(
+                '${campus['campus_name']}',
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+        ],
+        onChanged: onChanged,
+        validator: (choice) =>
+            choice == null ? 'Select a campus or Outside campus.' : null,
+      ),
     ],
-    onChanged: onChanged,
-    validator: (choice) =>
-        choice == null ? 'Select a campus or Outside campus.' : null,
   );
 }

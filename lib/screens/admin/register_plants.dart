@@ -15,6 +15,7 @@ import '../../widgets/app_shell.dart';
 import '../../widgets/forms/app_searchable_dropdown.dart';
 import '../../widgets/forms/app_text_field.dart';
 import '../../widgets/forms/planting_campus_dropdown.dart';
+import '../../widgets/forms/locked_plant_assignment.dart';
 import 'plant_service.dart';
 import 'registration widgets/plant_image_picker_field.dart';
 
@@ -1548,30 +1549,28 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
             ),
           ),
           const SizedBox(height: AppSpacing.lg),
-          const Text(
-            'Managing campus and college',
-            style: TextStyle(fontWeight: FontWeight.w700),
-          ),
-          const Text(
-            'Assigned to your account. These fields identify who manages the plant, not where it is planted.',
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          _twoFields(
-            AppSearchableDropdown(
-              label: 'Managing campus',
-              value: _campus,
-              items: _campusNames,
-              enabled: !_registrationScopeLocked,
-              onChanged: _selectCampus,
+          if (_registrationScopeLocked)
+            LockedPlantAssignment(
+              campus: _campus ?? 'Campus not assigned',
+              college: _college ?? 'College not assigned',
+            )
+          else
+            _twoFields(
+              AppSearchableDropdown(
+                label: 'Managing campus',
+                value: _campus,
+                items: _campusNames,
+                enabled: !_registrationScopeLocked,
+                onChanged: _selectCampus,
+              ),
+              AppSearchableDropdown(
+                label: 'Managing college',
+                value: _college,
+                items: _filteredCollegeNames,
+                enabled: _selectedCampusId != null && !_registrationScopeLocked,
+                onChanged: _selectCollege,
+              ),
             ),
-            AppSearchableDropdown(
-              label: 'Managing college',
-              value: _college,
-              items: _filteredCollegeNames,
-              enabled: _selectedCampusId != null && !_registrationScopeLocked,
-              onChanged: _selectCollege,
-            ),
-          ),
 
           if (_showPlantErrors) ...[
             const SizedBox(height: AppSpacing.lg),
@@ -1581,7 +1580,7 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
             ),
           ],
 
-          const SizedBox(height: AppSpacing.xl),
+          const SizedBox(height: AppSpacing.lg),
 
           _twoFields(
             AppSearchableDropdown(
@@ -1697,6 +1696,11 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
               fontWeight: FontWeight.w700,
               color: AppColors.darkGreen,
             ),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          const Text(
+            'Where this plant is physically planted.',
+            style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
           ),
 
           if (_showLocationErrors) ...[
@@ -1822,7 +1826,8 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
   Widget _twoFields(Widget first, Widget second) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        if (constraints.maxWidth < AppBreakpoints.phone) {
+        if (constraints.maxWidth < 480 ||
+            MediaQuery.textScalerOf(context).scale(1) >= 1.4) {
           return Column(
             children: [
               first,

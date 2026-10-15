@@ -8,6 +8,8 @@ import '../../theme/app_colors.dart';
 import '../../utils/user_facing_error.dart';
 import '../../widgets/app_error_state.dart';
 import '../../widgets/qr_problem_dialog.dart';
+import '../../widgets/plant_details_presentation.dart';
+import '../../widgets/plant_detail_content.dart';
 import '../admin/plant_service.dart';
 import '../inspections/inspection_form_screen.dart';
 import '../qr/qr_problem_reports_screen.dart';
@@ -93,8 +95,21 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
     backgroundColor: AppColors.background,
     appBar: AppBar(
       title: const Text('Plant Details'),
+      leading: PlantDetailsPresentation.floatsFor(MediaQuery.sizeOf(context))
+          ? IconButton(
+              tooltip: 'Close plant details',
+              onPressed: () => Navigator.maybePop(context),
+              icon: const Icon(Icons.close_rounded),
+            )
+          : const BackButton(),
       backgroundColor: AppColors.background,
-      actions: [IconButton(onPressed: _load, icon: const Icon(Icons.refresh))],
+      actions: [
+        IconButton(
+          tooltip: 'Refresh plant details',
+          onPressed: _loading ? null : _load,
+          icon: const Icon(Icons.refresh),
+        ),
+      ],
     ),
     body: _loading
         ? const Center(child: CircularProgressIndicator())
@@ -109,7 +124,15 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
             technicalDetails: _error,
             onRetry: _load,
           )
-        : _body(),
+        : SafeArea(
+            top: false,
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 1080),
+                child: _body(),
+              ),
+            ),
+          ),
   );
 
   Widget _body() {
@@ -147,72 +170,50 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
             ),
             const SizedBox(height: 14),
           ],
-          ClipRRect(
-            borderRadius: BorderRadius.circular(20),
-            child: Container(
-              height: 260,
-              color: AppColors.primaryContainer,
-              child: url.isEmpty
-                  ? const Icon(
-                      Icons.local_florist,
-                      size: 90,
-                      color: AppColors.green,
-                    )
-                  : Image.network(
-                      url,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, _, _) =>
-                          const Icon(Icons.broken_image_outlined, size: 70),
-                    ),
-            ),
+          PlantDetailHero(
+            name: _value(classification['common_name'], 'Unnamed plant'),
+            scientificName: _value(classification['scientific_name']),
+            plantId: '${plant['plant_id']}',
+            imageUrl: url,
           ),
-          const SizedBox(height: 20),
-          Text(
-            _value(classification['common_name'], 'Unnamed plant'),
-            style: const TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.w800,
-              color: AppColors.darkGreen,
-            ),
+          PlantDetailSectionPair(
+            first: _section('Plant Information', {
+              'Plant ID': '#${plant['plant_id']}',
+              'Date planted': _value(plant['date_planted']),
+              'Tree planter': _value(plant['tree_planter']),
+            }),
+            second: _section('Classification', {
+              'Plant type': _value(classification['plant_type']),
+              'Common name': _value(classification['common_name']),
+              'Variety': _value(plant['variety']),
+            }),
           ),
-          Text(
-            _value(classification['scientific_name']),
-            style: const TextStyle(
-              fontSize: 17,
-              fontStyle: FontStyle.italic,
-              color: AppColors.textSecondary,
-            ),
+          PlantDetailSectionPair(
+            first: _section('Status', {
+              'Health status': _value(
+                _map(plant['health_status'])['status_name'],
+              ),
+              'Growth stage': _value(
+                _map(plant['growth_status'])['growth_stage'],
+              ),
+            }),
+            second: _inspectionScheduleSection(plant),
           ),
-          const SizedBox(height: 18),
-          _section('Plant Information', {
-            'Plant ID': '#${plant['plant_id']}',
-            'Date planted': _value(plant['date_planted']),
-            'Tree planter': _value(plant['tree_planter']),
-          }),
-          _section('Classification', {
-            'Plant type': _value(classification['plant_type']),
-            'Common name': _value(classification['common_name']),
-            'Variety': _value(plant['variety']),
-          }),
-          _section('Status', {
-            'Health status': _value(
-              _map(plant['health_status'])['status_name'],
-            ),
-            'Growth stage': _value(
-              _map(plant['growth_status'])['growth_stage'],
-            ),
-          }),
-          _inspectionScheduleSection(plant),
-          _section('Managed by', {
-            'Managing campus': _value(_map(plant['campus'])['campus_name']),
-            'Managing college': _value(_map(plant['college'])['college_name']),
-          }),
-          _section('Planting location', {
-            'Campus / outside':
-                _locationError ?? PlantLocationService.label(_physicalLocation),
-            'Barangay': _value(_map(plant['barangay'])['barangay_name']),
-            'Town': _value(_map(plant['town'])['town_name']),
-          }),
+          PlantDetailSectionPair(
+            first: _section('Managed by', {
+              'Managing campus': _value(_map(plant['campus'])['campus_name']),
+              'Managing college': _value(
+                _map(plant['college'])['college_name'],
+              ),
+            }),
+            second: _section('Planting location', {
+              'Campus / outside':
+                  _locationError ??
+                  PlantLocationService.label(_physicalLocation),
+              'Barangay': _value(_map(plant['barangay'])['barangay_name']),
+              'Town': _value(_map(plant['town'])['town_name']),
+            }),
+          ),
           if ((canInspect || canArchive) && !archived)
             TextButton.icon(
               onPressed: () async {
@@ -495,48 +496,8 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
     }
   }
 
-  Widget _section(String title, Map<String, String> rows) => Container(
-    margin: const EdgeInsets.only(bottom: 14),
-    padding: const EdgeInsets.all(18),
-    decoration: BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(18),
-      border: Border.all(color: AppColors.border),
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
-        ),
-        const SizedBox(height: 10),
-        ...rows.entries.map(
-          (row) => Padding(
-            padding: const EdgeInsets.symmetric(vertical: 4),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Text(
-                    row.key,
-                    style: const TextStyle(color: AppColors.textSecondary),
-                  ),
-                ),
-                Expanded(
-                  child: Text(
-                    row.value,
-                    textAlign: TextAlign.right,
-                    style: const TextStyle(fontWeight: FontWeight.w700),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
-    ),
-  );
+  Widget _section(String title, Map<String, String> rows) =>
+      PlantDetailFields(title: title, rows: rows);
 
   Widget _inspectionScheduleSection(Map<String, dynamic> plant) {
     final last = _parseDate(plant['last_inspected_on']);
@@ -586,7 +547,11 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
               const Expanded(
                 child: Text(
                   'Inspection Schedule',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.darkGreen,
+                  ),
                 ),
               ),
               if (RoleCapabilities.fromValue(widget.role).canArchivePlants &&
@@ -601,29 +566,30 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                     color: AppColors.green,
                   ),
                 ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
-                decoration: BoxDecoration(
-                  color: background,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(icon, size: 15, color: foreground),
-                    const SizedBox(width: 5),
-                    Text(
-                      label,
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w800,
-                        color: foreground,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
             ],
+          ),
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+            decoration: BoxDecoration(
+              color: background,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(icon, size: 15, color: foreground),
+                const SizedBox(width: 5),
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                    color: foreground,
+                  ),
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: 10),
           _scheduleRow(

@@ -9,6 +9,7 @@ import '../../widgets/app_error_state.dart';
 import '../../widgets/app_shell.dart';
 import '../../widgets/app_card.dart';
 import 'dashboard widgets/dashboard_stat_card.dart';
+import 'dashboard widgets/dashboard_priority_layout.dart';
 import 'dashboard widgets/dashboard_page_header.dart';
 import 'dashboard widgets/campus_overview_card.dart';
 import 'dashboard widgets/quick_action_button.dart';
@@ -236,7 +237,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         college_id,
         next_inspection_due_on, last_inspected_on,
 
-        campus:campus!campus_id (
+        campus:campus!plant_campus_id_fkey (
           campus_name
         ),
 
@@ -331,7 +332,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           plant_type
         ),
 
-        campus:campus!campus_id (
+        campus:campus!plant_campus_id_fkey (
           campus_name
         ),
 
@@ -550,15 +551,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
         final contentWidth = constraints.maxWidth;
 
         return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             if (_role == 'college_admin') ...[
-              _buildMonitoringWork(),
-              const SizedBox(height: AppSpacing.md),
-              if (_recentPlants.isNotEmpty) ...[
-                _buildRecentPlantShortlist(),
-                const SizedBox(height: AppSpacing.md),
-              ],
+              DashboardPriorityLayout(
+                work: _buildMonitoringWork(),
+                recent: _recentPlants.isEmpty
+                    ? null
+                    : _buildRecentPlantShortlist(),
+              ),
+              const SizedBox(height: AppSpacing.lg),
             ],
             if ((_role == 'college_admin' || _role == 'inspection_team') &&
                 _dyingCount > 0) ...[
@@ -661,12 +663,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final last = _lastInspection;
     final needsFirstInspection = _totalPlants > 0 && last == null;
     return AppCard(
-      padding: const EdgeInsets.all(AppSpacing.md),
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppSpacing.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'What needs doing',
+            'Inspection overview',
             style: TextStyle(
               fontSize: 17,
               fontWeight: FontWeight.w800,
@@ -699,7 +702,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           Text(
             last == null
                 ? 'No inspection recorded yet.'
-                : 'Latest college inspection: ${MaterialLocalizations.of(context).formatMediumDate(last)}',
+                : 'Last inspection: ${MaterialLocalizations.of(context).formatFullDate(last)}',
             style: const TextStyle(
               fontSize: 12,
               color: AppColors.textSecondary,
@@ -715,7 +718,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ? 'Your team has inspections due today.'
                 : needsFirstInspection
                 ? 'Open a plant to review its schedule and arrange the first inspection.'
-                : 'Scan a tag to review health, or register another plant.',
+                : _unscheduledCount > 0
+                ? 'Set inspection dates for plants without a schedule.'
+                : 'No inspections due. Scan a tag to review plant health.',
+            style: const TextStyle(
+              fontSize: 13,
+              height: 1.4,
+              color: AppColors.textSecondary,
+            ),
           ),
           const SizedBox(height: AppSpacing.sm),
           Wrap(
@@ -736,6 +746,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         : 'Review plants',
                   ),
                 ),
+              OutlinedButton.icon(
+                onPressed: () async {
+                  await Navigator.pushNamed(
+                    context,
+                    '/qr-scanner',
+                    arguments: _navigationArguments,
+                  );
+                  if (mounted) _loadDashboardData();
+                },
+                icon: const Icon(Icons.qr_code_scanner_rounded, size: 18),
+                label: const Text('Scan QR'),
+              ),
               if (_totalPlants <= 1)
                 OutlinedButton.icon(
                   onPressed: () async {
@@ -761,7 +783,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildRecentPlantShortlist() => AppCard(
-    padding: const EdgeInsets.all(AppSpacing.sm),
+    width: double.infinity,
+    padding: const EdgeInsets.all(AppSpacing.lg),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -772,7 +795,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
               const Expanded(
                 child: Text(
                   'Recent plants',
-                  style: TextStyle(fontWeight: FontWeight.w700),
+                  style: TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.darkGreen,
+                  ),
                 ),
               ),
               TextButton(
@@ -789,14 +816,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
             contentPadding: const EdgeInsets.symmetric(
               horizontal: AppSpacing.sm,
             ),
+            leading: const CircleAvatar(
+              radius: 18,
+              backgroundColor: AppColors.primaryContainer,
+              child: Icon(Icons.eco_outlined, size: 20, color: AppColors.green),
+            ),
             title: Text(
               (plant['plant_classification'] as Map?)?['common_name']
                       ?.toString() ??
                   'Plant',
             ),
             subtitle: Text(
-              (plant['health_status'] as Map?)?['status_name']?.toString() ??
-                  'Health not recorded',
+              'Plant #${plant['plant_id']} · ${_recentHealthLabel(plant)}',
+              style: const TextStyle(
+                fontSize: 12,
+                color: AppColors.textSecondary,
+              ),
             ),
             trailing: const Icon(Icons.chevron_right),
             onTap: () async {
@@ -814,6 +849,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ],
     ),
   );
+
+  String _recentHealthLabel(Map<String, dynamic> plant) {
+    final health = (plant['health_status'] as Map?)?['status_name']
+        ?.toString()
+        .toLowerCase();
+    return switch (health) {
+      'alive' || 'healthy' => 'Healthy',
+      'dying' || 'at risk' => 'Needs attention',
+      'dead' => 'Dead',
+      _ => 'Health not recorded',
+    };
+  }
 
   void _openNeedsAttention() => _openFilteredPlants('Needs attention');
 
