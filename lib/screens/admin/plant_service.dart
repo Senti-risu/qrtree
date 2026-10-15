@@ -304,6 +304,25 @@ class PlantService {
     );
   }
 
+  Future<void> reopenDeadPlant({
+    required int plantId,
+    required int healthStatusId,
+    required String reason,
+  }) async {
+    if (reason.trim().length < 3 || reason.trim().length > 250) {
+      throw ArgumentError('Provide a reason from 3 to 250 characters.');
+    }
+    await _supabase.rpc(
+      'college_admin_reopen_dead_plant',
+      params: {
+        'p_session_token': AppSession.requiredToken,
+        'p_plant_id': plantId,
+        'p_health_status_id': healthStatusId,
+        'p_reason': reason.trim(),
+      },
+    );
+  }
+
   Future<void> restorePlant({required int plantId}) async {
     await _supabase.rpc(
       'college_admin_restore_plant',

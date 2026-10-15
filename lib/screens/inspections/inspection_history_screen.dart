@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../models/plant_record_lock.dart';
 import '../../widgets/plant_details_presentation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -785,7 +786,8 @@ class _InspectionHistoryScreenState extends State<InspectionHistoryScreen> {
                   icon: const Icon(Icons.visibility_outlined, size: 18),
                   label: const Text('View plant'),
                 ),
-                if (widget.role == 'inspection_team')
+                if (widget.role == 'inspection_team' &&
+                    !PlantRecordLock.isDead(item))
                   FilledButton.icon(
                     onPressed: plantId == null || busy
                         ? null

@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'app_session.dart';
+import '../models/plant_record_lock.dart';
 
 class InspectionService {
   final SupabaseClient _supabase = Supabase.instance.client;
@@ -68,7 +69,10 @@ class InspectionService {
         ),
       },
     );
-    return List<Map<String, dynamic>>.from(data as List);
+    final rows = List<Map<String, dynamic>>.from(data as List);
+    return filter == 'completed'
+        ? rows
+        : rows.where((p) => !PlantRecordLock.isDead(p)).toList();
   }
 
   /// Updates the recurring inspection schedule for a plant in the current

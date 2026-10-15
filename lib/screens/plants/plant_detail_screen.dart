@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../models/app_role.dart';
+import '../../models/plant_record_lock.dart';
+import '../../widgets/dead_plant_lock.dart';
 import '../../services/inspection_service.dart';
 import '../../services/plant_location_service.dart';
 import '../../widgets/plant_location_editor.dart';
@@ -142,11 +144,19 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
     final canInspect = RoleCapabilities.fromValue(widget.role).canInspectPlants;
     final canArchive = RoleCapabilities.fromValue(widget.role).canArchivePlants;
     final archived = plant['archived_at'] != null;
+    final dead = PlantRecordLock.isDead(plant);
+    final editable = PlantRecordLock.canEdit(plant);
     return RefreshIndicator(
       onRefresh: _load,
       child: ListView(
         padding: const EdgeInsets.fromLTRB(18, 12, 18, 32),
         children: [
+          if (dead)
+            DeadPlantLockNotice(
+              onReopen: canArchive && !archived && !_savingAction
+                  ? _reopenDeadPlant
+                  : null,
+            ),
           if (archived) ...[
             Container(
               padding: const EdgeInsets.all(14),
@@ -214,7 +224,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
               'Town': _value(_map(plant['town'])['town_name']),
             }),
           ),
-          if ((canInspect || canArchive) && !archived)
+          if ((canInspect || canArchive) && editable)
             TextButton.icon(
               onPressed: () async {
                 final changed = await showDialog<bool>(
@@ -248,7 +258,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
               icon: const Icon(Icons.history_rounded),
               label: Text(canArchive ? 'Review QR reports' : 'My QR reports'),
             ),
-          if (canInspect && !archived)
+          if (canInspect && editable)
             Padding(
               padding: const EdgeInsets.only(top: 8),
               child: FilledButton.icon(
@@ -295,6 +305,37 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _reopenDeadPlant() async {
+    setState(() => _savingAction = true);
+    try {
+      final statuses = (await _plantService.getHealthStatuses())
+          .where((s) => !PlantRecordLock.isDeadStatus(s['status_name']))
+          .toList();
+      if (!mounted) return;
+      final changed = await showDialog<bool>(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => ReopenDeadPlantDialog(
+          statuses: statuses,
+          onSave: (healthId, reason) => _plantService.reopenDeadPlant(
+            plantId: widget.plantId,
+            healthStatusId: healthId,
+            reason: reason,
+          ),
+        ),
+      );
+      if (changed == true && mounted) await _load();
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(userFacingError(error))));
+      }
+    } finally {
+      if (mounted) setState(() => _savingAction = false);
+    }
   }
 
   Future<void> _archivePlant() async {
@@ -500,6 +541,12 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
       PlantDetailFields(title: title, rows: rows);
 
   Widget _inspectionScheduleSection(Map<String, dynamic> plant) {
+    if (PlantRecordLock.isDead(plant)) {
+      return _section('Inspection Schedule', {
+        'Schedule': 'Stopped — plant confirmed Dead',
+        'Last inspection': _value(plant['last_inspected_on']),
+      });
+    }
     final last = _parseDate(plant['last_inspected_on']);
     final next = _parseDate(plant['next_inspection_due_on']);
     final interval = plant['inspection_interval_days'];

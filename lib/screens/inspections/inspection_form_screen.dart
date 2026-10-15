@@ -8,6 +8,8 @@ import '../../services/inspection_service.dart';
 import '../../theme/app_colors.dart';
 import '../../utils/user_facing_error.dart';
 import '../../widgets/app_error_state.dart';
+import '../../models/plant_record_lock.dart';
+import '../../widgets/dead_plant_lock.dart';
 
 class InspectionFormScreen extends StatefulWidget {
   final Map<String, dynamic> plant;
@@ -156,6 +158,7 @@ class _InspectionFormScreenState extends State<InspectionFormScreen> {
   }
 
   Future<void> _save() async {
+    if (_saving || !PlantRecordLock.canEdit(widget.plant)) return;
     setState(() {
       _selectionError = !_healthConfirmed
           ? 'Confirm the plant health before saving this inspection.'
@@ -166,9 +169,25 @@ class _InspectionFormScreenState extends State<InspectionFormScreen> {
       return;
     }
     if (!_healthConfirmed) return;
+    final selectedHealth = _health.firstWhere(
+      (h) => h['health_status_id'] == _healthId,
+    );
+    if (PlantRecordLock.isDeadStatus(selectedHealth['status_name'])) {
+      if (!await confirmDeadPlant(context) || !mounted) return;
+    }
 
     setState(() => _saving = true);
     try {
+      final latest = await _inspectionService.getPlant(
+        widget.plant['plant_id'] as int,
+      );
+      if (!PlantRecordLock.canEdit(latest)) {
+        throw StateError(
+          PlantRecordLock.isDead(latest)
+              ? 'Dead plant is locked'
+              : 'Plant is archived',
+        );
+      }
       String? photoUrl;
       if (_photo != null) {
         final extension = _photo!.name.contains('.')
@@ -271,7 +290,16 @@ class _InspectionFormScreenState extends State<InspectionFormScreen> {
           title: const Text('Inspect Plant'),
           backgroundColor: AppColors.background,
         ),
-        body: _loading
+        body: PlantRecordLock.isDead(widget.plant)
+            ? const SingleChildScrollView(
+                padding: EdgeInsets.all(18),
+                child: DeadPlantLockNotice(),
+              )
+            : widget.plant['archived_at'] != null
+            ? const Center(
+                child: Text('Archived plant — inspections are disabled.'),
+              )
+            : _loading
             ? const Center(
                 child: CircularProgressIndicator(color: AppColors.green),
               )
@@ -348,7 +376,10 @@ class _InspectionFormScreenState extends State<InspectionFormScreen> {
                   ),
                 ],
               ),
-        bottomNavigationBar: _loading || _loadError != null
+        bottomNavigationBar:
+            _loading ||
+                _loadError != null ||
+                !PlantRecordLock.canEdit(widget.plant)
             ? null
             : SafeArea(
                 minimum: const EdgeInsets.fromLTRB(18, 10, 18, 14),

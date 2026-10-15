@@ -8,6 +8,10 @@ String userFacingError(
 }) {
   final raw = error.toString().replaceFirst('Exception: ', '').trim();
   final value = raw.toLowerCase();
+  if (value.contains('dead plant is locked')) {
+    return 'This plant is confirmed Dead. Only your College Admin can reopen '
+        'the record with a reason. Its history and QR reporting remain available.';
+  }
 
   if (value.contains('already have a pending report')) {
     return 'You already reported this QR label. Check My QR reports for updates.';

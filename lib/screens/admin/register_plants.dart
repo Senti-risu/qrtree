@@ -15,6 +15,8 @@ import '../../widgets/app_shell.dart';
 import '../../widgets/forms/app_searchable_dropdown.dart';
 import '../../widgets/forms/app_text_field.dart';
 import '../../widgets/forms/planting_campus_dropdown.dart';
+import '../../models/plant_record_lock.dart';
+import '../../widgets/dead_plant_lock.dart';
 import '../../widgets/forms/locked_plant_assignment.dart';
 import 'plant_service.dart';
 import 'registration widgets/plant_image_picker_field.dart';
@@ -800,6 +802,9 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
     UploadedPlantPhoto? uploadedPhoto;
     var registrationCompleted = false;
     try {
+      if (PlantRecordLock.isDeadStatus(_healthStatus)) {
+        if (!await confirmDeadPlant(context) || !mounted) return;
+      }
       final possibleDuplicates = await _plantService
           .findPossibleDuplicatePlants(
             classificationId: _selectedClassificationId!,

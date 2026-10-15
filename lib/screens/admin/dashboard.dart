@@ -3,6 +3,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../theme/app_colors.dart';
+import '../../models/plant_record_lock.dart';
 import '../../theme/app_layout.dart';
 import '../../utils/user_facing_error.dart';
 import '../../widgets/app_error_state.dart';
@@ -262,6 +263,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
       int overdue = 0, dueToday = 0, unscheduled = 0;
       DateTime? lastInspection;
       for (final row in healthRows) {
+        final inspected = DateTime.tryParse(
+          row['last_inspected_on']?.toString() ?? '',
+        );
+        if (inspected != null &&
+            (lastInspection == null || inspected.isAfter(lastInspection))) {
+          lastInspection = inspected;
+        }
+        if (PlantRecordLock.isDead(row)) continue;
         final due = DateTime.tryParse(
           row['next_inspection_due_on']?.toString() ?? '',
         );
@@ -273,13 +282,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
             due.month == today.month &&
             due.day == today.day) {
           dueToday++;
-        }
-        final inspected = DateTime.tryParse(
-          row['last_inspected_on']?.toString() ?? '',
-        );
-        if (inspected != null &&
-            (lastInspection == null || inspected.isAfter(lastInspection))) {
-          lastInspection = inspected;
         }
       }
 
@@ -659,7 +661,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Widget _buildMonitoringWork() {
     final last = _lastInspection;
-    final needsFirstInspection = _totalPlants > 0 && last == null;
+    final needsFirstInspection = _totalPlants > _deadCount && last == null;
     return AppCard(
       width: double.infinity,
       padding: const EdgeInsets.all(AppSpacing.lg),

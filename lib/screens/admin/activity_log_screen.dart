@@ -128,6 +128,7 @@ class _ActivityLogScreenState extends State<ActivityLogScreen> {
           value: _action,
           options: const {
             'all': 'All actions',
+            'plant.dead_record_reopened': 'Reopened dead records',
             'create': 'Created',
             'update': 'Updated',
             'archive': 'Archived',
@@ -306,7 +307,14 @@ class _ActivityLogScreenState extends State<ActivityLogScreen> {
     final actor = event['actor_username']?.toString().trim();
     final role = event['actor_role']?.toString();
     final entityId = event['entity_id']?.toString();
-    final title = '${_actionLabel(action)} ${_entityLabel(entity)}';
+    final title = action == 'plant.dead_record_reopened'
+        ? 'Reopened dead plant record'
+        : '${_actionLabel(action)} ${_entityLabel(entity)}';
+    final newValues = event['new_values'];
+    final reopenReason =
+        action == 'plant.dead_record_reopened' && newValues is Map
+        ? newValues['reason']?.toString()
+        : null;
     final subtitle = [
       if (actor != null && actor.isNotEmpty) 'By $actor',
       if (role != null && role.isNotEmpty) _roleLabel(role),
@@ -351,6 +359,10 @@ class _ActivityLogScreenState extends State<ActivityLogScreen> {
                   ),
                 ],
                 const SizedBox(height: 5),
+                if (reopenReason != null) ...[
+                  Text('Reason: $reopenReason'),
+                  const SizedBox(height: 5),
+                ],
                 Text(
                   subtitle,
                   style: const TextStyle(
