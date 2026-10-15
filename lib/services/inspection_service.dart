@@ -16,7 +16,7 @@ class InspectionService {
       last_inspected_on, next_inspection_due_on, inspection_interval_days,
       archived_at, archive_reason,
       plant_classification (common_name, scientific_name, plant_type),
-      campus (campus_name), college (college_name),
+      campus:campus!campus_id (campus_name), college (college_name),
       town (town_name), barangay (barangay_name),
       growth_status (growth_stage), health_status (status_name)
     ''')

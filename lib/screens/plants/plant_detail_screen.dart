@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../models/app_role.dart';
 import '../../services/inspection_service.dart';
+import '../../services/plant_location_service.dart';
+import '../../widgets/plant_location_editor.dart';
 import '../../theme/app_colors.dart';
 import '../../utils/user_facing_error.dart';
 import '../../widgets/app_error_state.dart';
@@ -36,6 +38,8 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
   bool _loading = true;
   bool _savingAction = false;
   String? _error;
+  Map<String, dynamic> _physicalLocation = {};
+  String? _locationError;
 
   Map<String, dynamic> _map(dynamic value) =>
       value is Map ? Map<String, dynamic>.from(value) : {};
@@ -57,6 +61,13 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
     });
     try {
       final plant = await _service.getPlant(widget.plantId);
+      try {
+        _physicalLocation = await PlantLocationService().get(widget.plantId);
+        _locationError = null;
+      } catch (e) {
+        _physicalLocation = {};
+        _locationError = userFacingError(e);
+      }
       List<Map<String, dynamic>> history = [];
       try {
         history = await _service.getInspections(widget.plantId);
@@ -192,12 +203,29 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
             ),
           }),
           _inspectionScheduleSection(plant),
-          _section('Location', {
-            'Campus': _value(_map(plant['campus'])['campus_name']),
-            'Department': _value(_map(plant['college'])['college_name']),
+          _section('Managed by', {
+            'Managing campus': _value(_map(plant['campus'])['campus_name']),
+            'Managing college': _value(_map(plant['college'])['college_name']),
+          }),
+          _section('Planting location', {
+            'Campus / outside':
+                _locationError ?? PlantLocationService.label(_physicalLocation),
             'Barangay': _value(_map(plant['barangay'])['barangay_name']),
             'Town': _value(_map(plant['town'])['town_name']),
           }),
+          if ((canInspect || canArchive) && !archived)
+            TextButton.icon(
+              onPressed: () async {
+                final changed = await showDialog<bool>(
+                  context: context,
+                  barrierDismissible: false,
+                  builder: (_) => PlantLocationEditor(plantId: widget.plantId),
+                );
+                if (changed == true && mounted) _load();
+              },
+              icon: const Icon(Icons.edit_location_alt_outlined),
+              label: const Text('Update planting location'),
+            ),
           if (_history.isNotEmpty) _historySection(),
           if ((canInspect || canArchive) && !archived)
             Padding(

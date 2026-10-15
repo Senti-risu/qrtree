@@ -109,7 +109,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   // ============================================================
 
   bool get _canRegisterPlant {
-    return _role == 'college_admin';
+    return _role == 'college_admin' || _role == 'inspection_team';
   }
 
   bool get _canViewPlantList {
@@ -236,7 +236,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         college_id,
         next_inspection_due_on, last_inspected_on,
 
-        campus (
+        campus:campus!campus_id (
           campus_name
         ),
 
@@ -331,7 +331,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           plant_type
         ),
 
-        campus (
+        campus:campus!campus_id (
           campus_name
         ),
 

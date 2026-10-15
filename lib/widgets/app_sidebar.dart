@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../models/app_role.dart';
 
 import '../theme/app_colors.dart';
 import '../theme/app_layout.dart';
@@ -21,7 +22,8 @@ class AppSidebar extends StatelessWidget {
     this.collegeId,
   });
 
-  bool get _canRegisterPlant => role == 'college_admin';
+  bool get _canRegisterPlant =>
+      RoleCapabilities.fromValue(role).canRegisterPlants;
   bool get _canManageQrCodes => role == 'college_admin';
   bool get _canViewPlantList =>
       role == 'super_admin' ||

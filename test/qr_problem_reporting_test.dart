@@ -70,6 +70,14 @@ void main() {
         find.text('QR problem reports'),
         role == 'campus_admin' ? findsNothing : findsOneWidget,
       );
+      expect(
+        find.text('Register Plant'),
+        role == 'campus_admin' ? findsNothing : findsOneWidget,
+      );
+      if (role == 'inspection_team') {
+        expect(find.text('User Management'), findsNothing);
+        expect(find.text('QR Management'), findsNothing);
+      }
       expect(tester.takeException(), isNull);
     });
   }

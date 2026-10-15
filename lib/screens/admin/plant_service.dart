@@ -192,6 +192,8 @@ class PlantService {
   // ============================================================
 
   Future<Map<String, dynamic>> registerPlantWithQr({
+    required String locationType,
+    int? locationCampusId,
     required int classificationId,
     required int campusId,
     required int collegeId,
@@ -207,8 +209,10 @@ class PlantService {
     String? photoUrl,
   }) async {
     final result = await _supabase.rpc(
-      'register_plant_with_qr',
+      'register_plant_at_location',
       params: {
+        'p_location_type': locationType,
+        'p_location_campus_id': locationCampusId,
         'p_classification_id': classificationId,
         'p_campus_id': campusId,
         'p_college_id': collegeId,

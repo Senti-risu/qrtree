@@ -58,6 +58,8 @@ class GuestPlantProfile {
     this.treePlanter,
     this.campusName,
     this.collegeName,
+    this.plantingLocationType,
+    this.plantingCampusName,
     this.townName,
     this.barangayName,
     this.growthStage,
@@ -75,6 +77,14 @@ class GuestPlantProfile {
   final String? treePlanter;
   final String? campusName;
   final String? collegeName;
+  final String? plantingLocationType;
+  final String? plantingCampusName;
+
+  String get plantingLocationLabel => plantingLocationType == 'outside'
+      ? 'Outside campus'
+      : plantingLocationType == 'inside'
+      ? plantingCampusName ?? 'Campus not available'
+      : 'Not recorded yet';
   final String? townName;
   final String? barangayName;
   final String? growthStage;
@@ -100,6 +110,8 @@ class GuestPlantProfile {
       treePlanter: _optionalText(json['tree_planter']),
       campusName: _optionalText(json['campus_name']),
       collegeName: _optionalText(json['college_name']),
+      plantingLocationType: _optionalText(json['planting_location_type']),
+      plantingCampusName: _optionalText(json['planting_campus_name']),
       townName: _optionalText(json['town_name']),
       barangayName: _optionalText(json['barangay_name']),
       growthStage: _optionalText(json['growth_stage']),

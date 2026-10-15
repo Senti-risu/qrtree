@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
 import '../../services/qr_service.dart';
+import '../../models/app_role.dart';
 import '../../theme/app_colors.dart';
 import '../../utils/user_facing_error.dart';
 import '../admin/register_plants.dart';
@@ -75,7 +76,7 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
       final status = QrService.statusOf(tag);
 
       if (status == 'available') {
-        if (widget.role != 'college_admin') {
+        if (!RoleCapabilities.fromValue(widget.role).canRegisterPlants) {
           setState(() {
             _handling = false;
             _message =

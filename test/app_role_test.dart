@@ -14,21 +14,29 @@ void main() {
   });
 
   group('RoleCapabilities', () {
-    test('allows only College Admins to manage plant records', () {
-      for (final role in AppRole.values) {
-        final capabilities = RoleCapabilities(role);
-        final expected = role == AppRole.collegeAdmin;
+    test(
+      'allows scoped registration for College Admin and Inspection Team; archive stays College Admin only',
+      () {
+        for (final role in AppRole.values) {
+          final capabilities = RoleCapabilities(role);
+          final expected = role == AppRole.collegeAdmin;
 
-        expect(capabilities.canRegisterPlants, expected, reason: role.value);
-        expect(capabilities.canArchivePlants, expected, reason: role.value);
-        expect(capabilities.canRestorePlants, expected, reason: role.value);
-        expect(
-          capabilities.locksRegistrationScope,
-          expected,
-          reason: role.value,
-        );
-      }
-    });
+          final canRegister = expected || role == AppRole.inspectionTeam;
+          expect(
+            capabilities.canRegisterPlants,
+            canRegister,
+            reason: role.value,
+          );
+          expect(capabilities.canArchivePlants, expected, reason: role.value);
+          expect(capabilities.canRestorePlants, expected, reason: role.value);
+          expect(
+            capabilities.locksRegistrationScope,
+            canRegister,
+            reason: role.value,
+          );
+        }
+      },
+    );
 
     test('allows only Inspection Team accounts to inspect plants', () {
       for (final role in AppRole.values) {

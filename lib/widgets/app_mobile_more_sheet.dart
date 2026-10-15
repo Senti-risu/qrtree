@@ -61,6 +61,18 @@ Future<AppMobileMoreAction?> showAppMobileMoreSheet(
           ),
         ],
       ),
+    if (role == 'inspection_team')
+      const _MoreGroup(
+        label: 'Plant management',
+        items: [
+          _MoreItem(
+            action: AppMobileMoreAction.registerPlant,
+            icon: Icons.add_circle_outline_rounded,
+            title: 'Register Plant',
+            subtitle: 'Register a plant for your assigned college',
+          ),
+        ],
+      ),
     if (role == 'inspection_team' || role == 'college_admin')
       const _MoreGroup(
         label: 'QR labels',

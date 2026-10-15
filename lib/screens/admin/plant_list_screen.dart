@@ -74,7 +74,7 @@ class _PlantListScreenState extends State<PlantListScreen> {
         plant_id, variety, date_planted, tree_planter, photo_url, created_at, campus_id, college_id,
         archived_at, archive_reason,
         plant_classification (common_name, scientific_name, plant_type),
-        campus (campus_name), college (college_name),
+        campus:campus!campus_id (campus_name), college (college_name),
         growth_status (growth_stage), health_status (status_name),
         qr_tag:qr_tag!plant_qr_tag_id_fkey(qr_code_string)
       ''');

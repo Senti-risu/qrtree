@@ -309,9 +309,9 @@ class MyApp extends StatelessWidget {
             return _errorRoute('Incomplete plant registration information.');
           }
 
-          if (role.toString().toLowerCase() != 'college_admin') {
+          if (!RoleCapabilities.fromValue(role.toString()).canRegisterPlants) {
             return _errorRoute(
-              'Only College Admin accounts can register plants.',
+              'College Admin or Inspection Team access is required to register plants.',
             );
           }
 

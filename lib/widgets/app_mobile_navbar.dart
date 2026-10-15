@@ -114,7 +114,9 @@ class AppMobileNavbar extends StatelessWidget {
         '/activity-log',
       }.contains(activeRoute);
     }
-    if (role == 'inspection_team') return activeRoute == '/reports';
+    if (role == 'inspection_team') {
+      return activeRoute == '/reports' || activeRoute == '/register-plant';
+    }
     if (const {
       'super_admin',
       'university_admin',
@@ -389,7 +391,10 @@ class AppMobileNavbar extends StatelessWidget {
       '/qr-management',
       '/inspection-accounts',
     }.contains(route)) {
-      if (role != 'college_admin') {
+      final allowed = route == '/register-plant'
+          ? RoleCapabilities.fromValue(role).canRegisterPlants
+          : role == 'college_admin';
+      if (!allowed) {
         _showError(context, 'Only College Admin can use this feature.');
         return;
       }

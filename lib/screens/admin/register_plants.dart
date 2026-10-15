@@ -14,6 +14,7 @@ import '../../widgets/app_page_header.dart';
 import '../../widgets/app_shell.dart';
 import '../../widgets/forms/app_searchable_dropdown.dart';
 import '../../widgets/forms/app_text_field.dart';
+import '../../widgets/forms/planting_campus_dropdown.dart';
 import 'plant_service.dart';
 import 'registration widgets/plant_image_picker_field.dart';
 
@@ -83,6 +84,7 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
   // Campus is selected before College.
   String? _campus;
   String? _college;
+  String? _plantingCampusChoice;
 
   // Town is selected before Barangay.
   String? _town;
@@ -172,9 +174,7 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
     try {
       if (_registrationScopeLocked &&
           (widget.campusId == null || widget.collegeId == null)) {
-        throw StateError(
-          'This College Admin account has no assigned campus or college.',
-        );
+        throw StateError('This account has no assigned campus or college.');
       }
       final results = await Future.wait([
         _plantService.getClassifications(),
@@ -644,6 +644,8 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
 
   bool _validatePlantStep({bool announce = true}) {
     final missing = <String>[
+      if (_selectedCampusId == null || _selectedCollegeId == null)
+        'managing campus and college',
       if (_selectedClassificationId == null) 'plant type and common name',
       if (_selectedGrowthStatusId == null) 'growth stage',
       if (_selectedHealthStatusId == null) 'health status',
@@ -677,8 +679,7 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
 
   bool _validateLocationStep({bool announce = true}) {
     final missing = <String>[
-      if (_selectedCampusId == null) 'campus',
-      if (_selectedCollegeId == null) 'college',
+      if (_plantingCampusChoice == null) 'planting campus or Outside campus',
       if (_selectedTownId == null) 'town',
       if (_selectedBarangayId == null) 'barangay',
     ];
@@ -773,7 +774,10 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
     }
 
     if (!_capabilities.canRegisterPlants) {
-      _message('Only College Admin accounts can register plants.', error: true);
+      _message(
+        'College Admin or Inspection Team access is required to register plants.',
+        error: true,
+      );
       return;
     }
 
@@ -830,6 +834,12 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
       }
 
       final result = await _plantService.registerPlantWithQr(
+        locationType: _plantingCampusChoice == PlantingCampusDropdown.outside
+            ? 'outside'
+            : 'inside',
+        locationCampusId: PlantingCampusDropdown.campusId(
+          _plantingCampusChoice,
+        ),
         classificationId: _selectedClassificationId!,
 
         campusId: _selectedCampusId!,
@@ -1031,7 +1041,7 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
       body = const AppErrorState(
         title: 'Registration unavailable',
         message:
-            'Only College Admin accounts can register plants for an assigned college.',
+            'College Admin and Inspection Team accounts can register plants for their assigned college.',
       );
     } else if (_loading) {
       body = const SizedBox(
@@ -1353,6 +1363,8 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
           ),
           SizedBox(height: compact ? AppSpacing.md : AppSpacing.xl),
           _reviewGroup('Plant', {
+            'Managing campus': _campus ?? 'Not selected',
+            'Managing college': _college ?? 'Not selected',
             'Common name': _commonName ?? 'Not selected',
             'Scientific name': _scientificNameController.text.trim().isEmpty
                 ? 'Not available'
@@ -1368,8 +1380,15 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
           }, compact: compact),
           Divider(height: compact ? AppSpacing.lg : AppSpacing.xl),
           _reviewGroup('Location', {
-            'Campus': _campus ?? 'Not selected',
-            'College': _college ?? 'Not selected',
+            'Planting location': _plantingCampusChoice == null
+                ? 'Not selected'
+                : _plantingCampusChoice == PlantingCampusDropdown.outside
+                ? 'Outside campus'
+                : _campuses
+                      .firstWhere(
+                        (c) => '${c['campus_id']}' == _plantingCampusChoice,
+                      )['campus_name']
+                      .toString(),
             'Town': _town ?? 'Not selected',
             'Barangay': _barangay ?? 'Not selected',
             'ZIP code': _zipCodeController.text.trim().isEmpty
@@ -1528,6 +1547,31 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
               color: AppColors.darkGreen,
             ),
           ),
+          const SizedBox(height: AppSpacing.lg),
+          const Text(
+            'Managing campus and college',
+            style: TextStyle(fontWeight: FontWeight.w700),
+          ),
+          const Text(
+            'Assigned to your account. These fields identify who manages the plant, not where it is planted.',
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          _twoFields(
+            AppSearchableDropdown(
+              label: 'Managing campus',
+              value: _campus,
+              items: _campusNames,
+              enabled: !_registrationScopeLocked,
+              onChanged: _selectCampus,
+            ),
+            AppSearchableDropdown(
+              label: 'Managing college',
+              value: _college,
+              items: _filteredCollegeNames,
+              enabled: _selectedCampusId != null && !_registrationScopeLocked,
+              onChanged: _selectCollege,
+            ),
+          ),
 
           if (_showPlantErrors) ...[
             const SizedBox(height: AppSpacing.lg),
@@ -1658,38 +1702,21 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
           if (_showLocationErrors) ...[
             const SizedBox(height: AppSpacing.lg),
             _validationBanner(
-              'Select the campus, college, town, and barangay.',
+              'Select a planting campus or Outside campus, then town and barangay.',
             ),
           ],
 
           const SizedBox(height: AppSpacing.xl),
 
-          // CAMPUS FIRST
-          AppSearchableDropdown(
-            label: 'Campus',
-
-            value: _campus,
-
-            items: _campusNames,
-
-            enabled: !_registrationScopeLocked,
-
-            onChanged: _selectCampus,
-          ),
-
-          const SizedBox(height: AppSpacing.lg),
-
-          // COLLEGE FILTERED BY CAMPUS
-          AppSearchableDropdown(
-            label: 'College',
-
-            value: _college,
-
-            items: _filteredCollegeNames,
-
-            enabled: _selectedCampusId != null && !_registrationScopeLocked,
-
-            onChanged: _selectCollege,
+          PlantingCampusDropdown(
+            campuses: _campuses,
+            value: _plantingCampusChoice,
+            onChanged: _saving
+                ? null
+                : (value) => setState(() {
+                    _plantingCampusChoice = value;
+                    _hasUnsavedChanges = true;
+                  }),
           ),
 
           const SizedBox(height: AppSpacing.lg),

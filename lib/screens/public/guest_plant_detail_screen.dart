@@ -150,11 +150,19 @@ class GuestPlantDetailScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 14),
                       _DetailSection(
-                        title: 'Location',
+                        title: 'Managed by',
                         icon: Icons.location_on_outlined,
                         rows: {
-                          'Campus': _value(plant.campusName),
-                          'College': _value(plant.collegeName),
+                          'Managing campus': _value(plant.campusName),
+                          'Managing college': _value(plant.collegeName),
+                        },
+                      ),
+                      const SizedBox(height: 14),
+                      _DetailSection(
+                        title: 'Planting location',
+                        icon: Icons.location_on_outlined,
+                        rows: {
+                          'Campus / outside': plant.plantingLocationLabel,
                           'Town': _value(plant.townName),
                           'Barangay': _value(plant.barangayName),
                         },
