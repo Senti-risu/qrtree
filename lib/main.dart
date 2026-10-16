@@ -8,6 +8,7 @@ import 'theme/app_colors.dart';
 import 'theme/app_theme.dart';
 
 import 'screens/auth/login_screen.dart';
+import 'screens/auth/session_bootstrap_screen.dart';
 import 'screens/auth/access_choice_screen.dart';
 import 'screens/public/landing_screen.dart';
 import 'screens/public/guest_entry_screen.dart';
@@ -61,7 +62,7 @@ class MyApp extends StatelessWidget {
       // ROUTES THAT DON'T NEED ARGUMENTS
       // ========================================================
       routes: {
-        '/': (context) => const LandingScreen(),
+        '/': (context) => const SessionBootstrapScreen(),
         '/landing': (context) => const LandingScreen(),
         '/login': (context) => const AccessChoiceScreen(),
         '/access': (context) => const AccessChoiceScreen(),

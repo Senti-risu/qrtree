@@ -8,6 +8,10 @@ String userFacingError(
 }) {
   final raw = error.toString().replaceFirst('Exception: ', '').trim();
   final value = raw.toLowerCase();
+  if (value.contains('secure device storage is unavailable')) {
+    return 'This device could not securely save your sign-in. Restart the '
+        'updated app and try again. In a browser, use HTTPS or localhost.';
+  }
   if (value.contains('dead plant is locked')) {
     return 'This plant is confirmed Dead. Only your College Admin can reopen '
         'the record with a reason. Its history and QR reporting remain available.';

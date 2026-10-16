@@ -102,13 +102,15 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (!mounted) return;
 
-      AppSession.start(sessionToken);
+      await AppSession.start(sessionToken);
+      if (!mounted) return;
 
       _showMessage('Login successful.', isError: false);
 
-      Navigator.pushReplacementNamed(
+      Navigator.pushNamedAndRemoveUntil(
         context,
         role == 'super_admin' ? '/super-admin' : '/dashboard',
+        (_) => false,
         arguments: {
           'user_id': userId,
           'username': user['username'],
@@ -337,6 +339,16 @@ class _LoginScreenState extends State<LoginScreen> {
                                   color: AppColors.onPrimary,
                                 ),
                               ),
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    const Text(
+                      'This device remembers your sign-in until you log out or '
+                      'your session expires. Always log out on shared devices.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
                       ),
                     ),
                   ],

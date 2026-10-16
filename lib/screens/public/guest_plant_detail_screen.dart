@@ -5,6 +5,7 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_layout.dart';
 import '../../widgets/app_card.dart';
 import '../../widgets/plant_details_presentation.dart';
+import '../../widgets/plant_ecotag_header.dart';
 
 /// Curated public plant profile shown to guests after a successful scan.
 ///
@@ -48,6 +49,7 @@ class GuestPlantDetailScreen extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
+                      PlantEcoTagHeader(code: plant.qrCode),
                       Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 14,
@@ -174,12 +176,6 @@ class GuestPlantDetailScreen extends StatelessWidget {
                           'Town': _value(plant.townName),
                           'Barangay': _value(plant.barangayName),
                         },
-                      ),
-                      const SizedBox(height: 14),
-                      _DetailSection(
-                        title: 'EcoTag label',
-                        icon: Icons.qr_code_2_rounded,
-                        rows: {'QR code': plant.qrCode},
                       ),
                     ],
                   ),

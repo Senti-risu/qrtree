@@ -12,6 +12,7 @@ import '../../widgets/app_error_state.dart';
 import '../../widgets/qr_problem_dialog.dart';
 import '../../widgets/plant_details_presentation.dart';
 import '../../widgets/plant_detail_content.dart';
+import '../../widgets/plant_ecotag_header.dart';
 import '../admin/plant_service.dart';
 import '../inspections/inspection_form_screen.dart';
 import '../qr/qr_problem_reports_screen.dart';
@@ -151,6 +152,9 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
       child: ListView(
         padding: const EdgeInsets.fromLTRB(18, 12, 18, 32),
         children: [
+          PlantEcoTagHeader(
+            code: _map(plant['qr_tag'])['qr_code_string']?.toString(),
+          ),
           if (dead)
             DeadPlantLockNotice(
               onReopen: canArchive && !archived && !_savingAction

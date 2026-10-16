@@ -1,0 +1,77 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_application_1/models/app_role.dart';
+import 'package:flutter_application_1/services/persistent_session.dart';
+import 'package:flutter_application_1/screens/auth/session_bootstrap_screen.dart';
+import 'package:flutter_application_1/screens/public/landing_screen.dart';
+
+void main() {
+  const user = SessionIdentity(
+    userId: 5,
+    username: 'Admin',
+    role: AppRole.collegeAdmin,
+    campusId: 1,
+    collegeId: 2,
+  );
+  Widget app(
+    Future<SessionIdentity?> Function() restore, {
+    Future<void> Function()? forget,
+  }) => MaterialApp(
+    home: SessionBootstrapScreen(
+      restoreSession: restore,
+      forgetSession: forget,
+    ),
+    routes: {
+      '/dashboard': (_) => const Scaffold(body: Text('Dashboard loaded')),
+      '/staff-login': (_) => const Scaffold(body: Text('Login required')),
+    },
+  );
+
+  testWidgets('valid remembered session bypasses login', (tester) async {
+    await tester.pumpWidget(app(() async => user));
+    await tester.pumpAndSettle();
+    expect(find.text('Dashboard loaded'), findsOneWidget);
+    expect(find.text('Login required'), findsNothing);
+  });
+  testWidgets('first-time visitors retain the landing page', (tester) async {
+    await tester.pumpWidget(app(() async => null));
+    await tester.pumpAndSettle();
+    expect(find.byType(LandingScreen), findsOneWidget);
+  });
+  testWidgets('rejected sessions go to staff sign-in', (tester) async {
+    await tester.pumpWidget(app(() async => throw const SessionRejected()));
+    await tester.pumpAndSettle();
+    expect(find.text('Login required'), findsOneWidget);
+  });
+  testWidgets('network failure offers retry without entering dashboard', (
+    tester,
+  ) async {
+    var checks = 0;
+    await tester.pumpWidget(
+      app(() async {
+        if (++checks == 1) throw Exception('network timeout');
+        return user;
+      }),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Dashboard loaded'), findsNothing);
+    expect(find.text('Unable to check saved sign-in'), findsOneWidget);
+    await tester.tap(find.text('Try again'));
+    await tester.pumpAndSettle();
+    expect(find.text('Dashboard loaded'), findsOneWidget);
+  });
+  testWidgets('manual sign-in first forgets the saved token', (tester) async {
+    var forgotten = false;
+    await tester.pumpWidget(
+      app(
+        () async => throw Exception('network'),
+        forget: () async => forgotten = true,
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Forget saved sign-in and log in'));
+    await tester.pumpAndSettle();
+    expect(forgotten, isTrue);
+    expect(find.text('Login required'), findsOneWidget);
+  });
+}

@@ -280,7 +280,17 @@ class AppMobileNavbar extends StatelessWidget {
       case AppMobileMoreAction.logout:
         final shouldLogout = await _confirmLogout(context);
         if (!shouldLogout || !context.mounted) return;
-        await AppSession.end();
+        try {
+          await AppSession.end();
+        } catch (_) {
+          if (context.mounted) {
+            _showError(
+              context,
+              'This device could not remove the saved sign-in. Please try logging out again.',
+            );
+          }
+          return;
+        }
         if (!context.mounted) return;
         Navigator.pushNamedAndRemoveUntil(context, '/login', (_) => false);
         return;

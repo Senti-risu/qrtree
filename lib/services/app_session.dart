@@ -1,48 +1,50 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'persistent_session.dart';
 
 class AppSession {
   AppSession._();
 
-  static String? _token;
-
-  static bool get isAuthenticated => _token?.isNotEmpty == true;
-
-  static String get requiredToken {
-    final value = _token;
-    if (value == null || value.isEmpty) {
-      throw StateError(
-        'Your EcoTag session has expired. Please sign in again.',
+  static final _session = PersistentSession(
+    store: SecureSessionTokenStore(),
+    validate: (token) async {
+      final data = await Supabase.instance.client
+          .rpc('app_session_status', params: {'p_session_token': token})
+          .timeout(const Duration(seconds: 15));
+      if (data is! List || data.length != 1 || data.first is! Map) {
+        throw const SessionRejected();
+      }
+      return Map<String, dynamic>.from(data.first as Map);
+    },
+    revoke: (token) async {
+      await Supabase.instance.client.rpc(
+        'logout_user',
+        params: {'p_session_token': token},
       );
-    }
-    return value;
-  }
+    },
+  );
 
-  static void start(String token) {
-    final value = token.trim();
-    if (value.isEmpty) {
-      throw ArgumentError.value(
-        token,
-        'token',
-        'Session token cannot be empty.',
-      );
-    }
-    _token = value;
-  }
+  static bool get isAuthenticated => _session.isAuthenticated;
 
-  static void clear() => _token = null;
+  static String get requiredToken => _session.requiredToken;
 
-  static Future<void> end() async {
-    final token = _token;
-    _token = null;
-    if (token == null || token.isEmpty) return;
-
+  static Future<void> start(String token) async {
     try {
-      await Supabase.instance.client
-          .rpc('logout_user', params: {'p_session_token': token})
-          .timeout(const Duration(seconds: 6));
+      await _session.start(token);
     } catch (_) {
-      // Local logout must always succeed, including while offline or before
-      // the production-readiness migration has been applied.
+      try {
+        await Supabase.instance.client
+            .rpc('logout_user', params: {'p_session_token': token})
+            .timeout(const Duration(seconds: 6));
+      } catch (_) {}
+      throw StateError(
+        'Secure device storage is unavailable. Restart the '
+        'updated app and try again.',
+      );
     }
   }
+
+  static Future<void> clear() => _session.clear();
+  static Future<SessionIdentity?> restore() => _session.restore();
+
+  static Future<void> end() => _session.end();
 }

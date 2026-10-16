@@ -106,7 +106,21 @@ class AppTopNavbar extends StatelessWidget {
             onPressed:
                 onLogoutTap ??
                 () async {
-                  await AppSession.end();
+                  try {
+                    await AppSession.end();
+                  } catch (_) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'This device could not remove '
+                            'the saved sign-in. Please try logging out again.',
+                          ),
+                        ),
+                      );
+                    }
+                    return;
+                  }
                   if (!context.mounted) return;
                   Navigator.pushNamedAndRemoveUntil(
                     context,
