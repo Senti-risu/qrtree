@@ -68,7 +68,6 @@ class _SuperAdminScreenState extends State<SuperAdminScreen> {
       username: widget.username,
       role: widget.role,
       userRole: AppRole.superAdmin.label,
-      onRefresh: _load,
       child: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../theme/app_typography.dart';
 
 import '../../models/app_role.dart';
 import '../../services/inspection_account_service.dart';
@@ -8,6 +9,7 @@ import '../../utils/user_facing_error.dart';
 import '../../widgets/app_card.dart';
 import '../../widgets/app_page_header.dart';
 import '../../widgets/app_shell.dart';
+import '../../widgets/account_access_controls.dart';
 
 class InspectionAccountsScreen extends StatefulWidget {
   const InspectionAccountsScreen({
@@ -38,6 +40,7 @@ class _InspectionAccountsScreenState extends State<InspectionAccountsScreen> {
   bool _loading = true;
   String? _error;
   String _statusFilter = 'all';
+  final Set<int> _busyAccountIds = {};
 
   @override
   void initState() {
@@ -179,7 +182,7 @@ class _InspectionAccountsScreenState extends State<InspectionAccountsScreen> {
                                 Text(
                                   'Filter inspection accounts',
                                   style: TextStyle(
-                                    fontSize: 20,
+                                    fontSize: AppTypography.sectionTitle,
                                     fontWeight: FontWeight.w800,
                                     color: AppColors.textPrimary,
                                   ),
@@ -488,7 +491,7 @@ class _InspectionAccountsScreenState extends State<InspectionAccountsScreen> {
                             Text(
                               'Archived inspection accounts',
                               style: TextStyle(
-                                fontSize: 18,
+                                fontSize: AppTypography.sectionTitle,
                                 fontWeight: FontWeight.w800,
                               ),
                             ),
@@ -624,33 +627,35 @@ class _InspectionAccountsScreenState extends State<InspectionAccountsScreen> {
     );
   }
 
-  Widget _actions(Map<String, dynamic> account) => PopupMenuButton<String>(
-    tooltip: 'Account actions',
-    onSelected: (value) {
-      if (value == 'edit') _edit(account);
-      if (value == 'archive') _archive(account);
-    },
-    itemBuilder: (_) => const [
-      PopupMenuItem(
-        value: 'edit',
-        child: ListTile(
-          leading: Icon(Icons.edit_outlined),
-          title: Text('Edit'),
-          dense: true,
-          contentPadding: EdgeInsets.zero,
-        ),
-      ),
-      PopupMenuItem(
-        value: 'archive',
-        child: ListTile(
-          leading: Icon(Icons.archive_outlined, color: Colors.red),
-          title: Text('Archive', style: TextStyle(color: Colors.red)),
-          dense: true,
-          contentPadding: EdgeInsets.zero,
-        ),
-      ),
-    ],
+  Future<void> _runAccountAction(
+    Map<String, dynamic> account,
+    Future<void> Function() action,
+  ) async {
+    final id = account['user_id'] as int;
+    if (_busyAccountIds.contains(id)) return;
+    setState(() => _busyAccountIds.add(id));
+    try {
+      await action();
+    } finally {
+      if (mounted) setState(() => _busyAccountIds.remove(id));
+    }
+  }
+
+  Widget _actions(Map<String, dynamic> account) => AccountRowActions(
+    busy: _busyAccountIds.contains(account['user_id']),
+    onEdit: () => _runAccountAction(account, () => _edit(account)),
+    onArchive: () => _runAccountAction(account, () => _archive(account)),
   );
+
+  Widget _statusButton(Map<String, dynamic> account) {
+    final active = account['is_active'] as bool? ?? true;
+    return AccountStatusButton(
+      active: active,
+      busy: _busyAccountIds.contains(account['user_id']),
+      onPressed: () =>
+          _runAccountAction(account, () => _setActive(account, !active)),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -669,7 +674,6 @@ class _InspectionAccountsScreenState extends State<InspectionAccountsScreen> {
       collegeId: widget.collegeId,
       userName: widget.username,
       userRole: AppRole.collegeAdmin.label,
-      onRefresh: _loadAccounts,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -745,7 +749,7 @@ class _InspectionAccountsScreenState extends State<InspectionAccountsScreen> {
           const Text(
             'Inspection Team',
             style: TextStyle(
-              fontSize: 18,
+              fontSize: AppTypography.sectionTitle,
               fontWeight: FontWeight.w700,
               color: AppColors.darkGreen,
             ),
@@ -1060,17 +1064,17 @@ class _InspectionAccountsScreenState extends State<InspectionAccountsScreen> {
       child: ConstrainedBox(
         constraints: BoxConstraints(minWidth: constraints.maxWidth),
         child: DataTable(
+          dataRowMinHeight: 56,
+          dataRowMaxHeight: double.infinity,
           headingRowColor: const WidgetStatePropertyAll(AppColors.background),
           columns: const [
             DataColumn(label: Text('ACCOUNT')),
             DataColumn(label: Text('ROLE')),
-            DataColumn(label: Text('STATUS')),
-            DataColumn(label: Text('ACCESS')),
+            DataColumn(label: Text('STATUS / ACCESS')),
             DataColumn(label: Text('ACTIONS')),
           ],
           rows: accounts.map((account) {
             final username = account['username']?.toString() ?? '';
-            final active = account['is_active'] as bool? ?? true;
             return DataRow(
               cells: [
                 DataCell(
@@ -1095,13 +1099,7 @@ class _InspectionAccountsScreenState extends State<InspectionAccountsScreen> {
                   ),
                 ),
                 const DataCell(Text('Inspection Team')),
-                DataCell(_statusChip(active)),
-                DataCell(
-                  Switch(
-                    value: active,
-                    onChanged: (value) => _setActive(account, value),
-                  ),
-                ),
+                DataCell(_statusButton(account)),
                 DataCell(_actions(account)),
               ],
             );
@@ -1111,45 +1109,12 @@ class _InspectionAccountsScreenState extends State<InspectionAccountsScreen> {
     ),
   );
 
-  Widget _statusChip(bool active) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-    decoration: BoxDecoration(
-      color: active ? AppColors.primaryContainer : AppColors.dangerContainer,
-      borderRadius: AppRadii.fullyRounded,
-    ),
-    child: Text(
-      active ? 'Active' : 'Inactive',
-      style: TextStyle(
-        fontSize: 11,
-        fontWeight: FontWeight.w700,
-        color: active ? AppColors.green : AppColors.danger,
-      ),
-    ),
+  Widget _accountTile(Map<String, dynamic> account) => AccountAccessTile(
+    username: account['username']?.toString() ?? '',
+    subtitle: 'Inspection Team',
+    statusButton: _statusButton(account),
+    actions: _actions(account),
   );
-
-  Widget _accountTile(Map<String, dynamic> account) {
-    final username = account['username']?.toString() ?? '';
-    final active = account['is_active'] as bool? ?? true;
-    return ListTile(
-      contentPadding: EdgeInsets.zero,
-      leading: CircleAvatar(
-        backgroundColor: AppColors.primaryContainer,
-        child: Text(
-          username.isEmpty ? '?' : username[0].toUpperCase(),
-          style: const TextStyle(
-            color: AppColors.darkGreen,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
-      title: Text(
-        username,
-        style: const TextStyle(fontWeight: FontWeight.w600),
-      ),
-      subtitle: Text('Inspection Team • ${active ? 'Active' : 'Inactive'}'),
-      trailing: _actions(account),
-    );
-  }
 }
 
 class _CreateInspectionAccountDialog extends StatefulWidget {

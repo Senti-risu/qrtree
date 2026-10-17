@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'app_colors.dart';
 import 'app_layout.dart';
+import 'app_typography.dart';
 
 class AppTheme {
   AppTheme._();
@@ -50,16 +51,36 @@ class AppTheme {
       displaySmall: _compactStyle(theme.displaySmall),
       headlineLarge: _compactStyle(theme.headlineLarge),
       headlineMedium: _compactStyle(theme.headlineMedium),
-      headlineSmall: _compactStyle(theme.headlineSmall),
-      titleLarge: _compactStyle(theme.titleLarge),
-      titleMedium: _compactStyle(theme.titleMedium),
-      titleSmall: _compactStyle(theme.titleSmall),
-      bodyLarge: _compactStyle(theme.bodyLarge),
-      bodyMedium: _compactStyle(theme.bodyMedium),
-      bodySmall: _compactStyle(theme.bodySmall),
-      labelLarge: _compactStyle(theme.labelLarge),
-      labelMedium: _compactStyle(theme.labelMedium),
-      labelSmall: _compactStyle(theme.labelSmall),
+      headlineSmall: _compactStyle(
+        theme.headlineSmall,
+      ).copyWith(fontSize: AppTypography.pageTitle),
+      titleLarge: _compactStyle(
+        theme.titleLarge,
+      ).copyWith(fontSize: AppTypography.sectionTitle),
+      titleMedium: _compactStyle(
+        theme.titleMedium,
+      ).copyWith(fontSize: AppTypography.itemTitle),
+      titleSmall: _compactStyle(
+        theme.titleSmall,
+      ).copyWith(fontSize: AppTypography.itemTitle),
+      bodyLarge: _compactStyle(
+        theme.bodyLarge,
+      ).copyWith(fontSize: AppTypography.body),
+      bodyMedium: _compactStyle(
+        theme.bodyMedium,
+      ).copyWith(fontSize: AppTypography.body),
+      bodySmall: _compactStyle(
+        theme.bodySmall,
+      ).copyWith(fontSize: AppTypography.caption),
+      labelLarge: _compactStyle(
+        theme.labelLarge,
+      ).copyWith(fontSize: AppTypography.label),
+      labelMedium: _compactStyle(
+        theme.labelMedium,
+      ).copyWith(fontSize: AppTypography.caption),
+      labelSmall: _compactStyle(
+        theme.labelSmall,
+      ).copyWith(fontSize: AppTypography.caption),
     );
   }
 
@@ -96,16 +117,16 @@ class AppTheme {
           color: AppColors.textPrimary,
         ),
         titleLarge: compactTextTheme.titleLarge?.copyWith(
-          fontSize: 18,
+          fontSize: AppTypography.sectionTitle,
           fontWeight: FontWeight.w700,
           color: AppColors.textPrimary,
         ),
         bodyMedium: compactTextTheme.bodyMedium?.copyWith(
-          fontSize: 14,
+          fontSize: AppTypography.body,
           color: AppColors.textPrimary,
         ),
         bodySmall: compactTextTheme.bodySmall?.copyWith(
-          fontSize: 12,
+          fontSize: AppTypography.caption,
           color: AppColors.textSecondary,
         ),
       ),
@@ -116,6 +137,14 @@ class AppTheme {
         elevation: 0,
         centerTitle: false,
         surfaceTintColor: Colors.transparent,
+        titleTextStyle: TextStyle(
+          fontFamily: fontFamily,
+          fontSize: AppTypography.pageTitle,
+          fontWeight: FontWeight.w700,
+          color: AppColors.textPrimary,
+          letterSpacing: 0,
+          wordSpacing: 0,
+        ),
       ),
       cardTheme: const CardThemeData(
         color: AppColors.surface,

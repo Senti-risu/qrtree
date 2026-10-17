@@ -15,7 +15,7 @@ is not changed. No new SQL migration is needed for this design pass.
 - Phone/tablet registration follows Plant → Location → Photo → Review. Back and
   Continue stay outside the scrolling form. Existing controller values and the
   selected photo survive step changes; this is not an offline/autosaved draft.
-- Registration navigation, refresh, and logout check for unsaved work. Saving
+- Registration navigation and logout check for unsaved work. Saving
   blocks leaving the form. Desktop registration retains its full-form layout.
 - Phone plant records use a single lazy scrolling page, including filters and
   registration. Cards show health, physical planting location, managing college
@@ -25,11 +25,35 @@ is not changed. No new SQL migration is needed for this design pass.
   choices and fixed Reset/Apply controls. Plant and inspection sheets preview the
   matching result count; QR filtering reloads server-scoped results on Apply.
 - Desktop plant health choices wrap instead of disappearing in a horizontal row.
+- Desktop Plant Records and Reports use a compact two-row filter toolbar: search
+  and actions above health choices and the result count. Repeated headings and
+  helper text are removed. Report date/type/growth/scope options remain available
+  through Filters, with active selections summarized beside the result count.
 - College Admin and Inspection Team dashboards lead with inspection work and
   health overview; Scan QR is the primary work-card action. Charts stay hidden
   for zero/one plant, and recent plants remain alongside quick actions on desktop.
 - Health wording is Healthy / Needs attention / Dead, including reports. Raw
   database enum strings and IDs are not changed.
+- Manual refresh buttons are removed across staff and guest pages, including
+  detail and QR report headers. QR Management also removes its status-guide
+  help button. Automatic reloads after changes, existing pull-to-refresh gestures,
+  and error-recovery Retry/Try again controls are retained.
+- Desktop QR columns fill the whole list panel proportionally. The table scrolls
+  horizontally when narrow or enlarged text needs more room; long codes wrap.
+  Inspection overview uses full-width count tiles, a full-width last-inspection
+  strip, and expanding action buttons within the equal-height dashboard row.
+  Phone widths and enlarged text stack these controls instead of clipping them.
+- Admin account lists (University/Campus/College Admin and Inspection Team) share
+  an Active/Inactive status-access button and directly visible Edit/Archive
+  actions. Mobile identity and action layouts are shared and wrap for large text.
+  Existing account-management authority, deactivate/archive confirmations, archive
+  reasons, and restore-as-inactive behavior remain unchanged. Pending account
+  actions disable repeat clicks for that account.
+- QR tag rows also show their actions directly, without a three-dot menu:
+  Available → Retire label; Assigned → Mark damaged; Damaged → Replace label.
+  Print remains available under its existing rules; final states do not gain
+  new lifecycle actions. QR status is informational, not an arbitrary toggle.
+  Mobile actions wrap below the tag details, and desktop rows expand as needed.
 
 ## Verification
 
@@ -39,6 +63,46 @@ navigation guards, four-step progress, and wrapping plant cards. Cards also run
 at 1440×1000. The filter footer is tested in short landscape with enlarged text.
 A generated component preview is written to `build/layout_previews/` for visual
 inspection. Existing tests cover dashboard grid and detail presentation layouts.
+
+Dashboard neighbors now share equal widths and the tallest content height:
+Inspection Overview/Plant Health Overview, Quick Actions/Recent Plants, and
+all four statistic cards within their grid. Stacked mobile sections keep natural
+heights. The shared layout measures actual content, including LayoutBuilder-based
+tables, rather than assigning a fixed height. `equal_height_cards_test.dart`
+checks matching sizes, enlarged text, narrow widths, resizing, and taps.
+
+Typography uses shared logical sizes in `AppTypography`: page titles 24,
+section headings 18, body/item titles/control labels 14, captions 12, and
+dashboard/report metrics 26. Matching dashboard, report, inspection, account,
+plant-detail and common form levels use these tokens or the matching theme
+styles. Roboto, compact tracking and system text scaling remain enabled.
+Landing-page display lettering, branding, navigation and PDF export typography
+retain their distinct purposes. `app_typography_test.dart` checks theme/control
+sizes and real section headings at normal and enlarged text scales.
+
+Plant Details now uses a compact bordered photo/identity panel, a horizontal
+EcoTag copy action on wide screens, equal-height paired information cards, and
+one wrapping Plant actions panel. Schedule fields share the same label/value
+layout as other details. Dates and health labels are formatted for display only;
+record values, permissions, dead-plant locks and action callbacks are unchanged.
+`plant_detail_design_test.dart` covers 320/600/1080 widths, double text size,
+neighboring card geometry and action taps, and renders a desktop preview.
+
+The staff Plant Details view now uses the requested phone-style presentation on
+web as well: a floating dialog capped at 640 logical pixels, with QR, photo/name,
+managing assignment, classification (in registration field order), physical
+location, inspection schedule, and stacked actions. Narrow web screens still
+use the full-screen route. The general paired-card component remains available
+for other views, but staff details no longer uses side-by-side sections.
+
+Inspections now uses the shared full-width page heading, aligned filters and
+content, 16-pixel section gaps, and a content-sized empty-state card rather than
+stretching it to the remaining window height. Desktop queue filters wrap;
+phone filters scroll horizontally. Short windows and enlarged text can scroll
+the page header/filter sections without overflowing. Empty queue views offer
+View upcoming or View history using the existing queue selection behavior.
+`inspection_queue_layout_test.dart` checks alignment, short windows, text scale,
+all mobile filter taps, and a rendered desktop preview.
 
 Before distributing an APK, manually test on an actual phone:
 

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/app_typography.dart';
 
 import '../models/app_role.dart';
 import '../theme/app_colors.dart';
@@ -33,7 +34,6 @@ class AppShell extends StatelessWidget {
   // ACTIONS
   // ============================================================
 
-  final VoidCallback? onRefresh;
   final VoidCallback? onQrPressed;
 
   final bool showMobileNavigation;
@@ -62,7 +62,6 @@ class AppShell extends StatelessWidget {
     this.userName = '',
     this.userRole = '',
 
-    this.onRefresh,
     this.onQrPressed,
 
     this.showMobileNavigation = true,
@@ -219,7 +218,7 @@ class AppShell extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
-                      fontSize: 18,
+                      fontSize: AppTypography.pageTitle,
                       fontWeight: FontWeight.w800,
                       color: AppColors.darkGreen,
                     ),
@@ -241,19 +240,6 @@ class AppShell extends StatelessWidget {
             ),
           ],
         ),
-
-        actions: [
-          if (onRefresh != null)
-            IconButton(
-              tooltip: 'Refresh',
-
-              onPressed: onRefresh,
-
-              icon: const Icon(Icons.refresh_rounded, color: AppColors.green),
-            ),
-
-          const SizedBox(width: AppSpacing.sm),
-        ],
       ),
 
       body: SafeArea(

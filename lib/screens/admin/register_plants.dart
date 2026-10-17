@@ -1095,11 +1095,6 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
           collegeId: widget.collegeId,
           userName: widget.username,
           userRole: _roleLabel(widget.role),
-          onRefresh: _saving
-              ? null
-              : () async {
-                  if (await _confirmDiscard() && mounted) _loadData();
-                },
           bottomAction:
               phone &&
                   !_loading &&

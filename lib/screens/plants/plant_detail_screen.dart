@@ -5,8 +5,10 @@ import '../../models/plant_record_lock.dart';
 import '../../widgets/dead_plant_lock.dart';
 import '../../services/inspection_service.dart';
 import '../../services/plant_location_service.dart';
-import '../../widgets/plant_location_editor.dart';
+import '../../widgets/plant_details_editor.dart';
 import '../../theme/app_colors.dart';
+import '../../theme/app_typography.dart';
+import '../../utils/health_status_label.dart';
 import '../../utils/user_facing_error.dart';
 import '../../widgets/app_error_state.dart';
 import '../../widgets/qr_problem_dialog.dart';
@@ -106,13 +108,6 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
             )
           : const BackButton(),
       backgroundColor: AppColors.background,
-      actions: [
-        IconButton(
-          tooltip: 'Refresh plant details',
-          onPressed: _loading ? null : _load,
-          icon: const Icon(Icons.refresh),
-        ),
-      ],
     ),
     body: _loading
         ? const Center(child: CircularProgressIndicator())
@@ -131,7 +126,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
             top: false,
             child: Center(
               child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 1080),
+                constraints: const BoxConstraints(maxWidth: 640),
                 child: _body(),
               ),
             ),
@@ -190,122 +185,128 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
             plantId: '${plant['plant_id']}',
             imageUrl: url,
           ),
-          PlantDetailSectionPair(
-            first: _section('Plant Information', {
-              'Plant ID': '#${plant['plant_id']}',
-              'Date planted': _value(plant['date_planted']),
-              'Tree planter': _value(plant['tree_planter']),
-            }),
-            second: _section('Classification', {
-              'Plant type': _value(classification['plant_type']),
-              'Common name': _value(classification['common_name']),
-              'Variety': _value(plant['variety']),
-            }),
-          ),
-          PlantDetailSectionPair(
-            first: _section('Status', {
-              'Health status': _value(
-                _map(plant['health_status'])['status_name'],
-              ),
-              'Growth stage': _value(
-                _map(plant['growth_status'])['growth_stage'],
-              ),
-            }),
-            second: _inspectionScheduleSection(plant),
-          ),
-          PlantDetailSectionPair(
-            first: _section('Managed by', {
-              'Managing campus': _value(_map(plant['campus'])['campus_name']),
-              'Managing college': _value(
-                _map(plant['college'])['college_name'],
-              ),
-            }),
-            second: _section('Planting location', {
-              'Campus / outside':
-                  _locationError ??
-                  PlantLocationService.label(_physicalLocation),
-              'Barangay': _value(_map(plant['barangay'])['barangay_name']),
-              'Town': _value(_map(plant['town'])['town_name']),
-            }),
-          ),
-          if ((canInspect || canArchive) && editable)
-            TextButton.icon(
-              onPressed: () async {
-                final changed = await showDialog<bool>(
-                  context: context,
-                  barrierDismissible: false,
-                  builder: (_) => PlantLocationEditor(plantId: widget.plantId),
-                );
-                if (changed == true && mounted) _load();
-              },
-              icon: const Icon(Icons.edit_location_alt_outlined),
-              label: const Text('Update planting location'),
+          _section('Managed by', {
+            'Managing campus': _value(_map(plant['campus'])['campus_name']),
+            'Managing college': _value(_map(plant['college'])['college_name']),
+          }),
+          _section('Plant Classification', {
+            'Plant type': _value(classification['plant_type']),
+            'Common name': _value(classification['common_name']),
+            'Scientific name': _value(classification['scientific_name']),
+            'Variety': _value(plant['variety']),
+            'Growth stage': _value(
+              _map(plant['growth_status'])['growth_stage'],
             ),
-          if (_history.isNotEmpty) _historySection(),
-          if ((canInspect || canArchive) && !archived)
-            Padding(
-              padding: const EdgeInsets.only(top: 8, bottom: 8),
-              child: OutlinedButton.icon(
-                onPressed: () => showQrProblemDialog(context, widget.plantId),
-                icon: const Icon(Icons.report_problem_outlined),
-                label: const Text('Report QR problem'),
-              ),
+            'Health status': healthStatusLabel(
+              _map(plant['health_status'])['status_name'],
             ),
-          if (canInspect || canArchive)
-            TextButton.icon(
-              onPressed: () => Navigator.push(
-                context,
-                MaterialPageRoute<void>(
-                  builder: (_) => QrProblemReportsScreen(canReview: canArchive),
-                ),
-              ),
-              icon: const Icon(Icons.history_rounded),
-              label: Text(canArchive ? 'Review QR reports' : 'My QR reports'),
-            ),
-          if (canInspect && editable)
-            Padding(
-              padding: const EdgeInsets.only(top: 8),
-              child: FilledButton.icon(
-                onPressed: () async {
-                  await Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => InspectionFormScreen(
-                        plant: plant,
-                        userId: widget.userId,
+            'Date planted': _parseDate(plant['date_planted']) == null
+                ? _value(plant['date_planted'])
+                : _formatDate(_parseDate(plant['date_planted'])!),
+            'Tree planter': _value(plant['tree_planter']),
+          }),
+          _section('Planting location', {
+            'Campus / outside':
+                _locationError ?? PlantLocationService.label(_physicalLocation),
+            'Town': _value(_map(plant['town'])['town_name']),
+            'Barangay': _value(_map(plant['barangay'])['barangay_name']),
+          }),
+          _inspectionScheduleSection(plant),
+          if (canInspect || canArchive) ...[
+            PlantDetailActions(
+              singleColumn: true,
+              children: [
+                if (canInspect && editable)
+                  Padding(
+                    padding: EdgeInsets.zero,
+                    child: FilledButton.icon(
+                      onPressed: () async {
+                        await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => InspectionFormScreen(
+                              plant: plant,
+                              userId: widget.userId,
+                            ),
+                          ),
+                        );
+                        _load();
+                      },
+                      style: FilledButton.styleFrom(
+                        backgroundColor: AppColors.green,
+                        minimumSize: const Size.fromHeight(48),
+                      ),
+                      icon: const Icon(Icons.fact_check_outlined),
+                      label: const Text('Inspect Plant'),
+                    ),
+                  ),
+                if ((canInspect || canArchive) && editable)
+                  OutlinedButton.icon(
+                    onPressed: () async {
+                      final changed = await showDialog<bool>(
+                        context: context,
+                        barrierDismissible: false,
+                        builder: (_) => PlantDetailsEditor(
+                          plantId: widget.plantId,
+                          userId: widget.userId,
+                        ),
+                      );
+                      if (changed == true && mounted) _load();
+                    },
+                    icon: const Icon(Icons.edit_note_outlined),
+                    label: const Text('Update plant details'),
+                  ),
+                if ((canInspect || canArchive) && !archived)
+                  Padding(
+                    padding: EdgeInsets.zero,
+                    child: OutlinedButton.icon(
+                      onPressed: () =>
+                          showQrProblemDialog(context, widget.plantId),
+                      icon: const Icon(Icons.report_problem_outlined),
+                      label: const Text('Report QR problem'),
+                    ),
+                  ),
+                if (canInspect || canArchive)
+                  OutlinedButton.icon(
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute<void>(
+                        builder: (_) =>
+                            QrProblemReportsScreen(canReview: canArchive),
                       ),
                     ),
-                  );
-                  _load();
-                },
-                style: FilledButton.styleFrom(
-                  backgroundColor: AppColors.green,
-                  minimumSize: const Size.fromHeight(54),
-                ),
-                icon: const Icon(Icons.fact_check_outlined),
-                label: const Text('Inspect Plant'),
-              ),
+                    icon: const Icon(Icons.history_rounded),
+                    label: Text(
+                      canArchive ? 'Review QR reports' : 'My QR reports',
+                    ),
+                  ),
+                if (canArchive && !archived)
+                  Padding(
+                    padding: EdgeInsets.zero,
+                    child: OutlinedButton.icon(
+                      onPressed: _savingAction ? null : _archivePlant,
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.danger,
+                        side: const BorderSide(color: AppColors.danger),
+                        minimumSize: const Size.fromHeight(48),
+                      ),
+                      icon: _savingAction
+                          ? const SizedBox(
+                              width: 17,
+                              height: 17,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.archive_outlined),
+                      label: Text(
+                        _savingAction ? 'Archiving…' : 'Archive Plant',
+                      ),
+                    ),
+                  ),
+              ],
             ),
-          if (canArchive && !archived)
-            Padding(
-              padding: const EdgeInsets.only(top: 10),
-              child: OutlinedButton.icon(
-                onPressed: _savingAction ? null : _archivePlant,
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.danger,
-                  side: const BorderSide(color: AppColors.danger),
-                  minimumSize: const Size.fromHeight(50),
-                ),
-                icon: _savingAction
-                    ? const SizedBox(
-                        width: 17,
-                        height: 17,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.archive_outlined),
-                label: Text(_savingAction ? 'Archiving…' : 'Archive Plant'),
-              ),
-            ),
+            const SizedBox(height: 14),
+          ],
+          if (_history.isNotEmpty) _historySection(),
         ],
       ),
     );
@@ -582,107 +583,57 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
       ),
     };
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 14),
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Expanded(
-                child: Text(
-                  'Inspection Schedule',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.darkGreen,
-                  ),
-                ),
+    return PlantDetailFields(
+      title: 'Inspection Schedule',
+      trailing:
+          RoleCapabilities.fromValue(widget.role).canArchivePlants &&
+              plant['archived_at'] == null
+          ? IconButton(
+              tooltip: 'Edit inspection schedule',
+              onPressed: _savingAction
+                  ? null
+                  : () => _editInspectionSchedule(plant),
+              icon: const Icon(
+                Icons.edit_calendar_outlined,
+                color: AppColors.green,
               ),
-              if (RoleCapabilities.fromValue(widget.role).canArchivePlants &&
-                  plant['archived_at'] == null)
-                IconButton(
-                  tooltip: 'Edit inspection schedule',
-                  onPressed: _savingAction
-                      ? null
-                      : () => _editInspectionSchedule(plant),
-                  icon: const Icon(
-                    Icons.edit_calendar_outlined,
-                    color: AppColors.green,
-                  ),
-                ),
-            ],
+            )
+          : null,
+      badge: Align(
+        alignment: Alignment.centerLeft,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            color: background,
+            borderRadius: BorderRadius.circular(20),
           ),
-          const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
-            decoration: BoxDecoration(
-              color: background,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
+          child: Text.rich(
+            TextSpan(
               children: [
-                Icon(icon, size: 15, color: foreground),
-                const SizedBox(width: 5),
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w800,
-                    color: foreground,
-                  ),
+                WidgetSpan(
+                  alignment: PlaceholderAlignment.middle,
+                  child: Icon(icon, size: 15, color: foreground),
                 ),
+                TextSpan(text: ' $label'),
               ],
             ),
-          ),
-          const SizedBox(height: 10),
-          _scheduleRow(
-            'Last inspected',
-            last == null ? 'Not inspected' : _formatDate(last),
-          ),
-          _scheduleRow(
-            'Next inspection',
-            next == null ? 'Not scheduled' : _formatDate(next),
-          ),
-          if (interval != null)
-            _scheduleRow(
-              'Schedule repeats',
-              'Every $interval day${interval.toString() == '1' ? '' : 's'}',
+            style: TextStyle(
+              fontSize: AppTypography.caption,
+              fontWeight: FontWeight.w700,
+              color: foreground,
             ),
-        ],
+          ),
+        ),
       ),
+      rows: {
+        'Last inspected': last == null ? 'Not inspected' : _formatDate(last),
+        'Next inspection': next == null ? 'Not scheduled' : _formatDate(next),
+        if (interval != null)
+          'Schedule repeats':
+              'Every $interval day${interval.toString() == '1' ? '' : 's'}',
+      },
     );
   }
-
-  Widget _scheduleRow(String label, String value) => Padding(
-    padding: const EdgeInsets.symmetric(vertical: 4),
-    child: Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(
-          child: Text(
-            label,
-            style: const TextStyle(color: AppColors.textSecondary),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Text(
-            value,
-            textAlign: TextAlign.right,
-            style: const TextStyle(fontWeight: FontWeight.w700),
-          ),
-        ),
-      ],
-    ),
-  );
 
   String _inspectionScheduleStatus(DateTime? next) {
     if (next == null) return 'unscheduled';

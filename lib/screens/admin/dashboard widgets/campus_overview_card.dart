@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../theme/app_typography.dart';
 
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_layout.dart';
@@ -25,7 +26,7 @@ class CampusOverviewCard extends StatelessWidget {
           const Text(
             'CSU Campuses',
             style: TextStyle(
-              fontSize: 15,
+              fontSize: AppTypography.sectionTitle,
               fontWeight: FontWeight.w700,
               color: AppColors.darkGreen,
             ),
@@ -33,7 +34,10 @@ class CampusOverviewCard extends StatelessWidget {
           const SizedBox(height: 3),
           const Text(
             'Registered plants by campus',
-            style: TextStyle(fontSize: 10, color: AppColors.green),
+            style: TextStyle(
+              fontSize: AppTypography.caption,
+              color: AppColors.green,
+            ),
           ),
           const SizedBox(height: AppSpacing.lg),
           if (entries.isEmpty)
@@ -54,7 +58,7 @@ class CampusOverviewCard extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
-                          fontSize: 11,
+                          fontSize: AppTypography.caption,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -75,7 +79,7 @@ class CampusOverviewCard extends StatelessWidget {
                         '${entry.value}',
                         textAlign: TextAlign.right,
                         style: const TextStyle(
-                          fontSize: 11,
+                          fontSize: AppTypography.caption,
                           fontWeight: FontWeight.w700,
                         ),
                       ),

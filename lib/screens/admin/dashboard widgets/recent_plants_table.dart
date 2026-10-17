@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../theme/app_typography.dart';
 
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_layout.dart';
@@ -22,7 +23,7 @@ class RecentPlantsTable extends StatelessWidget {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _header(compact),
+            _header(),
             const SizedBox(height: AppSpacing.xl),
             if (plants.isEmpty)
               const Padding(
@@ -44,17 +45,23 @@ class RecentPlantsTable extends StatelessWidget {
     );
   }
 
-  Widget _header(bool compact) {
+  Widget _header() {
     const title = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           'Recent Plants',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            fontSize: AppTypography.sectionTitle,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         Text(
           'Recently registered or updated plants',
-          style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+          style: TextStyle(
+            color: AppColors.textSecondary,
+            fontSize: AppTypography.caption,
+          ),
         ),
       ],
     );
@@ -69,14 +76,14 @@ class RecentPlantsTable extends StatelessWidget {
       ),
       child: const Text(
         'View All',
-        style: TextStyle(color: AppColors.green, fontSize: 13),
+        style: TextStyle(color: AppColors.green, fontSize: AppTypography.label),
       ),
     );
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        if (compact) const Expanded(child: title) else title,
+        const Expanded(child: title),
         const SizedBox(width: 10),
         action,
       ],
@@ -205,7 +212,7 @@ class RecentPlantsTable extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
-                          fontSize: 15,
+                          fontSize: AppTypography.itemTitle,
                           fontWeight: FontWeight.w700,
                           color: AppColors.darkGreen,
                         ),
@@ -215,7 +222,7 @@ class RecentPlantsTable extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
-                          fontSize: 11,
+                          fontSize: AppTypography.caption,
                           color: AppColors.textSecondary,
                         ),
                       ),
@@ -261,7 +268,7 @@ class RecentPlantsTable extends StatelessWidget {
           Text(
             label,
             style: const TextStyle(
-              fontSize: 10,
+              fontSize: AppTypography.caption,
               color: AppColors.textSecondary,
             ),
           ),
@@ -270,7 +277,10 @@ class RecentPlantsTable extends StatelessWidget {
             value,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+            style: const TextStyle(
+              fontSize: AppTypography.caption,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ],
       ),
@@ -289,7 +299,7 @@ class RecentPlantsTable extends StatelessWidget {
         health,
         style: TextStyle(
           color: color,
-          fontSize: 10,
+          fontSize: AppTypography.caption,
           fontWeight: FontWeight.w700,
         ),
       ),
@@ -335,7 +345,7 @@ class RecentPlantsTable extends StatelessWidget {
               stage,
               style: TextStyle(
                 color: AppColors.accentPurple,
-                fontSize: 12,
+                fontSize: AppTypography.caption,
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -357,7 +367,7 @@ class RecentPlantsTable extends StatelessWidget {
                   health,
                   style: const TextStyle(
                     color: Colors.white,
-                    fontSize: 12,
+                    fontSize: AppTypography.caption,
                     fontWeight: FontWeight.w500,
                   ),
                 ),

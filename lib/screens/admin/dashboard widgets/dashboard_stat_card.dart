@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../theme/app_typography.dart';
 
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_layout.dart';
@@ -69,7 +70,7 @@ class DashboardStatCard extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
-                          fontSize: 26,
+                          fontSize: AppTypography.metric,
                           fontWeight: FontWeight.w800,
                           color: AppColors.textPrimary,
                         ),
@@ -86,7 +87,7 @@ class DashboardStatCard extends StatelessWidget {
                         maxLines: compact || largeText ? 2 : 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
-                          fontSize: 13,
+                          fontSize: AppTypography.label,
                           color: AppColors.darkGreen,
                           fontWeight: FontWeight.w700,
                         ),
@@ -98,7 +99,7 @@ class DashboardStatCard extends StatelessWidget {
                         style: TextStyle(
                           color: iconColor,
                           fontWeight: FontWeight.w700,
-                          fontSize: 11,
+                          fontSize: AppTypography.caption,
                         ),
                       ),
                   ],
@@ -111,7 +112,7 @@ class DashboardStatCard extends StatelessWidget {
                       maxLines: compact || largeText ? 2 : 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        fontSize: 11,
+                        fontSize: AppTypography.caption,
                         color: AppColors.textSecondary,
                       ),
                     ),

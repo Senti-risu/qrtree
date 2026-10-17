@@ -19,12 +19,14 @@ class AppPageHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AppCard(
-      padding: const EdgeInsets.all(AppSpacing.xl),
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
       child: LayoutBuilder(
         builder: (context, constraints) {
           final stackActions =
               trailing != null &&
-              !AppBreakpoints.isDesktop(constraints.maxWidth);
+              (!AppBreakpoints.isDesktop(constraints.maxWidth) ||
+                  MediaQuery.textScalerOf(context).scale(1) >= 1.4);
           final heading = Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -62,7 +64,10 @@ class AppPageHeader extends StatelessWidget {
               Expanded(child: heading),
               if (trailing != null) ...[
                 const SizedBox(width: AppSpacing.xl),
-                trailing!,
+                ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: constraints.maxWidth * .5),
+                  child: trailing!,
+                ),
               ],
             ],
           );

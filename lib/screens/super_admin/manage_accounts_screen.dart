@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../theme/app_typography.dart';
 import '../../models/admin_account.dart';
 import '../../models/app_role.dart';
 import '../../services/super_admin_service.dart';
@@ -8,6 +9,7 @@ import '../../utils/user_facing_error.dart';
 import '../../widgets/app_card.dart';
 import '../../widgets/app_page_header.dart';
 import '../../widgets/app_shell.dart';
+import '../../widgets/account_access_controls.dart';
 import 'create_account_screen.dart';
 
 class ManageAccountsScreen extends StatefulWidget {
@@ -32,6 +34,7 @@ class _ManageAccountsScreenState extends State<ManageAccountsScreen> {
   String? _error;
   String _roleFilter = 'all';
   String _statusFilter = 'all';
+  final Set<int> _busyAccountIds = {};
   @override
   void initState() {
     super.initState();
@@ -177,7 +180,7 @@ class _ManageAccountsScreenState extends State<ManageAccountsScreen> {
                                 Text(
                                   'Filter accounts',
                                   style: TextStyle(
-                                    fontSize: 20,
+                                    fontSize: AppTypography.sectionTitle,
                                     fontWeight: FontWeight.w800,
                                     color: AppColors.textPrimary,
                                   ),
@@ -545,7 +548,7 @@ class _ManageAccountsScreenState extends State<ManageAccountsScreen> {
                             Text(
                               'Archived accounts',
                               style: TextStyle(
-                                fontSize: 19,
+                                fontSize: AppTypography.sectionTitle,
                                 fontWeight: FontWeight.w800,
                               ),
                             ),
@@ -696,32 +699,32 @@ class _ManageAccountsScreenState extends State<ManageAccountsScreen> {
     );
   }
 
-  Widget _actions(AdminAccount account) => PopupMenuButton<String>(
-    tooltip: 'Account actions',
-    onSelected: (value) {
-      if (value == 'edit') _edit(account);
-      if (value == 'archive') _archive(account);
-    },
-    itemBuilder: (_) => const [
-      PopupMenuItem(
-        value: 'edit',
-        child: ListTile(
-          leading: Icon(Icons.edit_outlined),
-          title: Text('Edit'),
-          dense: true,
-          contentPadding: EdgeInsets.zero,
-        ),
-      ),
-      PopupMenuItem(
-        value: 'archive',
-        child: ListTile(
-          leading: Icon(Icons.archive_outlined, color: Colors.red),
-          title: Text('Archive', style: TextStyle(color: Colors.red)),
-          dense: true,
-          contentPadding: EdgeInsets.zero,
-        ),
-      ),
-    ],
+  Future<void> _runAccountAction(
+    AdminAccount account,
+    Future<void> Function() action,
+  ) async {
+    if (_busyAccountIds.contains(account.userId)) return;
+    setState(() => _busyAccountIds.add(account.userId));
+    try {
+      await action();
+    } finally {
+      if (mounted) setState(() => _busyAccountIds.remove(account.userId));
+    }
+  }
+
+  Widget _actions(AdminAccount account) => AccountRowActions(
+    busy: _busyAccountIds.contains(account.userId),
+    onEdit: () => _runAccountAction(account, () => _edit(account)),
+    onArchive: () => _runAccountAction(account, () => _archive(account)),
+  );
+
+  Widget _statusButton(AdminAccount account) => AccountStatusButton(
+    active: account.isActive,
+    busy: _busyAccountIds.contains(account.userId),
+    onPressed: () => _runAccountAction(
+      account,
+      () => _setActive(account, !account.isActive),
+    ),
   );
 
   @override
@@ -738,7 +741,6 @@ class _ManageAccountsScreenState extends State<ManageAccountsScreen> {
       username: widget.username,
       role: widget.role,
       userRole: AppRole.superAdmin.label,
-      onRefresh: _load,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1149,28 +1151,11 @@ class _ManageAccountsScreenState extends State<ManageAccountsScreen> {
       separatorBuilder: (_, _) => const Divider(height: 1),
       itemBuilder: (_, index) {
         final account = accounts[index];
-        return ListTile(
-          contentPadding: EdgeInsets.zero,
-          leading: CircleAvatar(
-            backgroundColor: AppColors.primaryContainer,
-            child: Text(
-              account.username.isEmpty
-                  ? '?'
-                  : account.username[0].toUpperCase(),
-              style: const TextStyle(
-                color: AppColors.darkGreen,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-          title: Text(
-            account.username,
-            style: const TextStyle(fontWeight: FontWeight.w600),
-          ),
-          subtitle: Text(
-            '${account.roleLabel} • ${account.scopeLabel} • ${account.isActive ? 'Active' : 'Inactive'}',
-          ),
-          trailing: _actions(account),
+        return AccountAccessTile(
+          username: account.username,
+          subtitle: '${account.roleLabel} · ${account.scopeLabel}',
+          statusButton: _statusButton(account),
+          actions: _actions(account),
         );
       },
     );
@@ -1182,13 +1167,14 @@ class _ManageAccountsScreenState extends State<ManageAccountsScreen> {
       child: ConstrainedBox(
         constraints: BoxConstraints(minWidth: constraints.maxWidth),
         child: DataTable(
+          dataRowMinHeight: 56,
+          dataRowMaxHeight: double.infinity,
           headingRowColor: const WidgetStatePropertyAll(AppColors.background),
           columns: const [
             DataColumn(label: Text('ACCOUNT')),
             DataColumn(label: Text('ROLE')),
             DataColumn(label: Text('ASSIGNMENT')),
-            DataColumn(label: Text('STATUS')),
-            DataColumn(label: Text('ACCESS')),
+            DataColumn(label: Text('STATUS / ACCESS')),
             DataColumn(label: Text('ACTIONS')),
           ],
           rows: accounts
@@ -1201,7 +1187,9 @@ class _ManageAccountsScreenState extends State<ManageAccountsScreen> {
                           CircleAvatar(
                             backgroundColor: AppColors.primaryContainer,
                             child: Text(
-                              account.username[0].toUpperCase(),
+                              account.username.isEmpty
+                                  ? '?'
+                                  : account.username[0].toUpperCase(),
                               style: const TextStyle(
                                 color: AppColors.darkGreen,
                                 fontWeight: FontWeight.bold,
@@ -1218,35 +1206,13 @@ class _ManageAccountsScreenState extends State<ManageAccountsScreen> {
                     ),
                     DataCell(Text(account.roleLabel)),
                     DataCell(Text(account.scopeLabel)),
-                    DataCell(_statusChip(account.isActive)),
-                    DataCell(
-                      Switch(
-                        value: account.isActive,
-                        onChanged: (value) => _setActive(account, value),
-                      ),
-                    ),
+                    DataCell(_statusButton(account)),
                     DataCell(_actions(account)),
                   ],
                 ),
               )
               .toList(),
         ),
-      ),
-    ),
-  );
-
-  Widget _statusChip(bool active) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-    decoration: BoxDecoration(
-      color: active ? AppColors.primaryContainer : AppColors.dangerContainer,
-      borderRadius: AppRadii.fullyRounded,
-    ),
-    child: Text(
-      active ? 'Active' : 'Inactive',
-      style: TextStyle(
-        fontSize: 11,
-        fontWeight: FontWeight.w700,
-        color: active ? AppColors.green : AppColors.danger,
       ),
     ),
   );

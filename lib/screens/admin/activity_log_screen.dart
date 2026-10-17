@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../theme/app_typography.dart';
 
 import '../../models/app_role.dart';
 import '../../services/activity_log_service.dart';
@@ -100,7 +101,6 @@ class _ActivityLogScreenState extends State<ActivityLogScreen> {
       collegeId: widget.collegeId,
       userName: widget.username,
       userRole: _roleLabel(widget.role),
-      onRefresh: _load,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -264,7 +264,10 @@ class _ActivityLogScreenState extends State<ActivityLogScreen> {
               SizedBox(height: AppSpacing.sm),
               Text(
                 'No activity found',
-                style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800),
+                style: TextStyle(
+                  fontSize: AppTypography.sectionTitle,
+                  fontWeight: FontWeight.w800,
+                ),
               ),
               SizedBox(height: AppSpacing.xs),
               Text(

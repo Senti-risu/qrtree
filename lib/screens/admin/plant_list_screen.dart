@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../theme/app_typography.dart';
 import '../../widgets/plant_details_presentation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -7,6 +8,7 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_layout.dart';
 import '../../utils/user_facing_error.dart';
 import '../../widgets/app_card.dart';
+import '../../widgets/compact_filter_panel.dart';
 import '../../widgets/app_filter_sheet.dart';
 import '../../widgets/plant_summary_card.dart';
 import '../../widgets/app_error_state.dart';
@@ -217,7 +219,6 @@ class _PlantListScreenState extends State<PlantListScreen> {
       campusId: widget.campusId,
       collegeId: widget.collegeId,
       userName: widget.username,
-      onRefresh: _loadPlants,
       child: isDesktop
           ? Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -282,7 +283,7 @@ class _PlantListScreenState extends State<PlantListScreen> {
   );
 
   Widget _filters() => AppCard(
-    padding: const EdgeInsets.all(AppSpacing.lg),
+    padding: const EdgeInsets.all(AppSpacing.md),
     child: LayoutBuilder(
       builder: (context, constraints) {
         final mobile = !AppBreakpoints.isDesktop(constraints.maxWidth);
@@ -293,43 +294,24 @@ class _PlantListScreenState extends State<PlantListScreen> {
 
   Widget _desktopFilters() {
     final plants = _searchMatchedPlants;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Wrap(
-          spacing: AppSpacing.md,
-          runSpacing: AppSpacing.sm,
-          crossAxisAlignment: WrapCrossAlignment.center,
-          children: [
-            Text('Find plants', style: Theme.of(context).textTheme.titleMedium),
-            if (_capabilities.canRestorePlants) _recordSelector(),
-            if (_hasActiveFilters) _activeBadge(_activeFilterCount),
-            if (_hasActiveFilters)
-              TextButton(
-                onPressed: _clearFilters,
-                child: const Text('Reset filters'),
-              ),
-          ],
-        ),
-        const SizedBox(height: AppSpacing.md),
-        _searchField(),
-        const SizedBox(height: AppSpacing.md),
-        Wrap(
-          spacing: AppSpacing.sm,
-          runSpacing: AppSpacing.sm,
-          children: [
-            for (final value in _healthOptions)
-              _healthChoice(
-                value,
-                _healthCount(value, plants),
-                _healthFilter,
-                (selected) => setState(() => _healthFilter = selected),
-              ),
-          ],
-        ),
-        const SizedBox(height: AppSpacing.sm),
-        _resultSummary(),
+    return CompactFilterPanel(
+      search: _searchField(),
+      controls: [
+        if (_capabilities.canRestorePlants) _recordSelector(),
+        if (_hasActiveFilters)
+          TextButton(onPressed: _clearFilters, child: const Text('Reset')),
       ],
+      choices: [
+        for (final value in _healthOptions)
+          _healthChoice(
+            value,
+            _healthCount(value, plants),
+            _healthFilter,
+            (selected) => setState(() => _healthFilter = selected),
+          ),
+        if (_hasActiveFilters) _activeBadge(_activeFilterCount),
+      ],
+      resultSummary: '${_visiblePlants.length} of $_recordCount plants shown',
     );
   }
 
@@ -808,7 +790,7 @@ class _PlantListScreenState extends State<PlantListScreen> {
               ? 'All Plants'
               : '$_healthFilter Plants',
           style: const TextStyle(
-            fontSize: 25,
+            fontSize: AppTypography.sectionTitle,
             fontWeight: FontWeight.w800,
             color: AppColors.darkGreen,
           ),

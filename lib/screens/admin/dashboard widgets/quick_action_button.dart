@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../theme/app_typography.dart';
 
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_layout.dart';
@@ -45,7 +46,7 @@ class QuickActionButton extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         fontWeight: FontWeight.w600,
-                        fontSize: 14,
+                        fontSize: AppTypography.itemTitle,
                         color: AppColors.textPrimary,
                       ),
                     ),
@@ -55,7 +56,7 @@ class QuickActionButton extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         color: AppColors.textSecondary,
-                        fontSize: 12,
+                        fontSize: AppTypography.caption,
                       ),
                     ),
                   ],

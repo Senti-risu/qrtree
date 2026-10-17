@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../theme/app_typography.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -9,6 +10,8 @@ import '../../utils/user_facing_error.dart';
 import '../../widgets/app_error_state.dart';
 import '../../widgets/app_shell.dart';
 import '../../widgets/app_card.dart';
+import '../../widgets/inspection_overview_card.dart';
+import '../../widgets/equal_height_cards.dart';
 import 'dashboard widgets/dashboard_stat_card.dart';
 import 'dashboard widgets/dashboard_priority_layout.dart';
 import 'dashboard widgets/dashboard_page_header.dart';
@@ -426,8 +429,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
       userRole: _userRole,
 
-      onRefresh: _loadDashboardData,
-
       showQrButton: true,
 
       onQrPressed: () async {
@@ -458,7 +459,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
               DashboardPageHeader(
                 description: _dashboardDescription,
                 userRole: _userRole,
-                onRefresh: _loadDashboardData,
               ),
               const SizedBox(height: AppSpacing.xl),
             ],
@@ -557,7 +557,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
           children: [
             if (_role == 'college_admin' || _role == 'inspection_team') ...[
               DashboardPriorityLayout(
-                work: _buildMonitoringWork(),
+                work: _buildMonitoringWork(
+                  contentWidth >= 720 &&
+                          _totalPlants > 1 &&
+                          MediaQuery.textScalerOf(context).scale(1) < 1.6
+                      ? (contentWidth - AppSpacing.lg) / 2
+                      : contentWidth,
+                ),
                 recent: _totalPlants > 1 ? _buildHealthChartCard() : null,
               ),
               const SizedBox(height: AppSpacing.lg),
@@ -661,126 +667,91 @@ class _DashboardScreenState extends State<DashboardScreen> {
     if (mounted) _loadDashboardData();
   }
 
-  Widget _buildMonitoringWork() {
+  Widget _buildMonitoringWork(double availableWidth) {
     final last = _lastInspection;
     final needsFirstInspection = _totalPlants > _deadCount && last == null;
-    return AppCard(
-      width: double.infinity,
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Inspection overview',
-            style: TextStyle(
-              fontSize: 17,
-              fontWeight: FontWeight.w800,
-              color: AppColors.darkGreen,
+    return InspectionOverviewCard(
+      availableWidth: availableWidth,
+      metrics: [
+        InspectionOverviewMetric(
+          label: 'Overdue',
+          count: _overdueCount,
+          icon: Icons.schedule,
+          onPressed: () => _openInspectionQueue('overdue'),
+        ),
+        InspectionOverviewMetric(
+          label: 'Due today',
+          count: _dueTodayCount,
+          icon: Icons.today,
+          onPressed: () => _openInspectionQueue('due_today'),
+        ),
+        if (_unscheduledCount > 0)
+          InspectionOverviewMetric(
+            label: 'No schedule',
+            count: _unscheduledCount,
+            icon: Icons.event_busy_outlined,
+            onPressed: _openPlantList,
+          ),
+      ],
+      lastInspection: last == null
+          ? 'No inspection recorded yet.'
+          : 'Last inspection: ${MaterialLocalizations.of(context).formatFullDate(last)}',
+      message: _totalPlants == 0
+          ? 'Start your college’s plant record.'
+          : _overdueCount > 0
+          ? 'Review overdue plants and arrange an inspection with your team.'
+          : _dueTodayCount > 0
+          ? 'Your team has inspections due today.'
+          : needsFirstInspection
+          ? 'Open a plant to review its schedule and arrange the first inspection.'
+          : _unscheduledCount > 0
+          ? 'Set inspection dates for plants without a schedule.'
+          : 'No inspections due. Scan a tag to review plant health.',
+      actions: [
+        if (_totalPlants > 0)
+          OutlinedButton.icon(
+            onPressed: _overdueCount + _dueTodayCount > 0
+                ? () => _openInspectionQueue('action')
+                : _openPlantList,
+            icon: const Icon(Icons.fact_check_outlined, size: 18),
+            label: Text(
+              _overdueCount + _dueTodayCount > 0
+                  ? 'Review inspections'
+                  : needsFirstInspection || _unscheduledCount > 0
+                  ? 'Schedule inspection'
+                  : 'Review plants',
             ),
           ),
-          const SizedBox(height: AppSpacing.sm),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              ActionChip(
-                avatar: const Icon(Icons.schedule, size: 18),
-                label: Text('Overdue $_overdueCount'),
-                onPressed: () => _openInspectionQueue('overdue'),
-              ),
-              ActionChip(
-                avatar: const Icon(Icons.today, size: 18),
-                label: Text('Due today $_dueTodayCount'),
-                onPressed: () => _openInspectionQueue('due_today'),
-              ),
-              if (_unscheduledCount > 0)
-                ActionChip(
-                  label: Text('No schedule $_unscheduledCount'),
-                  onPressed: _openPlantList,
-                ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          Text(
-            last == null
-                ? 'No inspection recorded yet.'
-                : 'Last inspection: ${MaterialLocalizations.of(context).formatFullDate(last)}',
-            style: const TextStyle(
-              fontSize: 12,
-              color: AppColors.textSecondary,
+        FilledButton.icon(
+          onPressed: () async {
+            await Navigator.pushNamed(
+              context,
+              '/qr-scanner',
+              arguments: _navigationArguments,
+            );
+            if (mounted) _loadDashboardData();
+          },
+          icon: const Icon(Icons.qr_code_scanner_rounded, size: 18),
+          label: const Text('Scan QR'),
+        ),
+        if (_totalPlants <= 1)
+          OutlinedButton.icon(
+            onPressed: () async {
+              await Navigator.pushNamed(
+                context,
+                '/register-plant',
+                arguments: _navigationArguments,
+              );
+              if (mounted) _loadDashboardData();
+            },
+            icon: const Icon(Icons.add, size: 18),
+            label: Text(
+              _totalPlants == 0
+                  ? 'Register first plant'
+                  : 'Register another plant',
             ),
           ),
-          const SizedBox(height: AppSpacing.sm),
-          Text(
-            _totalPlants == 0
-                ? 'Start your college’s plant record.'
-                : _overdueCount > 0
-                ? 'Review overdue plants and arrange an inspection with your team.'
-                : _dueTodayCount > 0
-                ? 'Your team has inspections due today.'
-                : needsFirstInspection
-                ? 'Open a plant to review its schedule and arrange the first inspection.'
-                : _unscheduledCount > 0
-                ? 'Set inspection dates for plants without a schedule.'
-                : 'No inspections due. Scan a tag to review plant health.',
-            style: const TextStyle(
-              fontSize: 13,
-              height: 1.4,
-              color: AppColors.textSecondary,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              if (_totalPlants > 0)
-                OutlinedButton.icon(
-                  onPressed: _overdueCount + _dueTodayCount > 0
-                      ? () => _openInspectionQueue('action')
-                      : _openPlantList,
-                  icon: const Icon(Icons.fact_check_outlined, size: 18),
-                  label: Text(
-                    _overdueCount + _dueTodayCount > 0
-                        ? 'Review inspections'
-                        : needsFirstInspection || _unscheduledCount > 0
-                        ? 'Schedule inspection'
-                        : 'Review plants',
-                  ),
-                ),
-              FilledButton.icon(
-                onPressed: () async {
-                  await Navigator.pushNamed(
-                    context,
-                    '/qr-scanner',
-                    arguments: _navigationArguments,
-                  );
-                  if (mounted) _loadDashboardData();
-                },
-                icon: const Icon(Icons.qr_code_scanner_rounded, size: 18),
-                label: const Text('Scan QR'),
-              ),
-              if (_totalPlants <= 1)
-                OutlinedButton.icon(
-                  onPressed: () async {
-                    await Navigator.pushNamed(
-                      context,
-                      '/register-plant',
-                      arguments: _navigationArguments,
-                    );
-                    if (mounted) _loadDashboardData();
-                  },
-                  icon: const Icon(Icons.add, size: 18),
-                  label: Text(
-                    _totalPlants == 0
-                        ? 'Register first plant'
-                        : 'Register another plant',
-                  ),
-                ),
-            ],
-          ),
-        ],
-      ),
+      ],
     );
   }
 
@@ -798,7 +769,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 child: Text(
                   'Recent plants',
                   style: TextStyle(
-                    fontSize: 17,
+                    fontSize: AppTypography.sectionTitle,
                     fontWeight: FontWeight.w800,
                     color: AppColors.darkGreen,
                   ),
@@ -915,10 +886,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ? 2
         : 1;
 
-    final totalGap = gap * (columns - 1);
-
-    final cardWidth = (contentWidth - totalGap) / columns;
-
     final cards = <Widget>[
       DashboardStatCard(
         title: 'Total Plants',
@@ -991,13 +958,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ),
     ];
 
-    return Wrap(
-      spacing: gap,
-      runSpacing: gap,
-
-      children: cards
-          .map((card) => SizedBox(width: cardWidth, child: card))
-          .toList(),
+    if (columns > 1) {
+      return EqualHeightCards(columns: columns, gap: gap, children: cards);
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (var index = 0; index < cards.length; index++) ...[
+          if (index > 0) const SizedBox(height: gap),
+          cards[index],
+        ],
+      ],
     );
   }
 
@@ -1016,16 +987,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
     if (recentPlants == null) return actions;
     if (contentWidth >= 720 &&
         MediaQuery.textScalerOf(context).scale(1) < 1.6) {
-      return Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-
-        children: [
-          Expanded(child: actions),
-
-          const SizedBox(width: AppSpacing.lg),
-
-          Expanded(child: recentPlants),
-        ],
+      return EqualHeightCards(
+        gap: AppSpacing.lg,
+        children: [actions, recentPlants],
       );
     }
 
@@ -1175,7 +1139,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             'Quick Actions',
 
             style: TextStyle(
-              fontSize: 15,
+              fontSize: AppTypography.sectionTitle,
               fontWeight: FontWeight.w700,
               color: AppColors.darkGreen,
             ),
@@ -1186,7 +1150,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
           const Text(
             'Common plant management tasks',
 
-            style: TextStyle(fontSize: 10, color: AppColors.green),
+            style: TextStyle(
+              fontSize: AppTypography.caption,
+              color: AppColors.green,
+            ),
           ),
 
           const SizedBox(height: AppSpacing.md),
@@ -1233,7 +1200,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             'Plant Health Overview',
 
             style: TextStyle(
-              fontSize: 15,
+              fontSize: AppTypography.sectionTitle,
               fontWeight: FontWeight.w700,
               color: AppColors.darkGreen,
             ),
@@ -1244,7 +1211,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
           const Text(
             'Distribution of plant health status',
 
-            style: TextStyle(fontSize: 10, color: AppColors.green),
+            style: TextStyle(
+              fontSize: AppTypography.caption,
+              color: AppColors.green,
+            ),
           ),
 
           const SizedBox(height: AppSpacing.md),
@@ -1278,7 +1248,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       style: const TextStyle(
                         color: AppColors.darkGreen,
 
-                        fontSize: 22,
+                        fontSize: AppTypography.metric,
 
                         fontWeight: FontWeight.w700,
                       ),
@@ -1287,7 +1257,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     const Text(
                       'Total Plants',
 
-                      style: TextStyle(color: AppColors.green, fontSize: 9),
+                      style: TextStyle(
+                        color: AppColors.green,
+                        fontSize: AppTypography.caption,
+                      ),
                     ),
                   ],
                 ),
@@ -1376,7 +1349,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
   // ============================================================
 
   Widget _buildResponsiveRecentPlants(double contentWidth) {
-    return RecentPlantsTable(plants: _recentPlants, onViewAll: _openPlantList);
+    return AppCard(
+      child: RecentPlantsTable(
+        plants: _recentPlants,
+        onViewAll: _openPlantList,
+      ),
+    );
   }
 
   void _openPlantList() {
@@ -1414,7 +1392,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
         Text(
           '$title  $value',
 
-          style: const TextStyle(fontSize: 9, color: AppColors.textSecondary),
+          style: const TextStyle(
+            fontSize: AppTypography.caption,
+            color: AppColors.textSecondary,
+          ),
         ),
       ],
     );

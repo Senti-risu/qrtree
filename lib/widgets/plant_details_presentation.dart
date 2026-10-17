@@ -82,7 +82,7 @@ class PlantDetailsPresentation extends StatelessWidget {
             ),
             child: SizedBox(
               key: const ValueKey('floating-plant-details'),
-              width: 1080,
+              width: 640,
               height: height,
               child: child,
             ),

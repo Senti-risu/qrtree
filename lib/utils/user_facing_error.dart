@@ -21,7 +21,7 @@ String userFacingError(
     return 'You already reported this QR label. Check My QR reports for updates.';
   }
   if (value.contains('report has already been reviewed')) {
-    return 'This report was already reviewed. Refresh the list to see its status.';
+    return 'This report was already reviewed. Reopen the reports page to see its status.';
   }
   if (value.contains('plant label has changed')) {
     return 'This plant now has a different QR label or is archived. Dismiss the old report with a review note.';

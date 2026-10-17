@@ -6,6 +6,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_application_1/theme/app_theme.dart';
+import 'package:flutter_application_1/screens/admin/dashboard widgets/dashboard_page_header.dart';
 import 'package:flutter_application_1/widgets/app_card.dart';
 import 'package:flutter_application_1/widgets/app_filter_sheet.dart';
 import 'package:flutter_application_1/widgets/app_mobile_navbar.dart';
@@ -80,6 +81,7 @@ void main() {
         expect(item.bottom, lessThan(scan.top));
         expect(find.text('Plants'), findsOneWidget);
         expect(find.text('More'), findsOneWidget);
+        expect(find.byTooltip('Refresh'), findsNothing);
         expect(tester.takeException(), isNull);
       });
     }
@@ -314,6 +316,27 @@ void main() {
       expect(selected, -1);
     },
   );
+
+  testWidgets('desktop dashboard header has no manual refresh action', (
+    tester,
+  ) async {
+    viewport(tester, const Size(1440, 1000));
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: const Scaffold(
+          body: DashboardPageHeader(
+            description: 'College plant overview',
+            userRole: 'College Admin',
+          ),
+        ),
+      ),
+    );
+    expect(find.text('Dashboard'), findsOneWidget);
+    expect(find.text('Refresh'), findsNothing);
+    expect(find.byType(OutlinedButton), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
 
   testWidgets('render a phone component preview', (tester) async {
     viewport(tester, const Size(390, 844));

@@ -127,13 +127,6 @@ class _QrProblemReportsScreenState extends State<QrProblemReportsScreen> {
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(
       title: Text(widget.canReview ? 'QR problem reports' : 'My QR reports'),
-      actions: [
-        IconButton(
-          tooltip: 'Refresh',
-          onPressed: _loading ? null : _load,
-          icon: const Icon(Icons.refresh),
-        ),
-      ],
     ),
     body: _loading
         ? const Center(child: CircularProgressIndicator())

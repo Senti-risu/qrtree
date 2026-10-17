@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../theme/app_typography.dart';
 import '../../theme/app_colors.dart';
 
 /// Physical planting location; deliberately independent of account ownership.
@@ -25,7 +26,7 @@ class PlantingCampusDropdown extends StatelessWidget {
         'Planting campus',
         style: TextStyle(
           color: AppColors.darkGreen,
-          fontSize: 12,
+          fontSize: AppTypography.label,
           fontWeight: FontWeight.w600,
         ),
       ),
@@ -34,10 +35,13 @@ class PlantingCampusDropdown extends StatelessWidget {
         key: ValueKey(value),
         initialValue: value,
         isExpanded: true,
-        style: const TextStyle(fontSize: 14, color: AppColors.textPrimary),
+        style: const TextStyle(
+          fontSize: AppTypography.body,
+          color: AppColors.textPrimary,
+        ),
         hint: const Text(
           'Select campus or Outside campus',
-          style: TextStyle(fontSize: 14),
+          style: TextStyle(fontSize: AppTypography.body),
         ),
         decoration: const InputDecoration(
           helperText: 'Select a CSU campus or Outside campus.',

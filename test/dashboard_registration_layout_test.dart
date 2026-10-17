@@ -7,6 +7,50 @@ import 'package:flutter_application_1/widgets/forms/planting_campus_dropdown.dar
 import 'package:flutter_application_1/theme/app_theme.dart';
 
 void main() {
+  testWidgets('inspection actions occupy the card height alongside the chart', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1440, 1000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: Scaffold(
+          body: SingleChildScrollView(
+            child: DashboardPriorityLayout(
+              work: AppCard(
+                key: const Key('inspection-card'),
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Inspection overview'),
+                    const Text('No inspections due'),
+                    FilledButton(
+                      key: const Key('scan-action'),
+                      onPressed: () {},
+                      child: const Text('Scan QR'),
+                    ),
+                  ],
+                ),
+              ),
+              recent: const AppCard(
+                child: SizedBox(height: 260, child: Text('Health chart')),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    final card = tester.getRect(find.byKey(const Key('inspection-card')));
+    final action = tester.getRect(find.byKey(const Key('scan-action')));
+    expect(card.bottom - action.bottom, closeTo(16, 1));
+    expect(tester.takeException(), isNull);
+  });
+
   for (final width in [320.0, 768.0, 1440.0]) {
     testWidgets('priority cards fill and align at width $width', (
       tester,

@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import '../theme/app_typography.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_layout.dart';
+import 'app_card.dart';
+import 'equal_height_cards.dart';
 
 class PlantDetailHero extends StatelessWidget {
   const PlantDetailHero({
@@ -22,7 +25,7 @@ class PlantDetailHero extends StatelessWidget {
         borderRadius: AppRadii.large,
         child: Container(
           height: split
-              ? 220
+              ? 160
               : (constraints.maxWidth * .56).clamp(160.0, 240.0),
           width: double.infinity,
           color: AppColors.primaryContainer,
@@ -47,7 +50,7 @@ class PlantDetailHero extends StatelessWidget {
           Text(
             name,
             style: const TextStyle(
-              fontSize: 26,
+              fontSize: AppTypography.pageTitle,
               fontWeight: FontWeight.w800,
               color: AppColors.darkGreen,
             ),
@@ -56,7 +59,7 @@ class PlantDetailHero extends StatelessWidget {
           Text(
             scientificName,
             style: const TextStyle(
-              fontSize: 15,
+              fontSize: AppTypography.body,
               fontStyle: FontStyle.italic,
               color: AppColors.textSecondary,
             ),
@@ -65,7 +68,7 @@ class PlantDetailHero extends StatelessWidget {
           Text(
             'Plant #$plantId',
             style: const TextStyle(
-              fontSize: 12,
+              fontSize: AppTypography.caption,
               fontWeight: FontWeight.w600,
               color: AppColors.textSecondary,
             ),
@@ -73,19 +76,22 @@ class PlantDetailHero extends StatelessWidget {
         ],
       );
       return Padding(
-        padding: const EdgeInsets.only(bottom: 18),
-        child: split
-            ? Row(
-                children: [
-                  SizedBox(width: 320, child: image),
-                  const SizedBox(width: 24),
-                  Expanded(child: heading),
-                ],
-              )
-            : Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [image, const SizedBox(height: 16), heading],
-              ),
+        padding: const EdgeInsets.only(bottom: 14),
+        child: AppCard(
+          padding: const EdgeInsets.all(16),
+          child: split
+              ? Row(
+                  children: [
+                    SizedBox(width: 220, child: image),
+                    const SizedBox(width: 20),
+                    Expanded(child: heading),
+                  ],
+                )
+              : Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [image, const SizedBox(height: 16), heading],
+                ),
+        ),
       );
     },
   );
@@ -103,14 +109,7 @@ class PlantDetailSectionPair extends StatelessWidget {
     builder: (context, constraints) {
       if (constraints.maxWidth >= 720 &&
           MediaQuery.textScalerOf(context).scale(1) < 1.6) {
-        return Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(child: first),
-            const SizedBox(width: 16),
-            Expanded(child: second),
-          ],
-        );
+        return EqualHeightCards(children: [first, second]);
       }
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -121,9 +120,17 @@ class PlantDetailSectionPair extends StatelessWidget {
 }
 
 class PlantDetailFields extends StatelessWidget {
-  const PlantDetailFields({super.key, required this.title, required this.rows});
+  const PlantDetailFields({
+    super.key,
+    required this.title,
+    required this.rows,
+    this.trailing,
+    this.badge,
+  });
   final String title;
   final Map<String, String> rows;
+  final Widget? trailing;
+  final Widget? badge;
 
   @override
   Widget build(BuildContext context) => Container(
@@ -142,14 +149,23 @@ class PlantDetailFields extends StatelessWidget {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-                color: AppColors.darkGreen,
-              ),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: AppTypography.sectionTitle,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.darkGreen,
+                    ),
+                  ),
+                ),
+                ?trailing,
+              ],
             ),
+            if (badge != null) ...[const SizedBox(height: 8), badge!],
             const SizedBox(height: 12),
             for (final row in rows.entries)
               Padding(
@@ -161,7 +177,7 @@ class PlantDetailFields extends StatelessWidget {
                           Text(
                             row.key,
                             style: const TextStyle(
-                              fontSize: 12,
+                              fontSize: AppTypography.label,
                               color: AppColors.textSecondary,
                             ),
                           ),
@@ -169,7 +185,7 @@ class PlantDetailFields extends StatelessWidget {
                           Text(
                             row.value,
                             style: const TextStyle(
-                              fontSize: 14,
+                              fontSize: AppTypography.body,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -183,7 +199,7 @@ class PlantDetailFields extends StatelessWidget {
                             child: Text(
                               row.key,
                               style: const TextStyle(
-                                fontSize: 13,
+                                fontSize: AppTypography.label,
                                 color: AppColors.textSecondary,
                               ),
                             ),
@@ -194,7 +210,7 @@ class PlantDetailFields extends StatelessWidget {
                             child: Text(
                               row.value,
                               style: const TextStyle(
-                                fontSize: 14,
+                                fontSize: AppTypography.body,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -205,6 +221,57 @@ class PlantDetailFields extends StatelessWidget {
           ],
         );
       },
+    ),
+  );
+}
+
+/// Related actions share a surface and wrap rather than spanning a wide dialog.
+class PlantDetailActions extends StatelessWidget {
+  const PlantDetailActions({
+    super.key,
+    required this.children,
+    this.singleColumn = false,
+  });
+  final List<Widget> children;
+  final bool singleColumn;
+
+  @override
+  Widget build(BuildContext context) => AppCard(
+    padding: const EdgeInsets.all(16),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const Text(
+          'Plant actions',
+          style: TextStyle(
+            fontSize: AppTypography.sectionTitle,
+            fontWeight: FontWeight.w700,
+            color: AppColors.darkGreen,
+          ),
+        ),
+        const SizedBox(height: 12),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final columns =
+                singleColumn || MediaQuery.textScalerOf(context).scale(1) >= 1.5
+                ? 1
+                : constraints.maxWidth >= 780
+                ? 3
+                : constraints.maxWidth >= 500
+                ? 2
+                : 1;
+            final width = (constraints.maxWidth - (columns - 1) * 10) / columns;
+            return Wrap(
+              spacing: 10,
+              runSpacing: 10,
+              children: [
+                for (final child in children)
+                  SizedBox(width: width, child: child),
+              ],
+            );
+          },
+        ),
+      ],
     ),
   );
 }

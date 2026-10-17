@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../theme/app_typography.dart';
 import '../../models/plant_record_lock.dart';
 import '../../widgets/plant_details_presentation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -9,6 +10,8 @@ import '../../theme/app_layout.dart';
 import '../../utils/user_facing_error.dart';
 import '../../utils/health_status_label.dart';
 import '../../widgets/app_card.dart';
+import '../../widgets/app_page_header.dart';
+import '../../widgets/inspection_queue_layout.dart';
 import '../../widgets/app_filter_sheet.dart';
 import '../../widgets/app_error_state.dart';
 import '../../widgets/app_shell.dart';
@@ -55,14 +58,7 @@ class _InspectionHistoryScreenState extends State<InspectionHistoryScreen> {
   int _loadRequestId = 0;
   int _queueRequestId = 0;
 
-  static const Map<String, String> _queueFilters = {
-    'action': 'Needs action',
-    'due_today': 'Due today',
-    'overdue': 'Overdue',
-    'upcoming': 'Upcoming',
-    'completed': 'Completed',
-    'history': 'History',
-  };
+  static const _queueFilters = InspectionQueueFilters.filters;
 
   Map<String, dynamic> _map(dynamic value) =>
       value is Map ? Map<String, dynamic>.from(value) : {};
@@ -380,128 +376,21 @@ class _InspectionHistoryScreenState extends State<InspectionHistoryScreen> {
     campusId: widget.campusId,
     collegeId: widget.collegeId,
     userName: widget.username,
-    onRefresh: _refreshAll,
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (AppBreakpoints.isDesktop(MediaQuery.sizeOf(context).width)) ...[
-          const AppCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Inspections',
-                  style: TextStyle(
-                    fontSize: 26,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.darkGreen,
-                  ),
-                ),
-                SizedBox(height: 4),
-                Text(
+    child: InspectionQueueLayout(
+      header: AppBreakpoints.isDesktop(MediaQuery.sizeOf(context).width)
+          ? const AppPageHeader(
+              title: 'Inspections',
+              subtitle:
                   'Prioritize scheduled work and review completed inspections',
-                  style: TextStyle(fontSize: 12, color: AppColors.green),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: AppSpacing.xl),
-        ],
-        _queueSwitcher(),
-        const SizedBox(height: AppSpacing.lg),
-        Expanded(
-          child: _queueFilter == 'history' ? _content() : _queueContent(),
-        ),
-      ],
+            )
+          : null,
+      filters: InspectionQueueFilters(
+        selected: _queueFilter,
+        onSelected: _selectQueueFilter,
+      ),
+      body: _queueFilter == 'history' ? _content() : _queueContent(),
     ),
   );
-
-  Widget _queueSwitcher() => AppCard(
-    padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Row(
-          children: [
-            Icon(Icons.event_note_rounded, color: AppColors.green, size: 21),
-            SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                'Inspection queue',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.darkGreen,
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 3),
-        const Text(
-          'Start with overdue and due-today plants, or review completed work.',
-          style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
-        ),
-        const SizedBox(height: 13),
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: _queueFilters.entries.map((entry) {
-              final selected = _queueFilter == entry.key;
-              final urgent = entry.key == 'action' || entry.key == 'overdue';
-              return Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: ChoiceChip(
-                  selected: selected,
-                  showCheckmark: false,
-                  avatar: Icon(
-                    _queueFilterIcon(entry.key),
-                    size: 17,
-                    color: selected
-                        ? urgent
-                              ? AppColors.danger
-                              : AppColors.green
-                        : AppColors.textSecondary,
-                  ),
-                  label: Text(entry.value),
-                  labelStyle: TextStyle(
-                    fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
-                    color: selected
-                        ? urgent
-                              ? AppColors.danger
-                              : AppColors.darkGreen
-                        : AppColors.textSecondary,
-                  ),
-                  selectedColor: urgent
-                      ? AppColors.dangerContainer
-                      : AppColors.primaryContainer,
-                  backgroundColor: AppColors.background,
-                  side: BorderSide(
-                    color: selected
-                        ? urgent
-                              ? AppColors.danger.withValues(alpha: .45)
-                              : AppColors.green.withValues(alpha: .45)
-                        : AppColors.border,
-                  ),
-                  shape: RoundedRectangleBorder(borderRadius: AppRadii.medium),
-                  onSelected: (_) => _selectQueueFilter(entry.key),
-                ),
-              );
-            }).toList(),
-          ),
-        ),
-      ],
-    ),
-  );
-
-  IconData _queueFilterIcon(String filter) => switch (filter) {
-    'action' => Icons.priority_high_rounded,
-    'due_today' => Icons.today_rounded,
-    'overdue' => Icons.warning_amber_rounded,
-    'upcoming' => Icons.upcoming_rounded,
-    'completed' => Icons.task_alt_rounded,
-    _ => Icons.history_rounded,
-  };
 
   Widget _queueContent() {
     if (_queueLoading) {
@@ -537,46 +426,14 @@ class _InspectionHistoryScreenState extends State<InspectionHistoryScreen> {
     );
   }
 
-  Widget _emptyQueue() {
-    final label = _queueFilters[_queueFilter] ?? 'scheduled';
-    final completed = _queueFilter == 'completed';
-    return AppCard(
-      child: SizedBox(
-        height: 250,
-        child: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                completed ? Icons.task_alt_rounded : Icons.event_available,
-                size: 54,
-                color: AppColors.green,
-              ),
-              const SizedBox(height: 12),
-              Text(
-                completed ? 'No recent completions' : 'No $label inspections',
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-              const SizedBox(height: 5),
-              Text(
-                completed
-                    ? 'Completed inspections from the last 30 days will appear here.'
-                    : _queueFilter == 'action'
-                    ? 'There are no overdue or due-today inspections.'
-                    : 'Plants will appear here when their schedule matches this view.',
-                textAlign: TextAlign.center,
-                style: const TextStyle(color: AppColors.textSecondary),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+  Widget _emptyQueue() => InspectionQueueEmptyState(
+    filter: _queueFilter,
+    onNext: () => _selectQueueFilter(
+      _queueFilter == 'upcoming' || _queueFilter == 'completed'
+          ? 'history'
+          : 'upcoming',
+    ),
+  );
 
   Widget _queueCard(Map<String, dynamic> item) {
     final plantId = _intValue(item['plant_id']);
@@ -955,7 +812,10 @@ class _InspectionHistoryScreenState extends State<InspectionHistoryScreen> {
               SizedBox(height: AppSpacing.md),
               Text(
                 'No inspections recorded yet',
-                style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
+                style: TextStyle(
+                  fontSize: AppTypography.sectionTitle,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
               SizedBox(height: AppSpacing.xs),
               Text(
@@ -1296,7 +1156,10 @@ class _InspectionHistoryScreenState extends State<InspectionHistoryScreen> {
             const SizedBox(height: 10),
             const Text(
               'No inspections match your filters',
-              style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
+              style: TextStyle(
+                fontSize: AppTypography.sectionTitle,
+                fontWeight: FontWeight.w700,
+              ),
             ),
             const SizedBox(height: 5),
             const Text(

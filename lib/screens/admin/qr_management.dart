@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import '../../theme/app_typography.dart';
 import '../../models/app_role.dart';
 import '../../services/qr_print_service.dart';
 import '../../services/qr_service.dart';
@@ -12,6 +13,8 @@ import '../../widgets/app_filter_sheet.dart';
 import '../../widgets/app_page_header.dart';
 import '../../widgets/app_shell.dart';
 import '../../widgets/qr_mobile_tag_list.dart';
+import '../../widgets/full_width_data_table.dart';
+import '../../widgets/qr_tag_actions.dart';
 import '../qr/qr_problem_reports_screen.dart';
 
 class QrManagementScreen extends StatefulWidget {
@@ -86,89 +89,6 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
     'retired': 'Retired',
     'all': 'All statuses',
   };
-
-  static const Map<String, String> _statusDescriptions = {
-    'available': 'Ready to print or attach to a plant.',
-    'assigned': 'Currently linked to a registered plant.',
-    'damaged': 'Reported unreadable or unusable and needs attention.',
-    'replaced': 'An older tag that has been superseded by a new one.',
-    'retired': 'Permanently removed from active use.',
-    'all': 'Shows every tag, including its lifecycle history.',
-  };
-
-  Future<void> _showStatusGuide() => showDialog<void>(
-    context: context,
-    builder: (dialogContext) => AlertDialog(
-      title: const Row(
-        children: [
-          Icon(Icons.help_outline_rounded, color: AppColors.green),
-          SizedBox(width: 10),
-          Expanded(child: Text('QR tag statuses')),
-        ],
-      ),
-      content: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 480),
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: _statusFilters.entries.map((entry) {
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 14),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      width: 34,
-                      height: 34,
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color: AppColors.primaryContainer,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: const Icon(
-                        Icons.qr_code_2_rounded,
-                        size: 19,
-                        color: AppColors.green,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            entry.value,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.textPrimary,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            _statusDescriptions[entry.key]!,
-                            style: const TextStyle(
-                              color: AppColors.textSecondary,
-                              height: 1.35,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            }).toList(),
-          ),
-        ),
-      ),
-      actions: [
-        FilledButton(
-          onPressed: () => Navigator.pop(dialogContext),
-          child: const Text('Got it'),
-        ),
-      ],
-    ),
-  );
 
   Future<void> _loadTags({bool more = false}) async {
     if (more && (_loadingMore || !_hasMore)) return;
@@ -607,7 +527,6 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
       collegeId: widget.collegeId,
       userName: widget.username,
       userRole: _roleLabel(widget.role),
-      onRefresh: _loadTags,
       child: !isDesktop
           ? QrMobileTagList(
               toolbar: _toolbar(),
@@ -870,16 +789,6 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
         ),
         icon: const Icon(Icons.qr_code_scanner_rounded),
         label: const Text('Scan'),
-      ),
-      IconButton.outlined(
-        tooltip: 'Refresh',
-        onPressed: _loadTags,
-        icon: const Icon(Icons.refresh_rounded),
-      ),
-      IconButton.outlined(
-        tooltip: 'Explain QR tag statuses',
-        onPressed: _showStatusGuide,
-        icon: const Icon(Icons.help_outline_rounded),
       ),
     ],
   );
@@ -1154,7 +1063,7 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
                   const Text(
                     'QR tags',
                     style: TextStyle(
-                      fontSize: 16,
+                      fontSize: AppTypography.sectionTitle,
                       fontWeight: FontWeight.w800,
                       color: AppColors.darkGreen,
                     ),
@@ -1244,156 +1153,103 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
     },
   );
 
-  Widget _tagTable() => SingleChildScrollView(
-    scrollDirection: Axis.horizontal,
-    child: DataTable(
-      headingRowColor: const WidgetStatePropertyAll(AppColors.background),
-      columns: const [
-        DataColumn(label: Text('QR CODE')),
-        DataColumn(label: Text('ID')),
-        DataColumn(label: Text('STATUS')),
-        DataColumn(label: Text('ACTION')),
-      ],
-      rows: _visibleTags.map((tag) {
-        final code = tag['qr_code_string']?.toString() ?? '';
-        final status = QrService.statusOf(tag);
-        return DataRow(
-          cells: [
-            DataCell(
-              Row(
-                children: [
-                  const CircleAvatar(
-                    backgroundColor: AppColors.primaryContainer,
-                    child: Icon(
-                      Icons.qr_code_2_rounded,
-                      color: AppColors.green,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Text(
+  Widget _tagTable() => FullWidthDataTable(
+    columns: const [
+      DataColumn(label: Text('QR CODE'), columnWidth: FlexColumnWidth(4)),
+      DataColumn(label: Text('ID'), columnWidth: FlexColumnWidth(1.2)),
+      DataColumn(label: Text('STATUS'), columnWidth: FlexColumnWidth(1.6)),
+      DataColumn(label: Text('ACTIONS'), columnWidth: FlexColumnWidth(3.2)),
+    ],
+    rows: _visibleTags.map((tag) {
+      final code = tag['qr_code_string']?.toString() ?? '';
+      final status = QrService.statusOf(tag);
+      return DataRow(
+        cells: [
+          DataCell(
+            Row(
+              children: [
+                const CircleAvatar(
+                  backgroundColor: AppColors.primaryContainer,
+                  child: Icon(Icons.qr_code_2_rounded, color: AppColors.green),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
                     code,
                     style: const TextStyle(fontWeight: FontWeight.w700),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-            DataCell(Text('${tag['qr_tag_id']}')),
-            DataCell(_statusChip(status)),
-            DataCell(_tagActions(tag, code)),
-          ],
-        );
-      }).toList(),
-    ),
+          ),
+          DataCell(Text('${tag['qr_tag_id']}')),
+          DataCell(_statusChip(status)),
+          DataCell(_tagActions(tag, code)),
+        ],
+      );
+    }).toList(),
   );
 
   Widget _tagTile(Map<String, dynamic> tag) {
     final code = tag['qr_code_string']?.toString() ?? '';
     final status = QrService.statusOf(tag);
     final plantName = tag['common_name']?.toString().trim();
-    return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
-      leading: const CircleAvatar(
-        backgroundColor: AppColors.primaryContainer,
-        child: Icon(Icons.qr_code_2_rounded, color: AppColors.green),
-      ),
-      title: Text(code, style: const TextStyle(fontWeight: FontWeight.w600)),
-      subtitle: Wrap(
-        spacing: 8,
-        crossAxisAlignment: WrapCrossAlignment.center,
+    return Padding(
+      padding: const EdgeInsets.all(AppSpacing.sm),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _statusChip(status),
-          Text('ID: ${tag['qr_tag_id']}'),
-          if (plantName != null && plantName.isNotEmpty) Text(plantName),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const CircleAvatar(
+                backgroundColor: AppColors.primaryContainer,
+                child: Icon(Icons.qr_code_2_rounded, color: AppColors.green),
+              ),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      code,
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(height: AppSpacing.xs),
+                    Wrap(
+                      spacing: AppSpacing.sm,
+                      runSpacing: AppSpacing.xs,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        _statusChip(status),
+                        Text('ID: ${tag['qr_tag_id']}'),
+                        if (plantName != null && plantName.isNotEmpty)
+                          Text(plantName),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          _tagActions(tag, code),
         ],
       ),
-      trailing: _tagActions(tag, code, compact: true),
     );
   }
 
-  Widget _tagActions(
-    Map<String, dynamic> tag,
-    String code, {
-    bool compact = false,
-  }) {
+  Widget _tagActions(Map<String, dynamic> tag, String code) {
     final tagId = _tagId(tag);
-    final status = QrService.statusOf(tag);
-    final busy = tagId != null && _updatingTags.contains(tagId);
-    final lifecycleAvailable = switch (status) {
-      'assigned' || 'damaged' || 'available' => true,
-      _ => false,
-    };
-
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        IconButton(
-          tooltip: 'Print QR',
-          onPressed: busy || code.isEmpty
-              ? null
-              : () => _printService.printSingleTag(qrCode: code),
-          icon: const Icon(Icons.print_outlined),
-        ),
-        if (busy)
-          const Padding(
-            padding: EdgeInsets.all(10),
-            child: SizedBox(
-              width: 18,
-              height: 18,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            ),
-          )
-        else if (lifecycleAvailable)
-          PopupMenuButton<String>(
-            tooltip: 'More actions',
-            icon: const Icon(Icons.more_vert_rounded),
-            onSelected: (action) {
-              if (action == 'damaged') _markDamaged(tag);
-              if (action == 'replace') _replaceTag(tag);
-              if (action == 'retire') _retireTag(tag);
-            },
-            itemBuilder: (_) => [
-              if (status == 'assigned')
-                const PopupMenuItem(
-                  value: 'damaged',
-                  child: ListTile(
-                    dense: true,
-                    contentPadding: EdgeInsets.zero,
-                    leading: Icon(Icons.broken_image_outlined),
-                    title: Text('Mark as damaged'),
-                  ),
-                ),
-              if (status == 'damaged')
-                const PopupMenuItem(
-                  value: 'replace',
-                  child: ListTile(
-                    dense: true,
-                    contentPadding: EdgeInsets.zero,
-                    leading: Icon(Icons.swap_horiz_rounded),
-                    title: Text('Replace label'),
-                  ),
-                ),
-              if (status == 'available')
-                const PopupMenuItem(
-                  value: 'retire',
-                  child: ListTile(
-                    dense: true,
-                    contentPadding: EdgeInsets.zero,
-                    leading: Icon(Icons.archive_outlined),
-                    title: Text('Retire label'),
-                  ),
-                ),
-            ],
-          )
-        else if (!compact)
-          Tooltip(
-            message: 'This label has reached a final lifecycle state',
-            child: Icon(
-              Icons.lock_outline_rounded,
-              size: 20,
-              color: AppColors.textSecondary.withValues(alpha: .65),
-            ),
-          ),
-      ],
+    return QrTagActions(
+      status: QrService.statusOf(tag),
+      busy: tagId != null && _updatingTags.contains(tagId),
+      onPrint: code.isEmpty
+          ? null
+          : () => _printService.printSingleTag(qrCode: code),
+      onMarkDamaged: () => _markDamaged(tag),
+      onReplace: () => _replaceTag(tag),
+      onRetire: () => _retireTag(tag),
     );
   }
 

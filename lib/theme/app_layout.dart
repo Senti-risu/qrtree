@@ -89,7 +89,7 @@ class AppLayout {
   }
 
   static double sectionGap(double width) {
-    return AppBreakpoints.isPhone(width) ? AppSpacing.lg : AppSpacing.xl;
+    return AppSpacing.lg;
   }
 
   static BoxConstraints get contentConstraints =>

@@ -399,17 +399,7 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
                 );
               }
 
-              return Row(
-                children: [
-                  Expanded(child: heading),
-                  const SizedBox(width: 24),
-                  IconButton.filledTonal(
-                    onPressed: _loadSummary,
-                    tooltip: 'Refresh public information',
-                    icon: const Icon(Icons.refresh_rounded),
-                  ),
-                ],
-              );
+              return heading;
             },
           ),
         ),

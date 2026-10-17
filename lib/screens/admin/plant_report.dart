@@ -354,13 +354,6 @@ class _PlantListPageState extends State<PlantListPage> {
           'Plant Records',
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
-        actions: [
-          IconButton(
-            tooltip: 'Refresh',
-            onPressed: loadPlantList,
-            icon: const Icon(Icons.refresh),
-          ),
-        ],
       ),
 
       body: Padding(

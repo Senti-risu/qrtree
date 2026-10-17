@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import '../../theme/app_typography.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../screens/admin/plant_service.dart';
@@ -113,7 +114,10 @@ class _InspectionFormScreenState extends State<InspectionFormScreen> {
                 padding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                 child: Text(
                   'Add a current plant photo',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+                  style: TextStyle(
+                    fontSize: AppTypography.sectionTitle,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
               ),
               ListTile(
@@ -441,7 +445,7 @@ class _InspectionFormScreenState extends State<InspectionFormScreen> {
                 Text(
                   commonName,
                   style: const TextStyle(
-                    fontSize: 18,
+                    fontSize: AppTypography.sectionTitle,
                     fontWeight: FontWeight.w800,
                     color: AppColors.darkGreen,
                   ),
@@ -492,7 +496,10 @@ class _InspectionFormScreenState extends State<InspectionFormScreen> {
           children: [
             Text(
               title,
-              style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800),
+              style: const TextStyle(
+                fontSize: AppTypography.sectionTitle,
+                fontWeight: FontWeight.w800,
+              ),
             ),
             Text(
               subtitle,

@@ -69,7 +69,7 @@ void main() {
         final rect = tester.getRect(
           find.byKey(const ValueKey('floating-plant-details')),
         );
-        expect(rect.width, lessThanOrEqualTo(1080));
+        expect(rect.width, lessThanOrEqualTo(640));
         expect(rect.left, greaterThan(0));
         expect(rect.right, lessThan(scenario.size.width));
         expect(rect.height, lessThan(scenario.size.height));

@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import '../../theme/app_typography.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
@@ -10,6 +11,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_layout.dart';
 import '../../widgets/app_card.dart';
+import '../../widgets/compact_filter_panel.dart';
 import '../../widgets/app_page_header.dart';
 import '../../widgets/app_shell.dart';
 
@@ -473,7 +475,6 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
       campusId: widget.campusId,
       collegeId: widget.collegeId,
       userName: widget.username,
-      onRefresh: _loadReport,
       child: LayoutBuilder(
         builder: (context, constraints) {
           // On tall desktop windows the filters stay visible while report
@@ -493,11 +494,6 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
                     spacing: AppSpacing.sm,
                     runSpacing: AppSpacing.sm,
                     children: [
-                      OutlinedButton.icon(
-                        onPressed: _loadReport,
-                        icon: const Icon(Icons.refresh_rounded),
-                        label: const Text('Refresh'),
-                      ),
                       FilledButton.icon(
                         onPressed: _loading ? null : _exportPdf,
                         icon: const Icon(Icons.picture_as_pdf_outlined),
@@ -568,7 +564,7 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
   }
 
   Widget _filterCard() => AppCard(
-    padding: const EdgeInsets.all(AppSpacing.lg),
+    padding: const EdgeInsets.all(AppSpacing.md),
     child: LayoutBuilder(
       builder: (_, constraints) => AppBreakpoints.isPhone(constraints.maxWidth)
           ? _mobileReportFilters()
@@ -576,158 +572,40 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
     ),
   );
 
-  Widget _desktopReportFilters(double maxWidth) {
-    final columns = AppBreakpoints.isDesktop(maxWidth) ? 3 : 2;
-    final fieldWidth = (maxWidth - (AppSpacing.md * (columns - 1))) / columns;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Container(
-              width: 4,
-              height: 32,
-              decoration: BoxDecoration(
-                color: AppColors.warningAccent,
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            const SizedBox(width: 10),
-            const Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Refine report',
-                    style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800),
-                  ),
-                  Text(
-                    'Use one or more filters to focus the analytics',
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            if (_hasActiveFilters) ...[
-              _reportActiveBadge(_activeFilterCount),
-              const SizedBox(width: 5),
-              TextButton(
-                onPressed: _resetFilters,
-                child: const Text('Reset all'),
-              ),
-            ],
-          ],
+  Widget _desktopReportFilters(double maxWidth) => CompactFilterPanel(
+    search: _reportSearchField(),
+    controls: [
+      OutlinedButton.icon(
+        onPressed: _showReportFilterSheet,
+        icon: const Icon(Icons.tune_rounded, size: 19),
+        label: Text(
+          _advancedFilterCount == 0
+              ? 'Filters'
+              : 'Filters ($_advancedFilterCount)',
         ),
-        const SizedBox(height: 14),
-        _reportSearchField(),
-        const SizedBox(height: 15),
-        const Divider(height: 1),
-        const SizedBox(height: 14),
-        const Text(
-          'FILTER BY',
-          style: TextStyle(
-            fontSize: 10,
-            fontWeight: FontWeight.w800,
-            color: AppColors.textSecondary,
-            letterSpacing: .8,
-          ),
+      ),
+      if (_hasActiveFilters)
+        TextButton(onPressed: _resetFilters, child: const Text('Reset')),
+    ],
+    choices: [
+      for (final status in _reportHealthOptions)
+        _reportHealthChoice(
+          status,
+          _healthStatus,
+          (value) => setState(() => _healthStatus = value),
         ),
-        const SizedBox(height: 9),
-        Wrap(
-          spacing: 10,
-          runSpacing: 10,
-          children: [
-            SizedBox(width: fieldWidth, child: _dateField()),
-            if (_universityScope)
-              SizedBox(
-                width: fieldWidth,
-                child: _dropdown(
-                  'Campus',
-                  _campus,
-                  _options((plant) => _related(plant, 'campus', 'campus_name')),
-                  (value) => setState(() {
-                    _campus = value;
-                    _college = 'All';
-                  }),
-                ),
-              ),
-            if (widget.role != 'college_admin')
-              SizedBox(
-                width: fieldWidth,
-                child: _dropdown(
-                  'College',
-                  _college,
-                  _collegeOptions,
-                  (value) => setState(() => _college = value),
-                ),
-              ),
-            SizedBox(
-              width: fieldWidth,
-              child: _dropdown(
-                'Plant type',
-                _plantType,
-                _options(
-                  (plant) =>
-                      _related(plant, 'plant_classification', 'plant_type'),
-                ),
-                (value) => setState(() => _plantType = value),
-              ),
-            ),
-            SizedBox(
-              width: fieldWidth,
-              child: _dropdown(
-                'Growth stage',
-                _growthStage,
-                _options(
-                  (plant) => _related(plant, 'growth_status', 'growth_stage'),
-                ),
-                (value) => setState(() => _growthStage = value),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 13),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            const Text(
-              'HEALTH',
-              style: TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.w800,
-                color: AppColors.textSecondary,
-                letterSpacing: .8,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: [
-                    for (final status in _reportHealthOptions) ...[
-                      if (status != _reportHealthOptions.first)
-                        const SizedBox(width: 7),
-                      _reportHealthChoice(
-                        status,
-                        _healthStatus,
-                        (value) => setState(() => _healthStatus = value),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        _reportResultSummary(),
-      ],
-    );
-  }
+      if (_hasActiveFilters) _reportActiveBadge(_activeFilterCount),
+    ],
+    resultSummary: [
+      '${_filteredPlants.length} of ${_plants.length} plants match',
+      if (_dateRange != null)
+        '${_shortDate(_dateRange!.start)} – ${_shortDate(_dateRange!.end)}',
+      if (_campus != 'All') _campus,
+      if (_college != 'All') _college,
+      if (_plantType != 'All') _plantType,
+      if (_growthStage != 'All') _growthStage,
+    ].join(' · '),
+  );
 
   Widget _mobileReportFilters() => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
@@ -895,33 +773,6 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
           ..sort();
     return ['All', ...values];
   }
-
-  List<String> get _collegeOptions => _collegeOptionsFor(_campus);
-
-  Widget _dateField() => InkWell(
-    onTap: () async {
-      final selected = await showDateRangePicker(
-        context: context,
-        firstDate: DateTime(2000),
-        lastDate: DateTime.now(),
-        initialDateRange: _dateRange,
-      );
-      if (selected != null) setState(() => _dateRange = selected);
-    },
-    borderRadius: BorderRadius.circular(10),
-    child: InputDecorator(
-      decoration: _inputDecoration(
-        'Registration date',
-        Icons.date_range_outlined,
-      ),
-      child: Text(
-        _dateRange == null
-            ? 'All dates'
-            : '${_shortDate(_dateRange!.start)} – ${_shortDate(_dateRange!.end)}',
-        overflow: TextOverflow.ellipsis,
-      ),
-    ),
-  );
 
   Widget _dropdown(
     String label,
@@ -1453,7 +1304,7 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
                 Text(
                   value.toString(),
                   style: const TextStyle(
-                    fontSize: 23,
+                    fontSize: AppTypography.metric,
                     fontWeight: FontWeight.w800,
                     color: AppColors.darkGreen,
                   ),
@@ -1501,7 +1352,7 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
         Text(
           title,
           style: const TextStyle(
-            fontSize: 17,
+            fontSize: AppTypography.sectionTitle,
             fontWeight: FontWeight.w800,
             color: AppColors.darkGreen,
           ),
@@ -1813,7 +1664,7 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
           const Text(
             'Inspection Overview',
             style: TextStyle(
-              fontSize: 17,
+              fontSize: AppTypography.sectionTitle,
               fontWeight: FontWeight.w800,
               color: AppColors.darkGreen,
             ),
@@ -1892,7 +1743,7 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
           Text(
             _universityScope ? 'Campus Summary' : 'College Summary',
             style: const TextStyle(
-              fontSize: 17,
+              fontSize: AppTypography.sectionTitle,
               fontWeight: FontWeight.w800,
               color: AppColors.darkGreen,
             ),
@@ -1952,7 +1803,7 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
           const Text(
             'Detailed Plant Report',
             style: TextStyle(
-              fontSize: 20,
+              fontSize: AppTypography.sectionTitle,
               fontWeight: FontWeight.w800,
               color: AppColors.darkGreen,
             ),

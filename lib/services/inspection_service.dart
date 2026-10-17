@@ -13,7 +13,8 @@ class InspectionService {
         .from('plant')
         .select('''
       plant_id, variety, date_planted, tree_planter, photo_url, created_at,
-      campus_id, college_id, growth_status_id, health_status_id, qr_tag_id,
+      campus_id, college_id, classification_id, town_id, barangay_id,
+      growth_status_id, health_status_id, qr_tag_id,
       qr_tag:qr_tag!plant_qr_tag_id_fkey(qr_code_string),
       last_inspected_on, next_inspection_due_on, inspection_interval_days,
       archived_at, archive_reason,

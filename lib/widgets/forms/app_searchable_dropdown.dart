@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../theme/app_typography.dart';
 
 import '../../theme/app_colors.dart';
 import '../../theme/app_layout.dart';
@@ -32,7 +33,7 @@ class AppSearchableDropdown extends StatelessWidget {
           label,
           style: const TextStyle(
             color: AppColors.darkGreen,
-            fontSize: 12,
+            fontSize: AppTypography.label,
             fontWeight: FontWeight.w600,
           ),
         ),
