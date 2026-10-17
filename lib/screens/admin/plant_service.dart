@@ -48,7 +48,10 @@ class PlantPhotoRules {
 }
 
 class PlantService {
-  final SupabaseClient _supabase = Supabase.instance.client;
+  PlantService({SupabaseClient? client})
+    : _supabase = client ?? Supabase.instance.client;
+
+  final SupabaseClient _supabase;
 
   Future<UploadedPlantPhoto> uploadPlantPhoto({
     required int registeredBy,

@@ -11,6 +11,8 @@ class AppSearchableDropdown extends StatelessWidget {
   final ValueChanged<String?> onChanged;
   final bool enabled;
   final String hintText;
+  final String? errorText;
+  final bool isRequired;
 
   const AppSearchableDropdown({
     super.key,
@@ -20,6 +22,8 @@ class AppSearchableDropdown extends StatelessWidget {
     required this.onChanged,
     this.enabled = true,
     this.hintText = 'Type or select',
+    this.errorText,
+    this.isRequired = false,
   });
 
   @override
@@ -30,7 +34,7 @@ class AppSearchableDropdown extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          label,
+          isRequired ? '$label *' : label,
           style: const TextStyle(
             color: AppColors.darkGreen,
             fontSize: AppTypography.label,
@@ -45,6 +49,7 @@ class AppSearchableDropdown extends StatelessWidget {
               width: constraints.maxWidth,
               initialSelection: validValue,
               hintText: hintText,
+              errorText: errorText,
               enabled: enabled,
               menuHeight: 280,
               enableFilter: true,
@@ -63,6 +68,7 @@ class AppSearchableDropdown extends StatelessWidget {
                   .toList(),
               onSelected: enabled ? onChanged : null,
               inputDecorationTheme: InputDecorationTheme(
+                errorMaxLines: 3,
                 filled: true,
                 fillColor: enabled
                     ? AppColors.surface

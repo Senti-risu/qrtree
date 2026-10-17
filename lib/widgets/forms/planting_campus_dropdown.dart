@@ -9,10 +9,14 @@ class PlantingCampusDropdown extends StatelessWidget {
     required this.campuses,
     required this.value,
     required this.onChanged,
+    this.errorText,
+    this.isRequired = false,
   });
   final List<Map<String, dynamic>> campuses;
   final String? value;
   final ValueChanged<String?>? onChanged;
+  final String? errorText;
+  final bool isRequired;
 
   static const outside = 'outside';
   static int? campusId(String? value) =>
@@ -22,9 +26,9 @@ class PlantingCampusDropdown extends StatelessWidget {
   Widget build(BuildContext context) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      const Text(
-        'Planting campus',
-        style: TextStyle(
+      Text(
+        isRequired ? 'Planting campus *' : 'Planting campus',
+        style: const TextStyle(
           color: AppColors.darkGreen,
           fontSize: AppTypography.label,
           fontWeight: FontWeight.w600,
@@ -43,7 +47,9 @@ class PlantingCampusDropdown extends StatelessWidget {
           'Select campus or Outside campus',
           style: TextStyle(fontSize: AppTypography.body),
         ),
-        decoration: const InputDecoration(
+        decoration: InputDecoration(
+          errorText: errorText,
+          errorMaxLines: 3,
           helperText: 'Select a CSU campus or Outside campus.',
           helperMaxLines: 2,
         ),

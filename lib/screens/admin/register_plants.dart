@@ -1,10 +1,12 @@
 import 'dart:typed_data';
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../models/app_role.dart';
 import '../../services/qr_print_service.dart';
+import '../../services/registration_draft_store.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_layout.dart';
 import '../../utils/user_facing_error.dart';
@@ -30,6 +32,8 @@ class RegisterPlantScreen extends StatefulWidget {
   final int? campusId;
   final int? collegeId;
   final Map<String, dynamic>? existingQrTag;
+  final PlantService? plantService;
+  final RegistrationDraftStore? draftStore;
 
   const RegisterPlantScreen({
     super.key,
@@ -39,6 +43,8 @@ class RegisterPlantScreen extends StatefulWidget {
     this.campusId,
     this.collegeId,
     this.existingQrTag,
+    this.plantService,
+    this.draftStore,
   });
 
   @override
@@ -46,10 +52,22 @@ class RegisterPlantScreen extends StatefulWidget {
 }
 
 class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
-  final PlantService _plantService = PlantService();
+  late final PlantService _plantService = widget.plantService ?? PlantService();
   final QrPrintService _qrPrintService = QrPrintService();
   final ImagePicker _imagePicker = ImagePicker();
   final ScrollController _formScroll = ScrollController();
+  late final RegistrationDraftStore _drafts =
+      widget.draftStore ?? RegistrationDraftStore();
+  bool _draftBusy = false;
+  bool _draftChecked = false;
+
+  String get _draftKey => RegistrationDraftStore.keyFor(
+    userId: widget.userId,
+    role: widget.role,
+    campusId: widget.campusId,
+    collegeId: widget.collegeId,
+    qrTagId: _existingQrTagId,
+  );
 
   static const int _maxVarietyLength = 100;
   static const int _maxPlanterLength = 120;
@@ -168,6 +186,182 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
     setState(() => _hasUnsavedChanges = true);
   }
 
+  Map<String, dynamic> _draftData() => {
+    'classificationId': _selectedClassificationId,
+    'plantType': _plantType,
+    'growthId': _selectedGrowthStatusId,
+    'healthId': _selectedHealthStatusId,
+    'townId': _selectedTownId,
+    'barangayId': _selectedBarangayId,
+    'plantingCampus': _plantingCampusChoice,
+    'variety': _varietyController.text,
+    'planter': _planterController.text,
+    'datePlanted': _datePlanted?.toIso8601String(),
+    'photoName': _selectedImage?.name,
+    'photo': _selectedImageBytes == null
+        ? null
+        : base64Encode(_selectedImageBytes!),
+  };
+
+  Future<bool> _saveDraft() async {
+    if (_saving || _draftBusy) return false;
+    setState(() => _draftBusy = true);
+    try {
+      await _drafts.save(_draftKey, _draftData());
+      if (mounted) {
+        _message('Draft saved on this device, including the selected photo.');
+      }
+      return true;
+    } catch (_) {
+      if (mounted) {
+        _message(
+          'Could not save the draft. Stay on this page and try again.',
+          error: true,
+        );
+      }
+      return false;
+    } finally {
+      if (mounted) setState(() => _draftBusy = false);
+    }
+  }
+
+  Future<void> _offerDraft() async {
+    if (_draftChecked) return;
+    _draftChecked = true;
+    try {
+      final draft = await _drafts.read(_draftKey);
+      if (!mounted || draft == null) return;
+      final resume = await showDialog<bool>(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => AlertDialog(
+          title: const Text('Resume saved registration?'),
+          content: const Text(
+            'A draft for your account is saved on this device. Review its details before registering.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Discard draft'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Resume'),
+            ),
+          ],
+        ),
+      );
+      if (!mounted || resume == null) return;
+      if (!resume) {
+        await _drafts.discard(_draftKey);
+        return;
+      }
+      _restoreDraft(draft);
+    } catch (_) {
+      if (mounted) {
+        _message(
+          'The saved draft could not be loaded. It has not been deleted. You can retry by reopening registration.',
+          error: true,
+        );
+      }
+    }
+  }
+
+  void _restoreDraft(Map<String, dynamic> data) {
+    Map<String, dynamic>? row(
+      List<Map<String, dynamic>> rows,
+      String key,
+      Object? id,
+    ) {
+      if (id is! int) return null;
+      for (final candidate in rows) {
+        if (candidate[key] == id) return candidate;
+      }
+      return null;
+    }
+
+    String text(String key, int limit) {
+      final value = data[key];
+      if (value is! String) return '';
+      return value.length <= limit ? value : value.substring(0, limit);
+    }
+
+    // Decode and validate before modifying the form, so corrupt photo data
+    // cannot leave a half-restored form behind.
+    Uint8List? photo;
+    final photoName = text('photoName', 255);
+    final encoded = data['photo'];
+    if (encoded != null) {
+      if (encoded is! String || encoded.length > 9 * 1024 * 1024) {
+        throw const FormatException('Invalid draft photo');
+      }
+      photo = base64Decode(encoded);
+      PlantPhotoRules.validate(
+        bytes: photo,
+        extension: photoName.split('.').last,
+      );
+    }
+    final classification = row(
+      _classifications,
+      'classification_id',
+      data['classificationId'],
+    );
+    final growth = row(_growthStatuses, 'growth_status_id', data['growthId']);
+    final health = row(_healthStatuses, 'health_status_id', data['healthId']);
+    final town = row(_towns, 'town_id', data['townId']);
+    final barangay = row(_barangays, 'barangay_id', data['barangayId']);
+    final planting = data['plantingCampus'];
+    setState(() {
+      _selectedClassificationId = classification?['classification_id'] as int?;
+      _plantType = classification == null
+          ? (_plantTypes.contains(data['plantType'])
+                ? data['plantType'] as String
+                : null)
+          : _titleCase(classification['plant_type']?.toString() ?? '');
+      _commonName = classification?['common_name']?.toString();
+      _scientificNameController.text =
+          classification?['scientific_name']?.toString() ?? '';
+      _selectedGrowthStatusId = growth?['growth_status_id'] as int?;
+      _growthStage = growth == null
+          ? null
+          : _titleCase(growth['growth_stage']?.toString() ?? '');
+      _selectedHealthStatusId = health?['health_status_id'] as int?;
+      _healthStatus = health == null
+          ? null
+          : _friendlyHealth(health['status_name']?.toString());
+      _selectedTownId = town?['town_id'] as int?;
+      _town = town?['town_name']?.toString();
+      final validBarangay =
+          town != null && barangay?['town_id'] == _selectedTownId;
+      _selectedBarangayId = validBarangay
+          ? (barangay?['barangay_id'] as int?)
+          : null;
+      _barangay = validBarangay
+          ? (barangay?['barangay_name']?.toString())
+          : null;
+      _zipCodeController.text = town?['zip_code']?.toString() ?? '';
+      _plantingCampusChoice =
+          planting is String &&
+              (planting == PlantingCampusDropdown.outside ||
+                  _campuses.any((c) => '${c['campus_id']}' == planting))
+          ? planting
+          : null;
+      _varietyController.text = text('variety', _maxVarietyLength);
+      _planterController.text = text('planter', _maxPlanterLength);
+      final date = DateTime.tryParse(text('datePlanted', 40));
+      _datePlanted =
+          date != null && date.year >= 1950 && !date.isAfter(DateTime.now())
+          ? date
+          : null;
+      _selectedImageBytes = photo;
+      _selectedImage = photo == null
+          ? null
+          : XFile.fromData(photo, name: photoName);
+      _mobileStep = 0;
+      _hasUnsavedChanges = true;
+    });
+  }
+
   // ============================================================
   // LOAD SUPABASE DATA
   // ============================================================
@@ -234,6 +428,7 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
 
         _loading = false;
       });
+      await _offerDraft();
     } catch (e) {
       if (!mounted) return;
 
@@ -650,22 +845,29 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
   // REGISTER PLANT
   // ============================================================
 
+  List<String> get _missingPlantFields => [
+    if (_selectedCampusId == null || _selectedCollegeId == null)
+      'managing campus and college',
+    if (_plantType == null) 'plant type',
+    if (_selectedClassificationId == null) 'common name',
+    if (_selectedGrowthStatusId == null) 'growth stage',
+    if (_selectedHealthStatusId == null) 'health status',
+  ];
+
+  List<String> get _missingLocationFields => [
+    if (_plantingCampusChoice == null) 'planting campus or Outside campus',
+    if (_selectedTownId == null) 'town',
+    if (_selectedBarangayId == null) 'barangay',
+  ];
+
   bool _validatePlantStep({bool announce = true}) {
-    final missing = <String>[
-      if (_selectedCampusId == null || _selectedCollegeId == null)
-        'managing campus and college',
-      if (_selectedClassificationId == null) 'plant type and common name',
-      if (_selectedGrowthStatusId == null) 'growth stage',
-      if (_selectedHealthStatusId == null) 'health status',
-    ];
+    final missing = _missingPlantFields;
     final varietyLength = _varietyController.text.trim().runes.length;
     final planterLength = _planterController.text.trim().runes.length;
     final today = DateTime.now();
     final todayOnly = DateTime(today.year, today.month, today.day);
     String? validationError;
-    if (missing.isNotEmpty) {
-      validationError = 'Complete the highlighted plant information.';
-    } else if (varietyLength > _maxVarietyLength) {
+    if (varietyLength > _maxVarietyLength) {
       validationError =
           'Variety must be $_maxVarietyLength characters or fewer.';
     } else if (planterLength > _maxPlanterLength) {
@@ -677,30 +879,29 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
 
     setState(() {
       _plantValidationError = validationError;
-      _showPlantErrors = validationError != null;
+      _showPlantErrors = missing.isNotEmpty || validationError != null;
     });
-    if (validationError != null && announce) {
-      _message(validationError, error: true);
+    if (_showPlantErrors && announce) {
+      _message(
+        missing.isNotEmpty
+            ? 'Please fill out: ${missing.join(', ')}.'
+            : validationError!,
+        error: true,
+      );
     }
-    return validationError == null;
+    return missing.isEmpty && validationError == null;
   }
 
   bool _validateLocationStep({bool announce = true}) {
-    final missing = <String>[
-      if (_plantingCampusChoice == null) 'planting campus or Outside campus',
-      if (_selectedTownId == null) 'town',
-      if (_selectedBarangayId == null) 'barangay',
-    ];
+    final missing = _missingLocationFields;
     setState(() => _showLocationErrors = missing.isNotEmpty);
     if (missing.isNotEmpty && announce) {
-      _message('Complete the highlighted location information.', error: true);
+      _message('Please fill out: ${missing.join(', ')}.', error: true);
     }
     return missing.isEmpty;
   }
 
   void _nextMobileStep() {
-    if (_mobileStep == 0 && !_validatePlantStep()) return;
-    if (_mobileStep == 1 && !_validateLocationStep()) return;
     _goToStep((_mobileStep + 1).clamp(0, 3).toInt());
   }
 
@@ -709,6 +910,21 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
   }
 
   void _goToStep(int step) {
+    if (_saving || _draftBusy || step < 0 || step > 3) return;
+    if (step > _mobileStep) {
+      if (!_validatePlantStep()) {
+        _showStep(0);
+        return;
+      }
+      if (step > 1 && !_validateLocationStep()) {
+        _showStep(1);
+        return;
+      }
+    }
+    _showStep(step);
+  }
+
+  void _showStep(int step) {
     FocusScope.of(context).unfocus();
     setState(() => _mobileStep = step);
     if (_formScroll.hasClients) _formScroll.jumpTo(0);
@@ -783,7 +999,7 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
   }
 
   Future<void> _registerPlant() async {
-    if (_saving) {
+    if (_saving || _draftBusy) {
       return;
     }
 
@@ -798,7 +1014,7 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
     final plantValid = _validatePlantStep(announce: false);
     final locationValid = _validateLocationStep(announce: false);
     if (!plantValid || !locationValid) {
-      setState(() => _mobileStep = plantValid ? 1 : 0);
+      _showStep(plantValid ? 1 : 0);
       _message(
         'Review the missing information before registering this plant.',
         error: true,
@@ -884,6 +1100,16 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
         photoUrl: photoUrl,
       );
       registrationCompleted = true;
+      try {
+        await _drafts.complete(_draftKey);
+      } catch (_) {
+        if (mounted) {
+          _message(
+            'Plant registered, but the local draft could not be cleared. Discard it if offered again.',
+            error: true,
+          );
+        }
+      }
 
       if (!mounted) {
         return;
@@ -1019,31 +1245,50 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
   // ============================================================
 
   Future<bool> _confirmDiscard() async {
-    if (_saving) return false;
+    if (_saving || _draftBusy) return false;
     if (!_hasUnsavedChanges) return true;
-    return await showDialog<bool>(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('Discard this registration?'),
-            content: const Text(
-              'The plant information you entered has not been saved.',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const Text('Keep editing'),
-              ),
-              FilledButton(
-                onPressed: () => Navigator.pop(context, true),
-                style: FilledButton.styleFrom(
-                  backgroundColor: AppColors.danger,
-                ),
-                child: const Text('Discard'),
-              ),
-            ],
+    final choice = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Leave this registration?'),
+        content: const Text(
+          'Save a draft on this device, discard this registration, or stay to continue editing.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, 'stay'),
+            child: const Text('Stay'),
           ),
-        ) ??
-        false;
+          FilledButton(
+            onPressed: () => Navigator.pop(context, 'discard'),
+            style: FilledButton.styleFrom(backgroundColor: AppColors.danger),
+            child: const Text('Discard'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, 'save'),
+            child: const Text('Save draft'),
+          ),
+        ],
+      ),
+    );
+    if (!mounted || choice == null || choice == 'stay') return false;
+    if (choice == 'save') return _saveDraft();
+    try {
+      setState(() => _draftBusy = true);
+      await _drafts.discard(_draftKey);
+      if (mounted) setState(() => _hasUnsavedChanges = false);
+      return true;
+    } catch (_) {
+      if (mounted) {
+        _message(
+          'Could not discard the saved draft. Please try again.',
+          error: true,
+        );
+      }
+      return false;
+    } finally {
+      if (mounted) setState(() => _draftBusy = false);
+    }
   }
 
   @override
@@ -1070,11 +1315,29 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
     } else if (_loadError != null) {
       body = _errorCard();
     } else {
-      body = _form(useMobileStepper: phone, showHeader: desktop);
+      body = Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton.icon(
+              onPressed: _saving || _draftBusy ? null : _saveDraft,
+              icon: const Icon(Icons.save_outlined),
+              label: Text(
+                _draftBusy ? 'Saving draft…' : 'Save draft on device',
+              ),
+            ),
+          ),
+          AbsorbPointer(
+            absorbing: _draftBusy,
+            child: _form(useMobileStepper: phone, showHeader: desktop),
+          ),
+        ],
+      );
     }
 
     return PopScope(
-      canPop: !_saving && (_allowPop || !_hasUnsavedChanges),
+      canPop: !_saving && !_draftBusy && (_allowPop || !_hasUnsavedChanges),
       onPopInvokedWithResult: (didPop, _) async {
         if (didPop || _saving) return;
         final discard = await _confirmDiscard();
@@ -1541,6 +1804,10 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
               color: AppColors.darkGreen,
             ),
           ),
+          const SizedBox(height: AppSpacing.xs),
+          const Text(
+            'Fields marked * are required. Select an option from each list.',
+          ),
           const SizedBox(height: AppSpacing.lg),
           if (_registrationScopeLocked)
             LockedPlantAssignment(
@@ -1565,11 +1832,14 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
               ),
             ),
 
-          if (_showPlantErrors) ...[
+          if (_showPlantErrors &&
+              (_missingPlantFields.isNotEmpty ||
+                  _plantValidationError != null)) ...[
             const SizedBox(height: AppSpacing.lg),
             _validationBanner(
-              _plantValidationError ??
-                  'Select the plant type and common name, growth stage, and health status.',
+              _missingPlantFields.isNotEmpty
+                  ? 'Please fill out: ${_missingPlantFields.join(', ')}.'
+                  : _plantValidationError!,
             ),
           ],
 
@@ -1578,6 +1848,10 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
           _twoFields(
             AppSearchableDropdown(
               label: 'Plant Type',
+              isRequired: true,
+              errorText: _showPlantErrors && _plantType == null
+                  ? 'Please select a plant type.'
+                  : null,
 
               value: _plantType,
 
@@ -1588,6 +1862,10 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
 
             AppSearchableDropdown(
               label: 'Common Name',
+              isRequired: true,
+              errorText: _showPlantErrors && _selectedClassificationId == null
+                  ? 'Please select a common name.'
+                  : null,
 
               value: _commonName,
 
@@ -1603,7 +1881,7 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
 
           _twoFields(
             AppTextField(
-              label: 'Variety',
+              label: 'Variety (Optional)',
               controller: _varietyController,
               maxLength: _maxVarietyLength,
             ),
@@ -1622,6 +1900,10 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
           _twoFields(
             AppSearchableDropdown(
               label: 'Growth Stage',
+              isRequired: true,
+              errorText: _showPlantErrors && _selectedGrowthStatusId == null
+                  ? 'Please select a growth stage.'
+                  : null,
 
               value: _growthStage,
 
@@ -1632,6 +1914,10 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
 
             AppSearchableDropdown(
               label: 'Health Status',
+              isRequired: true,
+              errorText: _showPlantErrors && _selectedHealthStatusId == null
+                  ? 'Please select a health status.'
+                  : null,
 
               value: _healthStatus,
 
@@ -1697,16 +1983,20 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
             style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
           ),
 
-          if (_showLocationErrors) ...[
+          if (_showLocationErrors && _missingLocationFields.isNotEmpty) ...[
             const SizedBox(height: AppSpacing.lg),
             _validationBanner(
-              'Select a planting campus or Outside campus, then town and barangay.',
+              'Please fill out: ${_missingLocationFields.join(', ')}.',
             ),
           ],
 
           const SizedBox(height: AppSpacing.xl),
 
           PlantingCampusDropdown(
+            isRequired: true,
+            errorText: _showLocationErrors && _plantingCampusChoice == null
+                ? 'Please select a planting campus or Outside campus.'
+                : null,
             campuses: _campuses,
             value: _plantingCampusChoice,
             onChanged: _saving
@@ -1722,6 +2012,10 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
           // TOWN FIRST
           AppSearchableDropdown(
             label: 'Town',
+            isRequired: true,
+            errorText: _showLocationErrors && _selectedTownId == null
+                ? 'Please select a town.'
+                : null,
 
             value: _town,
 
@@ -1735,6 +2029,10 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
           // BARANGAY FILTERED BY TOWN
           AppSearchableDropdown(
             label: 'Barangay',
+            isRequired: true,
+            errorText: _showLocationErrors && _selectedBarangayId == null
+                ? 'Please select a barangay.'
+                : null,
 
             value: _barangay,
 
@@ -1775,7 +2073,7 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
 
       children: [
         Text(
-          'Date Planted',
+          'Date Planted (Optional)',
           style: theme.textTheme.labelMedium?.copyWith(
             color: AppColors.darkGreen,
             fontWeight: FontWeight.w600,

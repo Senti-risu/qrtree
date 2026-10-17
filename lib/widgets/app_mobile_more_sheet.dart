@@ -5,6 +5,7 @@ import '../models/app_role.dart';
 import '../services/account_profile_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_layout.dart';
+import 'app_version_info.dart';
 
 enum AppMobileMoreAction {
   profile,
@@ -214,6 +215,7 @@ Future<AppMobileMoreAction?> showAppMobileMoreSheet(
                     ),
                   const SizedBox(height: AppSpacing.xs),
                 ],
+                const AppVersionInfo(),
               ],
             ),
           ),
