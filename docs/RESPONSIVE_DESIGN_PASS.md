@@ -104,6 +104,32 @@ View upcoming or View history using the existing queue selection behavior.
 `inspection_queue_layout_test.dart` checks alignment, short windows, text scale,
 all mobile filter taps, and a rendered desktop preview.
 
+## Consistent staff workspace layout
+
+- List/report pages share `AppWorkspacePage`: full-width heading/actions, tools,
+  then independently scrolling results with 16-pixel gaps. This is used by Plant
+  Records (desktop), QR Management (desktop), account management, activity logs,
+  reports and the inspection queue. Existing mobile plant/QR sliver lists stay
+  intact so long lists retain lazy loading and scanner clearance.
+- All page headings use a 20-pixel inset; filter cards use `AppToolbarCard` with
+  a 16-pixel inset. Titles/subtitles and primary/secondary action styles share
+  theme sizes. Long headings/actions stack on smaller or enlarged-text layouts.
+- `AppTablePanel` lets QR/account table surfaces end after the last row instead
+  of filling the unused window with white. Table headings default to 48 pixels,
+  rows to at least 56 pixels, and cells may grow for wrapping/large text.
+- Plant, QR, account, activity and inspection empty states share one content-sized card.
+  Existing reset/history/upcoming actions retain their callbacks.
+- Short windows and text scaling of 1.4 or above let heading/tools scroll out of
+  the way. Dashboard and registration retain their task-specific content flow,
+  but use the same full-width headers, 16-pixel section gaps and aligned cards.
+- No database, role permissions, exports, QR lifecycle or registration rules
+  change in this visual pass. Landing/auth screens retain their separate layout.
+
+`app_workspace_page_test.dart` checks seven heading/action configurations at
+320/600/1440 widths and 1x/2x text, compact tables, short-window reachability and
+adoption of the shared component. QR/account preview PNGs are rendered from the
+shared widgets with sample records, not a live signed-in Supabase session.
+
 Before distributing an APK, manually test on an actual phone:
 
 1. Register as College Admin and Inspection Team. Move backward through all four

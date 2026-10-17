@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import '../../widgets/app_workspace_page.dart';
 import '../../theme/app_typography.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -475,96 +476,53 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
       campusId: widget.campusId,
       collegeId: widget.collegeId,
       userName: widget.username,
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          // On tall desktop windows the filters stay visible while report
-          // results scroll. On shorter windows they join the scroll area so
-          // the fixed controls can never crowd out the report content.
-          final keepFiltersFixed =
-              desktop && constraints.maxHeight >= AppBreakpoints.desktop;
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (desktop) ...[
-                AppPageHeader(
-                  title: 'Reports & Analytics',
-                  subtitle:
-                      '$_scopeLabel · plant health, growth, and inspections',
-                  trailing: Wrap(
-                    spacing: AppSpacing.sm,
-                    runSpacing: AppSpacing.sm,
-                    children: [
-                      FilledButton.icon(
-                        onPressed: _loading ? null : _exportPdf,
-                        icon: const Icon(Icons.picture_as_pdf_outlined),
-                        label: const Text('Export PDF'),
-                      ),
-                    ],
-                  ),
+      child: AppWorkspacePage(
+        header: desktop
+            ? AppPageHeader(
+                title: 'Reports & Analytics',
+                subtitle:
+                    '$_scopeLabel · plant health, growth, and inspections',
+                trailing: FilledButton.icon(
+                  onPressed: _loading ? null : _exportPdf,
+                  icon: const Icon(Icons.picture_as_pdf_outlined),
+                  label: const Text('Export PDF'),
                 ),
-                const SizedBox(height: AppSpacing.lg),
-              ] else ...[
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: FilledButton.icon(
-                    onPressed: _loading ? null : _exportPdf,
-                    icon: const Icon(Icons.picture_as_pdf_outlined),
-                    label: const Text('Export PDF'),
-                  ),
+              )
+            : Align(
+                alignment: Alignment.centerRight,
+                child: FilledButton.icon(
+                  onPressed: _loading ? null : _exportPdf,
+                  icon: const Icon(Icons.picture_as_pdf_outlined),
+                  label: const Text('Export PDF'),
                 ),
-                const SizedBox(height: AppSpacing.md),
-              ],
-              if (_loading)
-                const Expanded(
-                  child: Center(
-                    child: CircularProgressIndicator(color: AppColors.green),
-                  ),
-                )
-              else if (_error != null)
-                Expanded(
-                  child: Align(
-                    alignment: Alignment.topCenter,
-                    child: _errorCard(),
-                  ),
-                )
-              else ...[
-                if (keepFiltersFixed) ...[
-                  _filterCard(),
-                  const SizedBox(height: AppSpacing.lg),
-                ],
-                Expanded(
-                  child: SingleChildScrollView(
-                    child: Padding(
-                      padding: const EdgeInsets.only(bottom: AppSpacing.xl),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          if (!keepFiltersFixed) ...[
-                            _filterCard(),
-                            const SizedBox(height: AppSpacing.lg),
-                          ],
-                          _kpiCards(),
-                          const SizedBox(height: AppSpacing.lg),
-                          _analytics(),
-                          const SizedBox(height: AppSpacing.lg),
-                          _inspectionAndScope(),
-                          const SizedBox(height: AppSpacing.lg),
-                          _detailedReport(),
-                        ],
-                      ),
-                    ),
-                  ),
+              ),
+        tools: !_loading && _error == null ? _filterCard() : null,
+        body: _loading
+            ? const Center(
+                child: CircularProgressIndicator(color: AppColors.green),
+              )
+            : _error != null
+            ? SingleChildScrollView(child: _errorCard())
+            : SingleChildScrollView(
+                padding: const EdgeInsets.only(bottom: AppSpacing.lg),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _kpiCards(),
+                    const SizedBox(height: AppSpacing.lg),
+                    _analytics(),
+                    const SizedBox(height: AppSpacing.lg),
+                    _inspectionAndScope(),
+                    const SizedBox(height: AppSpacing.lg),
+                    _detailedReport(),
+                  ],
                 ),
-              ],
-            ],
-          );
-        },
+              ),
       ),
     );
   }
 
-  Widget _filterCard() => AppCard(
-    padding: const EdgeInsets.all(AppSpacing.md),
+  Widget _filterCard() => AppToolbarCard(
     child: LayoutBuilder(
       builder: (_, constraints) => AppBreakpoints.isPhone(constraints.maxWidth)
           ? _mobileReportFilters()

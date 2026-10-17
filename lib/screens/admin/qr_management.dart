@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import '../../widgets/app_workspace_page.dart';
+import '../../widgets/compact_filter_panel.dart';
 import '../../theme/app_typography.dart';
 import '../../models/app_role.dart';
 import '../../services/qr_print_service.dart';
@@ -514,7 +516,6 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
     final isDesktop = AppBreakpoints.isDesktop(
       MediaQuery.sizeOf(context).width,
     );
-    final useHeaderActions = isDesktop;
     return AppShell(
       activeRoute: '/qr-management',
       mobileTitle: 'QR Management',
@@ -541,24 +542,14 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
                   ? 'No QR tags match your filters.'
                   : 'No QR tags found.',
             )
-          : Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (isDesktop) ...[
-                  AppPageHeader(
-                    title: 'QR Management',
-                    subtitle:
-                        'Generate, print, scan, and monitor EcoTag QR codes',
-                    trailing: useHeaderActions ? _headerActions() : null,
-                  ),
-                  const SizedBox(height: AppSpacing.xl),
-                ],
-                if (!useHeaderActions) ...[
-                  _toolbar(),
-                  const SizedBox(height: AppSpacing.xl),
-                ],
-                Expanded(child: _tagList()),
-              ],
+          : AppWorkspacePage(
+              header: AppPageHeader(
+                title: 'QR Management',
+                subtitle: 'Generate, print, scan, and monitor EcoTag QR codes',
+                trailing: _headerActions(),
+              ),
+              tools: AppToolbarCard(child: _listHeader()),
+              body: _tagList(),
             ),
     );
   }
@@ -841,95 +832,46 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
 
   Widget _tagList() {
     if (_loading) {
-      return AppCard(
-        child: Column(
-          children: [
-            _listHeader(),
-            const Expanded(
-              child: Center(
-                child: CircularProgressIndicator(color: AppColors.green),
-              ),
-            ),
-          ],
-        ),
+      return const Center(
+        child: CircularProgressIndicator(color: AppColors.green),
       );
     }
-    if (_tags.isEmpty) {
-      return AppCard(
-        child: Column(
-          children: [
-            _listHeader(),
-            const Expanded(
-              child: Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.qr_code_2_rounded,
-                      size: 46,
-                      color: AppColors.textSecondary,
-                    ),
-                    SizedBox(height: AppSpacing.sm),
-                    Text('No QR tags found.'),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
+    if (_visibleTags.isEmpty) {
+      return AppEmptyState(
+        title: 'No QR tags found',
+        message: _hasActiveFilters
+            ? 'Try another search or reset your filters.'
+            : 'Generate QR tags to get started.',
+        icon: Icons.qr_code_2_rounded,
+        action: _hasActiveFilters
+            ? TextButton(
+                onPressed: _resetFilters,
+                child: const Text('Reset filters'),
+              )
+            : null,
       );
     }
-
-    return AppCard(
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _listHeader(),
-          const SizedBox(height: AppSpacing.md),
-          if (_visibleTags.isEmpty)
-            const Expanded(
-              child: Center(child: Text('No QR tags match your search.')),
-            )
-          else
-            Expanded(
-              child: LayoutBuilder(
-                builder: (_, constraints) {
-                  if (AppBreakpoints.isPhone(constraints.maxWidth)) {
-                    return ListView.separated(
-                      keyboardDismissBehavior:
-                          ScrollViewKeyboardDismissBehavior.onDrag,
-                      itemCount: _visibleTags.length,
-                      separatorBuilder: (_, _) => const Divider(height: 1),
-                      itemBuilder: (_, index) => _tagTile(_visibleTags[index]),
-                    );
-                  }
-                  return SingleChildScrollView(
-                    keyboardDismissBehavior:
-                        ScrollViewKeyboardDismissBehavior.onDrag,
-                    child: _tagTable(),
-                  );
-                },
-              ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Expanded(child: AppTablePanel(child: _tagTable())),
+        if (_hasMore) ...[
+          const SizedBox(height: AppSpacing.lg),
+          Center(
+            child: OutlinedButton.icon(
+              onPressed: _loadingMore ? null : () => _loadTags(more: true),
+              icon: _loadingMore
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.expand_more_rounded),
+              label: Text(_loadingMore ? 'Loading…' : 'Load more QR tags'),
             ),
-          if (_hasMore) ...[
-            const SizedBox(height: AppSpacing.lg),
-            Center(
-              child: OutlinedButton.icon(
-                onPressed: _loadingMore ? null : () => _loadTags(more: true),
-                icon: _loadingMore
-                    ? const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.expand_more_rounded),
-                label: Text(_loadingMore ? 'Loading…' : 'Load more QR tags'),
-              ),
-            ),
-          ],
+          ),
         ],
-      ),
+      ],
     );
   }
 
@@ -1132,23 +1074,24 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
           ],
         );
       }
-      return Row(
-        children: [
-          Expanded(child: title),
-          SizedBox(width: 300, child: _searchField()),
-          const SizedBox(width: 10),
+      return CompactFilterPanel(
+        search: _searchField(),
+        controls: [
           _statusDropdown(width: 190),
-          if (_activeFilterCount > 0) ...[
-            const SizedBox(width: 8),
-            _activeFilterPill(),
-          ],
-          const SizedBox(width: 8),
           TextButton.icon(
-            onPressed: _hasActiveFilters ? _resetFilters : null,
-            icon: const Icon(Icons.filter_alt_off_outlined, size: 18),
-            label: const Text('Reset'),
+            onPressed: _openProblemReports,
+            icon: const Icon(Icons.report_problem_outlined),
+            label: const Text('QR problem reports'),
           ),
+          if (_hasActiveFilters)
+            TextButton.icon(
+              onPressed: _resetFilters,
+              icon: const Icon(Icons.filter_alt_off_outlined, size: 18),
+              label: const Text('Reset'),
+            ),
         ],
+        choices: [if (_activeFilterCount > 0) _activeFilterPill()],
+        resultSummary: '$visibleCount of ${_tags.length} QR tags',
       );
     },
   );

@@ -1147,17 +1147,17 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
     if (useMobileStepper) return _mobileForm();
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (showHeader) ...[
           const AppPageHeader(
             title: 'Registration',
             subtitle: 'Register and profile a new campus plant',
           ),
-          const SizedBox(height: AppSpacing.xl),
+          const SizedBox(height: AppSpacing.lg),
         ],
         _qrCard(),
-        const SizedBox(height: AppSpacing.xl),
+        const SizedBox(height: AppSpacing.lg),
         LayoutBuilder(
           builder: (context, constraints) =>
               constraints.maxWidth >= AppBreakpoints.desktop
@@ -1165,19 +1165,19 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Expanded(child: _plantSection()),
-                    const SizedBox(width: AppSpacing.xl),
+                    const SizedBox(width: AppSpacing.lg),
                     Expanded(child: _locationSection()),
                   ],
                 )
               : Column(
                   children: [
                     _plantSection(),
-                    const SizedBox(height: AppSpacing.xl),
+                    const SizedBox(height: AppSpacing.lg),
                     _locationSection(),
                   ],
                 ),
         ),
-        const SizedBox(height: AppSpacing.xl),
+        const SizedBox(height: AppSpacing.lg),
         AppCard(
           padding: const EdgeInsets.all(AppSpacing.lg),
           child: Align(
@@ -1847,12 +1847,9 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
   }
 
   Widget _card({required Widget child}) {
-    final width = MediaQuery.sizeOf(context).width;
     return AppCard(
       width: double.infinity,
-      padding: EdgeInsets.all(
-        AppBreakpoints.isPhone(width) ? AppSpacing.lg : AppSpacing.xl,
-      ),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       child: child,
     );
   }

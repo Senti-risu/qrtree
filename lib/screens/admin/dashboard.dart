@@ -453,14 +453,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
       child: SingleChildScrollView(
         padding: EdgeInsets.zero,
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             if (isDesktop) ...[
               DashboardPageHeader(
                 description: _dashboardDescription,
                 userRole: _userRole,
               ),
-              const SizedBox(height: AppSpacing.xl),
+              const SizedBox(height: AppSpacing.lg),
             ],
             _buildDashboardContent(),
           ],
@@ -575,11 +575,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ],
             _buildResponsiveStats(contentWidth),
 
-            const SizedBox(height: AppSpacing.xl),
+            const SizedBox(height: AppSpacing.lg),
 
             _buildResponsiveAnalytics(contentWidth),
 
-            const SizedBox(height: AppSpacing.xl),
+            const SizedBox(height: AppSpacing.lg),
 
             if (_role != 'college_admin' &&
                 _role != 'inspection_team' &&

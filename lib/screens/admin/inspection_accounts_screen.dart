@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../widgets/app_workspace_page.dart';
 import '../../theme/app_typography.dart';
 
 import '../../models/app_role.dart';
@@ -674,101 +675,73 @@ class _InspectionAccountsScreenState extends State<InspectionAccountsScreen> {
       collegeId: widget.collegeId,
       userName: widget.username,
       userRole: AppRole.collegeAdmin.label,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (isDesktop) ...[
-            AppPageHeader(
-              title: 'Inspection Team Accounts',
-              subtitle:
-                  'Create, archive, and restore inspection accounts for your college.',
-              trailing: Wrap(
-                spacing: 10,
-                runSpacing: 10,
-                children: [
-                  OutlinedButton.icon(
-                    onPressed: _showArchivedAccounts,
-                    icon: const Icon(Icons.archive_outlined),
-                    label: const Text('Archived'),
-                  ),
-                  FilledButton.icon(
-                    onPressed: _openCreateDialog,
-                    style: FilledButton.styleFrom(
-                      backgroundColor: AppColors.green,
-                    ),
-                    icon: const Icon(Icons.person_add_alt_1_rounded),
-                    label: const Text('Create Account'),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: AppSpacing.xl),
-          ],
-          if (!isDesktop) ...[
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: _showArchivedAccounts,
-                    icon: const Icon(Icons.archive_outlined),
-                    label: const Text('Archived'),
-                  ),
+      child: AppWorkspacePage(
+        header: isDesktop
+            ? AppPageHeader(
+                title: 'Inspection Team Accounts',
+                subtitle:
+                    'Create, archive, and restore inspection accounts for your college.',
+                trailing: _pageActions(),
+              )
+            : _pageActions(),
+        tools: AppToolbarCard(child: _filterBar()),
+        body: LayoutBuilder(
+          builder: (_, constraints) {
+            final table = !AppBreakpoints.isPhone(constraints.maxWidth);
+            if (!_loading && _error == null && _accounts.isEmpty) {
+              return AppEmptyState(
+                title: 'No Inspection Team accounts yet',
+                message: 'Create an account to get started.',
+                icon: Icons.people_outline,
+                action: FilledButton.icon(
+                  onPressed: _openCreateDialog,
+                  icon: const Icon(Icons.person_add_alt_1_rounded),
+                  label: const Text('Create Account'),
                 ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: FilledButton.icon(
-                    onPressed: _openCreateDialog,
-                    style: FilledButton.styleFrom(
-                      backgroundColor: AppColors.green,
-                    ),
-                    icon: const Icon(Icons.person_add_alt_1_rounded),
-                    label: const Text('Create'),
-                  ),
+              );
+            }
+            if (!_loading && _error == null && _visibleAccounts.isEmpty) {
+              return AppEmptyState(
+                title: 'No accounts match your filters',
+                message: 'Try another search or reset your filters.',
+                action: TextButton(
+                  onPressed: _resetFilters,
+                  child: const Text('Reset filters'),
                 ),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.xl),
-          ],
-          Expanded(
-            child: LayoutBuilder(
-              builder: (_, constraints) =>
-                  _accountsCard(!AppBreakpoints.isPhone(constraints.maxWidth)),
-            ),
-          ),
-        ],
+              );
+            }
+            if (table &&
+                !_loading &&
+                _error == null &&
+                _visibleAccounts.isNotEmpty) {
+              return AppTablePanel(child: _desktopTable(_visibleAccounts));
+            }
+            return AppCard(
+              padding: const EdgeInsets.all(16),
+              child: _accountResults(_visibleAccounts, table),
+            );
+          },
+        ),
       ),
     );
   }
 
-  Widget _accountsCard(bool isDesktop) {
-    final visibleAccounts = _visibleAccounts;
-    return AppCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Inspection Team',
-            style: TextStyle(
-              fontSize: AppTypography.sectionTitle,
-              fontWeight: FontWeight.w700,
-              color: AppColors.darkGreen,
-            ),
-          ),
-          const SizedBox(height: 4),
-          const Text(
-            'Accounts assigned to your college',
-            style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
-          ),
-          const SizedBox(height: 14),
-          if (!_loading && _error == null && _accounts.isNotEmpty) ...[
-            _filterBar(),
-            const SizedBox(height: 14),
-          ],
-          Expanded(child: _accountResults(visibleAccounts, isDesktop)),
-        ],
+  Widget _pageActions() => Wrap(
+    spacing: 8,
+    runSpacing: 8,
+    children: [
+      OutlinedButton.icon(
+        onPressed: _showArchivedAccounts,
+        icon: const Icon(Icons.archive_outlined),
+        label: const Text('Archived'),
       ),
-    );
-  }
+      FilledButton.icon(
+        onPressed: _openCreateDialog,
+        icon: const Icon(Icons.person_add_alt_1_rounded),
+        label: const Text('Create Account'),
+      ),
+    ],
+  );
 
   Widget _accountResults(
     List<Map<String, dynamic>> visibleAccounts,
@@ -813,7 +786,9 @@ class _InspectionAccountsScreenState extends State<InspectionAccountsScreen> {
 
   Widget _filterBar() => LayoutBuilder(
     builder: (_, constraints) {
-      final isMobile = !AppBreakpoints.isDesktop(constraints.maxWidth);
+      final isMobile =
+          !AppBreakpoints.isDesktop(constraints.maxWidth) ||
+          MediaQuery.textScalerOf(context).scale(1) >= 1.4;
       final search = TextField(
         controller: _searchController,
         onChanged: (_) => setState(() {}),

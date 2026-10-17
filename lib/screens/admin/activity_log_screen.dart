@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../widgets/app_workspace_page.dart';
 import '../../theme/app_typography.dart';
 
 import '../../models/app_role.dart';
@@ -101,26 +102,20 @@ class _ActivityLogScreenState extends State<ActivityLogScreen> {
       collegeId: widget.collegeId,
       userName: widget.username,
       userRole: _roleLabel(widget.role),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          if (desktop) ...[
-            const AppPageHeader(
-              title: 'Activity Log',
-              subtitle: 'Review important changes made in EcoTag',
-            ),
-            const SizedBox(height: AppSpacing.xl),
-          ],
-          _filters(),
-          const SizedBox(height: AppSpacing.lg),
-          Expanded(child: _content()),
-        ],
+      child: AppWorkspacePage(
+        header: desktop
+            ? const AppPageHeader(
+                title: 'Activity Log',
+                subtitle: 'Review important changes made in EcoTag',
+              )
+            : null,
+        tools: _filters(),
+        body: _content(),
       ),
     );
   }
 
-  Widget _filters() => AppCard(
-    padding: const EdgeInsets.all(16),
+  Widget _filters() => AppToolbarCard(
     child: LayoutBuilder(
       builder: (context, constraints) {
         final action = _dropdown(
@@ -158,13 +153,17 @@ class _ActivityLogScreenState extends State<ActivityLogScreen> {
           },
         );
 
-        if (AppBreakpoints.isPhone(constraints.maxWidth)) {
+        if (constraints.maxWidth < 720 ||
+            MediaQuery.textScalerOf(context).scale(1) >= 1.4) {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const Text(
                 'Filter activity',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+                style: TextStyle(
+                  fontSize: AppTypography.sectionTitle,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
               const SizedBox(height: 12),
               action,
@@ -181,7 +180,10 @@ class _ActivityLogScreenState extends State<ActivityLogScreen> {
                 children: [
                   Text(
                     'Filter activity',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+                    style: TextStyle(
+                      fontSize: AppTypography.sectionTitle,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                   SizedBox(height: 2),
                   Text(
@@ -251,36 +253,12 @@ class _ActivityLogScreenState extends State<ActivityLogScreen> {
       );
     }
     if (_events.isEmpty) {
-      return const AppCard(
-        child: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                Icons.history_toggle_off_rounded,
-                size: 52,
-                color: AppColors.textSecondary,
-              ),
-              SizedBox(height: AppSpacing.sm),
-              Text(
-                'No activity found',
-                style: TextStyle(
-                  fontSize: AppTypography.sectionTitle,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-              SizedBox(height: AppSpacing.xs),
-              Text(
-                'New account and plant changes will appear here.',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: AppColors.textSecondary),
-              ),
-            ],
-          ),
-        ),
+      return const AppEmptyState(
+        title: 'No activity found',
+        message: 'New account and plant changes will appear here.',
+        icon: Icons.history_toggle_off_rounded,
       );
     }
-
     return ListView.separated(
       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
       itemCount: _events.length + (_hasMore ? 1 : 0),

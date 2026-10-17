@@ -65,7 +65,9 @@ class AppPageHeader extends StatelessWidget {
               if (trailing != null) ...[
                 const SizedBox(width: AppSpacing.xl),
                 ConstrainedBox(
-                  constraints: BoxConstraints(maxWidth: constraints.maxWidth * .5),
+                  constraints: BoxConstraints(
+                    maxWidth: constraints.maxWidth * .5,
+                  ),
                   child: trailing!,
                 ),
               ],

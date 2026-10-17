@@ -131,6 +131,18 @@ class AppTheme {
         ),
       ),
       primaryTextTheme: _compactTextTheme(base.primaryTextTheme),
+      dataTableTheme: DataTableThemeData(
+        headingRowHeight: 48,
+        dataRowMinHeight: 56,
+        dataRowMaxHeight: double.infinity,
+        horizontalMargin: 16,
+        columnSpacing: 24,
+        headingTextStyle: compactTextTheme.labelLarge?.copyWith(
+          fontWeight: FontWeight.w700,
+          color: AppColors.textPrimary,
+        ),
+        dataTextStyle: compactTextTheme.bodyMedium,
+      ),
       appBarTheme: const AppBarTheme(
         backgroundColor: AppColors.surface,
         foregroundColor: AppColors.textPrimary,

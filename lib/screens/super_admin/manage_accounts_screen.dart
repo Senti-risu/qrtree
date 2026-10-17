@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../widgets/app_workspace_page.dart';
 import '../../theme/app_typography.dart';
 import '../../models/admin_account.dart';
 import '../../models/app_role.dart';
@@ -741,81 +742,80 @@ class _ManageAccountsScreenState extends State<ManageAccountsScreen> {
       username: widget.username,
       role: widget.role,
       userRole: AppRole.superAdmin.label,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (isDesktop) ...[
-            AppPageHeader(
-              title: 'Manage Accounts',
-              subtitle:
-                  'View, activate, archive, and restore administrator accounts.',
-              trailing: Wrap(
-                spacing: 10,
-                runSpacing: 10,
-                children: [
-                  OutlinedButton.icon(
-                    onPressed: _showArchivedAccounts,
-                    icon: const Icon(Icons.archive_outlined),
-                    label: const Text('Archived'),
-                  ),
-                  FilledButton.icon(
-                    onPressed: _create,
-                    style: FilledButton.styleFrom(
-                      backgroundColor: AppColors.green,
-                    ),
-                    icon: const Icon(Icons.person_add_alt_1_rounded),
-                    label: const Text('Create Account'),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: AppSpacing.xl),
-          ],
-          if (!isDesktop) ...[
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: _showArchivedAccounts,
-                    icon: const Icon(Icons.archive_outlined),
-                    label: const Text('Archived'),
-                  ),
+      child: AppWorkspacePage(
+        header: isDesktop
+            ? AppPageHeader(
+                title: 'Manage Accounts',
+                subtitle:
+                    'View, activate, archive, and restore administrator accounts.',
+                trailing: _pageActions(),
+              )
+            : _pageActions(),
+        tools: _filterBar(),
+        body: LayoutBuilder(
+          builder: (_, constraints) {
+            final table = !AppBreakpoints.isPhone(constraints.maxWidth);
+            if (!_loading && _error == null && _accounts.isEmpty) {
+              return AppEmptyState(
+                title: 'No administrator accounts yet',
+                message: 'Create an account to get started.',
+                icon: Icons.people_outline,
+                action: FilledButton.icon(
+                  onPressed: _create,
+                  icon: const Icon(Icons.person_add_alt_1_rounded),
+                  label: const Text('Create Account'),
                 ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: FilledButton.icon(
-                    onPressed: _create,
-                    style: FilledButton.styleFrom(
-                      backgroundColor: AppColors.green,
-                    ),
-                    icon: const Icon(Icons.person_add_alt_1_rounded),
-                    label: const Text('Create'),
-                  ),
+              );
+            }
+            if (!_loading && _error == null && _visibleAccounts.isEmpty) {
+              return AppEmptyState(
+                title: 'No accounts match your filters',
+                message: 'Try another search or reset your filters.',
+                action: TextButton(
+                  onPressed: _resetFilters,
+                  child: const Text('Reset filters'),
                 ),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.xl),
-          ],
-          _filterBar(),
-          const SizedBox(height: AppSpacing.lg),
-          Expanded(
-            child: AppCard(
-              child: LayoutBuilder(
-                builder: (_, constraints) =>
-                    _body(!AppBreakpoints.isPhone(constraints.maxWidth)),
-              ),
-            ),
-          ),
-        ],
+              );
+            }
+            if (table &&
+                !_loading &&
+                _error == null &&
+                _visibleAccounts.isNotEmpty) {
+              return AppTablePanel(child: _desktopTable(_visibleAccounts));
+            }
+            return AppCard(
+              padding: const EdgeInsets.all(16),
+              child: _body(table),
+            );
+          },
+        ),
       ),
     );
   }
 
-  Widget _filterBar() => AppCard(
-    padding: const EdgeInsets.all(16),
+  Widget _pageActions() => Wrap(
+    spacing: 8,
+    runSpacing: 8,
+    children: [
+      OutlinedButton.icon(
+        onPressed: _showArchivedAccounts,
+        icon: const Icon(Icons.archive_outlined),
+        label: const Text('Archived'),
+      ),
+      FilledButton.icon(
+        onPressed: _create,
+        icon: const Icon(Icons.person_add_alt_1_rounded),
+        label: const Text('Create Account'),
+      ),
+    ],
+  );
+
+  Widget _filterBar() => AppToolbarCard(
     child: LayoutBuilder(
       builder: (_, constraints) {
-        final isMobile = !AppBreakpoints.isDesktop(constraints.maxWidth);
+        final isMobile =
+            !AppBreakpoints.isDesktop(constraints.maxWidth) ||
+            MediaQuery.textScalerOf(context).scale(1) >= 1.4;
         final search = TextField(
           controller: _searchController,
           onChanged: (_) => setState(() {}),

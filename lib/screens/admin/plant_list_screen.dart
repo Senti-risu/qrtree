@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../widgets/app_workspace_page.dart';
 import '../../theme/app_typography.dart';
 import '../../widgets/plant_details_presentation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -220,15 +221,10 @@ class _PlantListScreenState extends State<PlantListScreen> {
       collegeId: widget.collegeId,
       userName: widget.username,
       child: isDesktop
-          ? Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _header(),
-                const SizedBox(height: AppSpacing.xl),
-                _filters(),
-                const SizedBox(height: AppSpacing.lg),
-                Expanded(child: _content()),
-              ],
+          ? AppWorkspacePage(
+              header: _header(),
+              tools: _filters(),
+              body: _content(),
             )
           : CustomScrollView(
               keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
@@ -282,8 +278,7 @@ class _PlantListScreenState extends State<PlantListScreen> {
         : null,
   );
 
-  Widget _filters() => AppCard(
-    padding: const EdgeInsets.all(AppSpacing.md),
+  Widget _filters() => AppToolbarCard(
     child: LayoutBuilder(
       builder: (context, constraints) {
         final mobile = !AppBreakpoints.isDesktop(constraints.maxWidth);
@@ -685,39 +680,23 @@ class _PlantListScreenState extends State<PlantListScreen> {
     }
     final plants = _visiblePlants;
     if (plants.isEmpty) {
-      return AppCard(
-        child: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(
-                Icons.local_florist_outlined,
-                size: 56,
-                color: AppColors.textSecondary,
-              ),
-              const SizedBox(height: AppSpacing.md),
-              Text(
-                _recordCount == 0
-                    ? _recordFilter == 'archived'
-                          ? 'No archived plants'
-                          : 'No plants registered yet'
-                    : 'No plants match your filters',
-                textAlign: TextAlign.center,
-                style: Theme.of(
-                  context,
-                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
-              ),
-              if (_recordCount > 0 && _hasActiveFilters) ...[
-                const SizedBox(height: AppSpacing.md),
-                OutlinedButton.icon(
-                  onPressed: _clearFilters,
-                  icon: const Icon(Icons.filter_alt_off_rounded),
-                  label: const Text('Clear filters'),
-                ),
-              ],
-            ],
-          ),
-        ),
+      return AppEmptyState(
+        title: _recordCount == 0
+            ? _recordFilter == 'archived'
+                  ? 'No archived plants'
+                  : 'No plants registered yet'
+            : 'No plants match your filters',
+        message: _recordCount == 0
+            ? 'Plant records will appear here when available.'
+            : 'Try another search or clear your filters.',
+        icon: Icons.eco_outlined,
+        action: _recordCount > 0 && _hasActiveFilters
+            ? OutlinedButton.icon(
+                onPressed: _clearFilters,
+                icon: const Icon(Icons.filter_alt_off_rounded),
+                label: const Text('Clear filters'),
+              )
+            : null,
       );
     }
     return LayoutBuilder(
@@ -779,7 +758,7 @@ class _PlantListScreenState extends State<PlantListScreen> {
   }
 
   Widget _plantTable(List<Map<String, dynamic>> plants) => AppCard(
-    padding: const EdgeInsets.fromLTRB(20, 18, 20, 12),
+    padding: const EdgeInsets.all(AppSpacing.lg),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

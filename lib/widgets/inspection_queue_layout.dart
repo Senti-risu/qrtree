@@ -15,7 +15,8 @@ class InspectionQueueLayout extends StatelessWidget {
   final Widget? header;
   final Widget filters, body;
   @override
-  Widget build(BuildContext context) => AppWorkspacePage(header: header, tools: filters, body: body);
+  Widget build(BuildContext context) =>
+      AppWorkspacePage(header: header, tools: filters, body: body);
 }
 
 class InspectionQueueFilters extends StatelessWidget {
@@ -133,62 +134,32 @@ class InspectionQueueEmptyState extends StatelessWidget {
   final String filter;
   final VoidCallback onNext;
   @override
-  Widget build(BuildContext context) => SingleChildScrollView(
-    child: AppCard(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 28),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(
-            Icons.event_available_outlined,
-            size: 40,
-            color: AppColors.green,
-          ),
-          const SizedBox(height: 12),
-          Text(
-            switch (filter) {
-              'action' => 'No inspections need attention',
-              'due_today' => 'No inspections due today',
-              'overdue' => 'No overdue inspections',
-              'upcoming' => 'No upcoming inspections',
-              'completed' => 'No recent completions',
-              _ => 'No inspections found',
-            },
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: AppTypography.sectionTitle,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            filter == 'completed'
-                ? 'Completed inspections from the last 30 days will appear here.'
-                : filter == 'action'
-                ? 'There are no overdue or due-today inspections.'
-                : 'Plants will appear here when their schedule matches this view.',
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: AppTypography.body,
-              color: AppColors.textSecondary,
-            ),
-          ),
-          const SizedBox(height: 12),
-          OutlinedButton.icon(
-            onPressed: onNext,
-            icon: Icon(
-              filter == 'upcoming' || filter == 'completed'
-                  ? Icons.history
-                  : Icons.upcoming_outlined,
-            ),
-            label: Text(
-              filter == 'upcoming' || filter == 'completed'
-                  ? 'View history'
-                  : 'View upcoming',
-            ),
-          ),
-        ],
+  Widget build(BuildContext context) => AppEmptyState(
+    title: switch (filter) {
+      'action' => 'No inspections need attention',
+      'due_today' => 'No inspections due today',
+      'overdue' => 'No overdue inspections',
+      'upcoming' => 'No upcoming inspections',
+      'completed' => 'No recent completions',
+      _ => 'No inspections found',
+    },
+    message: filter == 'completed'
+        ? 'Completed inspections from the last 30 days will appear here.'
+        : filter == 'action'
+        ? 'There are no overdue or due-today inspections.'
+        : 'Plants will appear here when their schedule matches this view.',
+    icon: Icons.event_available_outlined,
+    action: OutlinedButton.icon(
+      onPressed: onNext,
+      icon: Icon(
+        filter == 'upcoming' || filter == 'completed'
+            ? Icons.history
+            : Icons.upcoming_outlined,
+      ),
+      label: Text(
+        filter == 'upcoming' || filter == 'completed'
+            ? 'View history'
+            : 'View upcoming',
       ),
     ),
   );
