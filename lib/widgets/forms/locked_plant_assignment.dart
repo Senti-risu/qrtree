@@ -8,9 +8,11 @@ class LockedPlantAssignment extends StatelessWidget {
     super.key,
     required this.campus,
     required this.college,
+    this.compact = false,
   });
   final String campus;
   final String college;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) => Container(
@@ -41,45 +43,67 @@ class LockedPlantAssignment extends StatelessWidget {
           ],
         ),
         const SizedBox(height: AppSpacing.md),
-        _entry(Icons.location_city_outlined, 'Campus', campus),
+        _entry(Icons.location_city_outlined, 'Campus', campus, inline: compact),
         const SizedBox(height: AppSpacing.sm),
-        _entry(Icons.school_outlined, 'College', college),
-        const SizedBox(height: AppSpacing.sm),
-        const Text(
-          'Choose the physical planting location in Location.',
-          style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
-        ),
+        _entry(Icons.school_outlined, 'College', college, inline: compact),
+        if (!compact) ...[
+          const SizedBox(height: AppSpacing.sm),
+          const Text(
+            'Choose the physical planting location in Location.',
+            style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+          ),
+        ],
       ],
     ),
   );
 
-  Widget _entry(IconData icon, String label, String value) => Row(
+  Widget _entry(
+    IconData icon,
+    String label,
+    String value, {
+    bool inline = false,
+  }) => Row(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
       Icon(icon, size: 18, color: AppColors.textSecondary),
       const SizedBox(width: AppSpacing.sm),
       Expanded(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              label,
-              style: const TextStyle(
-                fontSize: 11,
-                color: AppColors.textSecondary,
+        child: inline
+            ? Text.rich(
+                TextSpan(
+                  children: [
+                    TextSpan(
+                      text: '$label: ',
+                      style: const TextStyle(color: AppColors.textSecondary),
+                    ),
+                    TextSpan(
+                      text: value,
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                  ],
+                ),
+              )
+            : Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                  Text(
+                    value,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      height: 1.3,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                ],
               ),
-            ),
-            Text(
-              value,
-              style: const TextStyle(
-                fontSize: 14,
-                height: 1.3,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
-              ),
-            ),
-          ],
-        ),
       ),
     ],
   );

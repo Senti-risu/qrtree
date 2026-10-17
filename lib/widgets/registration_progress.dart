@@ -9,11 +9,13 @@ class RegistrationProgress extends StatelessWidget {
   static const labels = ['Plant', 'Location', 'Photo', 'Review'];
   final int currentStep;
   final ValueChanged<int>? onStepSelected;
+  final Widget? trailing;
 
   const RegistrationProgress({
     super.key,
     required this.currentStep,
     this.onStepSelected,
+    this.trailing,
   });
 
   @override
@@ -24,9 +26,32 @@ class RegistrationProgress extends StatelessWidget {
       children: [
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
-          child: Text(
-            'Step ${currentStep + 1} of 4 · ${labels[currentStep]}',
-            style: Theme.of(context).textTheme.titleSmall,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final heading = Text(
+                'Step ${currentStep + 1} of 4 · ${labels[currentStep]}',
+                style: Theme.of(context).textTheme.titleSmall,
+              );
+              if (trailing == null) return heading;
+              if (constraints.maxWidth < 280 ||
+                  MediaQuery.textScalerOf(context).scale(1) >= 1.4) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    heading,
+                    const SizedBox(height: AppSpacing.sm),
+                    trailing!,
+                  ],
+                );
+              }
+              return Row(
+                children: [
+                  Expanded(child: heading),
+                  const SizedBox(width: AppSpacing.sm),
+                  trailing!,
+                ],
+              );
+            },
           ),
         ),
         const SizedBox(height: AppSpacing.xs),

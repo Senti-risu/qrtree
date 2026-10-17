@@ -126,8 +126,7 @@ class AppSidebar extends StatelessWidget {
         color: AppColors.surface,
         border: Border(right: BorderSide(color: AppColors.navbarBorder)),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: ListView(
         children: [
           const SizedBox(height: AppSpacing.xl),
           const Padding(
@@ -151,7 +150,6 @@ class AppSidebar extends StatelessWidget {
               active: item.route == activeRoute,
               onTap: () => _handleNavigation(context, item),
             ),
-          const Spacer(),
         ],
       ),
     );

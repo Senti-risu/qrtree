@@ -45,7 +45,10 @@ class AppTopNavbar extends StatelessWidget {
     final hasIdentity = resolvedName.isNotEmpty || resolvedRole.isNotEmpty;
 
     return Container(
-      height: 64,
+      height: (MediaQuery.textScalerOf(context).scale(40) + 16).clamp(
+        64.0,
+        160.0,
+      ),
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
       decoration: const BoxDecoration(
         color: AppColors.surface,

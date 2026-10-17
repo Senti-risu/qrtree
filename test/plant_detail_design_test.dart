@@ -38,8 +38,8 @@ Widget content(VoidCallback onInspect) => Column(
         ),
         rows: const {
           'Last inspected': 'Not inspected',
-          'Next inspection': 'Jan 13, 2027',
-          'Schedule repeats': 'Every 90 days',
+          'Next inspection': 'Oct 22, 2026',
+          'Schedule repeats': 'Every 7 days',
         },
       ),
     ),

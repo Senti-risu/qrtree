@@ -10,9 +10,9 @@ import '../../services/registration_draft_store.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_layout.dart';
 import '../../utils/user_facing_error.dart';
+import '../../utils/word_capitalization.dart';
 import '../../widgets/app_card.dart';
 import '../../widgets/app_error_state.dart';
-import '../../widgets/app_page_header.dart';
 import '../../widgets/app_shell.dart';
 import '../../widgets/app_navigation_guard.dart';
 import '../../widgets/registration_progress.dart';
@@ -194,8 +194,8 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
     'townId': _selectedTownId,
     'barangayId': _selectedBarangayId,
     'plantingCampus': _plantingCampusChoice,
-    'variety': _varietyController.text,
-    'planter': _planterController.text,
+    'variety': capitalizeWords(_varietyController.text),
+    'planter': capitalizeWords(_planterController.text),
     'datePlanted': _datePlanted?.toIso8601String(),
     'photoName': _selectedImage?.name,
     'photo': _selectedImageBytes == null
@@ -346,8 +346,12 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
                   _campuses.any((c) => '${c['campus_id']}' == planting))
           ? planting
           : null;
-      _varietyController.text = text('variety', _maxVarietyLength);
-      _planterController.text = text('planter', _maxPlanterLength);
+      _varietyController.text = capitalizeWords(
+        text('variety', _maxVarietyLength),
+      );
+      _planterController.text = capitalizeWords(
+        text('planter', _maxPlanterLength),
+      );
       final date = DateTime.tryParse(text('datePlanted', 40));
       _datePlanted =
           date != null && date.year >= 1950 && !date.isAfter(DateTime.now())
@@ -390,11 +394,24 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
       if (!mounted) return;
 
       setState(() {
-        _classifications = results[0];
-        _campuses = results[1];
-        _colleges = results[2];
-        _towns = results[3];
-        _barangays = results[4];
+        // Format display names locally; database IDs and scientific names stay intact.
+        List<Map<String, dynamic>> namedRows(
+          List<Map<String, dynamic>> rows,
+          String key,
+        ) => rows
+            .map(
+              (row) => {
+                ...row,
+                if (row[key] is String)
+                  key: capitalizeWords(row[key] as String),
+              },
+            )
+            .toList();
+        _classifications = namedRows(results[0], 'common_name');
+        _campuses = namedRows(results[1], 'campus_name');
+        _colleges = namedRows(results[2], 'college_name');
+        _towns = namedRows(results[3], 'town_name');
+        _barangays = namedRows(results[4], 'barangay_name');
         _growthStatuses = results[5];
         _healthStatuses = results[6];
 
@@ -852,6 +869,7 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
     if (_selectedClassificationId == null) 'common name',
     if (_selectedGrowthStatusId == null) 'growth stage',
     if (_selectedHealthStatusId == null) 'health status',
+    if (_datePlanted == null) 'date planted',
   ];
 
   List<String> get _missingLocationFields => [
@@ -1039,7 +1057,7 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
             collegeId: _selectedCollegeId!,
             townId: _selectedTownId!,
             barangayId: _selectedBarangayId!,
-            variety: _emptyToNull(_varietyController.text),
+            variety: _emptyToNull(capitalizeWords(_varietyController.text)),
             datePlanted: _datePlanted == null
                 ? null
                 : _formatDate(_datePlanted!),
@@ -1091,11 +1109,11 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
 
         existingQrTagId: _existingQrTagId,
 
-        variety: _emptyToNull(_varietyController.text),
+        variety: _emptyToNull(capitalizeWords(_varietyController.text)),
 
         datePlanted: _datePlanted == null ? null : _formatDate(_datePlanted!),
 
-        treePlanter: _emptyToNull(_planterController.text),
+        treePlanter: _emptyToNull(capitalizeWords(_planterController.text)),
 
         photoUrl: photoUrl,
       );
@@ -1296,7 +1314,6 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
     final media = MediaQuery.of(context);
     final width = media.size.width;
     final phone = width < AppBreakpoints.desktop;
-    final desktop = width >= AppBreakpoints.desktop;
 
     Widget body;
 
@@ -1315,24 +1332,9 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
     } else if (_loadError != null) {
       body = _errorCard();
     } else {
-      body = Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Align(
-            alignment: Alignment.centerRight,
-            child: TextButton.icon(
-              onPressed: _saving || _draftBusy ? null : _saveDraft,
-              icon: const Icon(Icons.save_outlined),
-              label: Text(
-                _draftBusy ? 'Saving draft…' : 'Save draft on device',
-              ),
-            ),
-          ),
-          AbsorbPointer(
-            absorbing: _draftBusy,
-            child: _form(useMobileStepper: phone, showHeader: desktop),
-          ),
-        ],
+      body = AbsorbPointer(
+        absorbing: _draftBusy,
+        child: _form(useMobileStepper: phone),
       );
     }
 
@@ -1406,20 +1408,76 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
   // FORM
   // ============================================================
 
-  Widget _form({required bool useMobileStepper, required bool showHeader}) {
+  Widget _draftAction() => OutlinedButton.icon(
+    key: const Key('save-registration-draft'),
+    onPressed: _saving || _draftBusy ? null : _saveDraft,
+    icon: _draftBusy
+        ? const SizedBox(
+            width: 16,
+            height: 16,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          )
+        : const Icon(Icons.save_outlined),
+    label: Text(_draftBusy ? 'Saving draft…' : 'Save draft'),
+  );
+
+  Widget _registrationHeader() => _card(
+    key: const Key('registration-page-header'),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final heading = Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Registration',
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    color: AppColors.darkGreen,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                const Text(
+                  'Add plant details, its planting location, and an optional photo.',
+                ),
+              ],
+            );
+            if (constraints.maxWidth < 650 ||
+                MediaQuery.textScalerOf(context).scale(1) >= 1.4) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  heading,
+                  const SizedBox(height: AppSpacing.md),
+                  _draftAction(),
+                ],
+              );
+            }
+            return Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Expanded(child: heading),
+                const SizedBox(width: AppSpacing.lg),
+                _draftAction(),
+              ],
+            );
+          },
+        ),
+        const SizedBox(height: AppSpacing.lg),
+        _qrCard(),
+      ],
+    ),
+  );
+
+  Widget _form({required bool useMobileStepper}) {
     if (useMobileStepper) return _mobileForm();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (showHeader) ...[
-          const AppPageHeader(
-            title: 'Registration',
-            subtitle: 'Register and profile a new campus plant',
-          ),
-          const SizedBox(height: AppSpacing.lg),
-        ],
-        _qrCard(),
+        _registrationHeader(),
         const SizedBox(height: AppSpacing.lg),
         LayoutBuilder(
           builder: (context, constraints) =>
@@ -1427,25 +1485,62 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
               ? Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(child: _plantSection()),
+                    Expanded(
+                      child: _plantSection(
+                        includePhoto: false,
+                        compactAssignment: true,
+                      ),
+                    ),
                     const SizedBox(width: AppSpacing.lg),
-                    Expanded(child: _locationSection()),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          _locationSection(),
+                          const SizedBox(height: AppSpacing.lg),
+                          _photoSection(),
+                        ],
+                      ),
+                    ),
                   ],
                 )
               : Column(
                   children: [
-                    _plantSection(),
+                    _plantSection(includePhoto: false, compactAssignment: true),
                     const SizedBox(height: AppSpacing.lg),
                     _locationSection(),
+                    const SizedBox(height: AppSpacing.lg),
+                    _photoSection(),
                   ],
                 ),
         ),
         const SizedBox(height: AppSpacing.lg),
         AppCard(
           padding: const EdgeInsets.all(AppSpacing.lg),
-          child: Align(
-            alignment: Alignment.centerRight,
-            child: SizedBox(width: 200, height: 52, child: _registerButton()),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              const hint = Text(
+                'Check the required fields before registering. A draft does not create a plant record.',
+              );
+              if (constraints.maxWidth < 650 ||
+                  MediaQuery.textScalerOf(context).scale(1) >= 1.4) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    hint,
+                    const SizedBox(height: AppSpacing.md),
+                    _registerButton(),
+                  ],
+                );
+              }
+              return Row(
+                children: [
+                  const Expanded(child: hint),
+                  const SizedBox(width: AppSpacing.lg),
+                  _registerButton(),
+                ],
+              );
+            },
           ),
         ),
       ],
@@ -1461,14 +1556,16 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         RegistrationProgress(
+          key: const Key('registration-step-header'),
           currentStep: _mobileStep,
           onStepSelected: _saving ? null : _goToStep,
+          trailing: _draftAction(),
         ),
         SizedBox(height: sectionGap),
         if (_mobileStep == 0) ...[
           _qrCard(),
           SizedBox(height: sectionGap),
-          _plantSection(includePhoto: false),
+          _plantSection(includePhoto: false, compactAssignment: true),
         ] else if (_mobileStep == 1)
           _locationSection()
         else if (_mobileStep == 2)
@@ -1551,10 +1648,12 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Plant photo', style: Theme.of(context).textTheme.titleLarge),
-        const SizedBox(height: AppSpacing.sm),
-        const Text(
-          'Optional. Add a clear photo to help your team identify this plant.',
+        Text(
+          'Plant photo',
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+            color: AppColors.darkGreen,
+            fontWeight: FontWeight.w700,
+          ),
         ),
         const SizedBox(height: AppSpacing.lg),
         PlantImagePickerField(
@@ -1762,7 +1861,14 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
   // ============================================================
 
   Widget _qrCard() {
-    return _card(
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: AppColors.background,
+        borderRadius: AppRadii.medium,
+        border: AppBorders.subtle,
+      ),
       child: Row(
         children: [
           Icon(
@@ -1778,6 +1884,9 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
               _usingExistingQr
                   ? 'Using scanned QR: ${widget.existingQrTag?['qr_code_string']}'
                   : 'A new QR will be generated automatically when registration succeeds.',
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
             ),
           ),
         ],
@@ -1789,7 +1898,10 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
   // PLANT SECTION
   // ============================================================
 
-  Widget _plantSection({bool includePhoto = true}) {
+  Widget _plantSection({
+    bool includePhoto = true,
+    bool compactAssignment = false,
+  }) {
     final theme = Theme.of(context);
 
     return _card(
@@ -1804,13 +1916,10 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
               color: AppColors.darkGreen,
             ),
           ),
-          const SizedBox(height: AppSpacing.xs),
-          const Text(
-            'Fields marked * are required. Select an option from each list.',
-          ),
           const SizedBox(height: AppSpacing.lg),
           if (_registrationScopeLocked)
             LockedPlantAssignment(
+              compact: compactAssignment,
               campus: _campus ?? 'Campus not assigned',
               college: _college ?? 'College not assigned',
             )
@@ -1882,6 +1991,8 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
           _twoFields(
             AppTextField(
               label: 'Variety (Optional)',
+              textCapitalization: TextCapitalization.words,
+              inputFormatters: const [WordCapitalizationFormatter()],
               controller: _varietyController,
               maxLength: _maxVarietyLength,
             ),
@@ -1934,6 +2045,8 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
 
             AppTextField(
               label: 'Tree Planter (Optional)',
+              textCapitalization: TextCapitalization.words,
+              inputFormatters: const [WordCapitalizationFormatter()],
 
               controller: _planterController,
 
@@ -1977,11 +2090,6 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
               color: AppColors.darkGreen,
             ),
           ),
-          const SizedBox(height: AppSpacing.xs),
-          const Text(
-            'Where this plant is physically planted.',
-            style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
-          ),
 
           if (_showLocationErrors && _missingLocationFields.isNotEmpty) ...[
             const SizedBox(height: AppSpacing.lg),
@@ -1990,9 +2098,10 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
             ),
           ],
 
-          const SizedBox(height: AppSpacing.xl),
+          const SizedBox(height: AppSpacing.lg),
 
           PlantingCampusDropdown(
+            showHelperText: false,
             isRequired: true,
             errorText: _showLocationErrors && _plantingCampusChoice == null
                 ? 'Please select a planting campus or Outside campus.'
@@ -2073,7 +2182,7 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
 
       children: [
         Text(
-          'Date Planted (Optional)',
+          'Date Planted *',
           style: theme.textTheme.labelMedium?.copyWith(
             color: AppColors.darkGreen,
             fontWeight: FontWeight.w600,
@@ -2085,7 +2194,12 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
         InkWell(
           onTap: _pickDate,
           child: InputDecorator(
-            decoration: const InputDecoration(),
+            decoration: InputDecoration(
+              errorText: _showPlantErrors && _datePlanted == null
+                  ? 'Please select the date planted.'
+                  : null,
+              errorMaxLines: 3,
+            ),
             child: ConstrainedBox(
               constraints: const BoxConstraints(minHeight: 24),
               child: Row(
@@ -2144,8 +2258,9 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
     );
   }
 
-  Widget _card({required Widget child}) {
+  Widget _card({Key? key, required Widget child}) {
     return AppCard(
+      key: key,
       width: double.infinity,
       padding: const EdgeInsets.all(AppSpacing.lg),
       child: child,

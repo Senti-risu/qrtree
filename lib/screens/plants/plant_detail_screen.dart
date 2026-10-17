@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../models/inspection_schedule.dart';
 
 import '../../models/app_role.dart';
 import '../../models/plant_record_lock.dart';
@@ -426,14 +427,14 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
 
   Future<void> _editInspectionSchedule(Map<String, dynamic> plant) async {
     final intervalController = TextEditingController(
-      text: (plant['inspection_interval_days'] ?? 90).toString(),
+      text: InspectionSchedule.intervalDays(plant).toString(),
     );
     final formKey = GlobalKey<FormState>();
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     var dueDate =
         _parseDate(plant['next_inspection_due_on']) ??
-        today.add(const Duration(days: 90));
+        today.add(Duration(days: InspectionSchedule.intervalDays(plant)));
     if (dueDate.isBefore(today)) dueDate = today;
     final values = await showDialog<(DateTime, int)>(
       context: context,
@@ -554,7 +555,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
     }
     final last = _parseDate(plant['last_inspected_on']);
     final next = _parseDate(plant['next_inspection_due_on']);
-    final interval = plant['inspection_interval_days'];
+    final interval = InspectionSchedule.intervalDays(plant);
     final status = _inspectionScheduleStatus(next);
     final (label, icon, foreground, background) = switch (status) {
       'overdue' => (
@@ -628,9 +629,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
       rows: {
         'Last inspected': last == null ? 'Not inspected' : _formatDate(last),
         'Next inspection': next == null ? 'Not scheduled' : _formatDate(next),
-        if (interval != null)
-          'Schedule repeats':
-              'Every $interval day${interval.toString() == '1' ? '' : 's'}',
+        'Schedule repeats': 'Every $interval day${interval == 1 ? '' : 's'}',
       },
     );
   }

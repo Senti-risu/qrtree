@@ -11,12 +11,14 @@ class PlantingCampusDropdown extends StatelessWidget {
     required this.onChanged,
     this.errorText,
     this.isRequired = false,
+    this.showHelperText = true,
   });
   final List<Map<String, dynamic>> campuses;
   final String? value;
   final ValueChanged<String?>? onChanged;
   final String? errorText;
   final bool isRequired;
+  final bool showHelperText;
 
   static const outside = 'outside';
   static int? campusId(String? value) =>
@@ -50,7 +52,9 @@ class PlantingCampusDropdown extends StatelessWidget {
         decoration: InputDecoration(
           errorText: errorText,
           errorMaxLines: 3,
-          helperText: 'Select a CSU campus or Outside campus.',
+          helperText: showHelperText
+              ? 'Select a CSU campus or Outside campus.'
+              : null,
           helperMaxLines: 2,
         ),
         items: [

@@ -71,6 +71,9 @@ Future<void> open(
   WidgetTester tester,
   MemoryDrafts drafts, {
   double width = 390,
+  double scale = 1,
+  String role = 'college_admin',
+  PlantService? service,
 }) async {
   tester.view.physicalSize = Size(width, 900);
   tester.view.devicePixelRatio = 1;
@@ -79,6 +82,15 @@ Future<void> open(
   await tester.pumpWidget(
     MaterialApp(
       theme: AppTheme.light,
+      builder: (context, child) => MediaQuery(
+        data: MediaQuery.of(
+          context,
+        ).copyWith(textScaler: TextScaler.linear(scale)),
+        child: RepaintBoundary(
+          key: const Key('registration-preview'),
+          child: child!,
+        ),
+      ),
       routes: {
         '/dashboard': (_) =>
             const Scaffold(body: Text('Dashboard destination')),
@@ -86,10 +98,10 @@ Future<void> open(
       home: RegisterPlantScreen(
         userId: 5,
         username: 'Admin',
-        role: 'college_admin',
+        role: role,
         campusId: 1,
         collegeId: 2,
-        plantService: LookupService(),
+        plantService: service ?? LookupService(),
         draftStore: drafts,
       ),
     ),
@@ -127,6 +139,24 @@ void main() {
       await choose(tester, 'Health Status', 'Healthy');
       await tester.tap(find.text('Continue to location'));
       await tester.pumpAndSettle();
+      expect(find.text('Step 1 of 4 · Plant'), findsOneWidget);
+      expect(find.text('Please select the date planted.'), findsOneWidget);
+      final date = find.text('Select date');
+      await tester.ensureVisible(date);
+      await tester.tap(date);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Cancel'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Continue to location'));
+      await tester.pumpAndSettle();
+      expect(find.text('Step 1 of 4 · Plant'), findsOneWidget);
+      await tester.ensureVisible(date);
+      await tester.tap(date);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('OK'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Continue to location'));
+      await tester.pumpAndSettle();
       expect(find.text('Step 2 of 4 · Location'), findsOneWidget);
       await tester.tap(find.text('Continue to photo'));
       await tester.pumpAndSettle();
@@ -161,6 +191,7 @@ void main() {
       await tester.ensureVisible(submit);
       await tester.tap(submit);
       await tester.pumpAndSettle();
+      expect(find.text('Please select the date planted.'), findsOneWidget);
       final requiredFields = tester
           .widgetList<AppSearchableDropdown>(find.byType(AppSearchableDropdown))
           .where((field) => field.isRequired);
@@ -191,8 +222,11 @@ void main() {
       await tester.tap(find.text('Resume'));
       await tester.pumpAndSettle();
       expect(find.text('Native Mango'), findsOneWidget);
-      expect(find.text('Assigned College'), findsOneWidget);
-      await tester.tap(find.text('Save draft on device'));
+      expect(
+        find.textContaining('Assigned College', findRichText: true),
+        findsWidgets,
+      );
+      await tester.tap(find.byKey(const Key('save-registration-draft')));
       await tester.pumpAndSettle();
       expect(drafts.value?['classificationId'], 7);
       expect(drafts.value?['variety'], 'Native Mango');
@@ -205,7 +239,12 @@ void main() {
       expect(find.text('Native Mango'), findsOneWidget);
       await tester.tap(find.text('Dashboard').last);
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Save draft'));
+      await tester.tap(
+        find.descendant(
+          of: find.byType(AlertDialog),
+          matching: find.text('Save draft'),
+        ),
+      );
       await tester.pumpAndSettle();
       expect(find.text('Dashboard destination'), findsOneWidget);
       expect(drafts.value?['planter'], 'Russel');
@@ -222,7 +261,12 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Dashboard').last);
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Save draft'));
+    await tester.tap(
+      find.descendant(
+        of: find.byType(AlertDialog),
+        matching: find.text('Save draft'),
+      ),
+    );
     await tester.pumpAndSettle();
     expect(find.text('Dashboard destination'), findsNothing);
     expect(find.text('Unsaved'), findsOneWidget);

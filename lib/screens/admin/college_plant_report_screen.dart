@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import '../../models/inspection_schedule.dart';
 import '../../widgets/app_workspace_page.dart';
 import '../../theme/app_typography.dart';
 import 'package:pdf/pdf.dart';
@@ -91,7 +92,7 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
           .from('plant')
           .select('''
         plant_id, variety, date_planted, tree_planter, created_at,
-        campus_id, college_id,
+        campus_id, college_id, last_inspected_on, next_inspection_due_on, inspection_interval_days,
         plant_classification (common_name, scientific_name, plant_type),
         campus:campus!plant_campus_id_fkey (campus_name), college (college_name),
         growth_status (growth_stage), health_status (status_name),
@@ -274,8 +275,10 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
   bool _inspected(Map<String, dynamic> plant) =>
       _inspectionDates.containsKey(plant['plant_id'] as int);
   bool _overdue(Map<String, dynamic> plant) {
-    final date = _inspectionDates[plant['plant_id'] as int];
-    return date != null && DateTime.now().difference(date).inDays > 90;
+    return InspectionSchedule.isOverdue(
+      plant,
+      lastInspected: _inspectionDates[plant['plant_id'] as int],
+    );
   }
 
   Future<void> _exportPdf() async {
@@ -1630,7 +1633,7 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
           const SizedBox(height: 18),
           _metricRow('Inspected', inspected, AppColors.info),
           _metricRow('Pending inspection', pending, AppColors.warningAccent),
-          _metricRow('Overdue (90+ days)', overdue, AppColors.danger),
+          _metricRow('Overdue inspections', overdue, AppColors.danger),
           const SizedBox(height: 15),
           Row(
             children: [
