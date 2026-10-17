@@ -31,10 +31,15 @@ class _GuestQrScannerScreenState extends State<GuestQrScannerScreen>
     with WidgetsBindingObserver {
   late final GuestService _service;
   final MobileScannerController _controller = MobileScannerController(
-    detectionSpeed: DetectionSpeed.noDuplicates,
+    // Native noDuplicates remembers a failed label even after UI-only retries.
+    // Repeated detections are gated below, so an explicit retry can use it again.
+    detectionSpeed: DetectionSpeed.normal,
+    detectionTimeoutMs: 500,
   );
 
   bool _handling = false;
+  bool _awaitingRetry = false;
+  bool _manualEntryOpen = false;
   String _message =
       'Place an EcoTag label inside the frame. You can also enter its code manually.';
   _GuestScanMessageType _messageType = _GuestScanMessageType.neutral;
@@ -54,7 +59,7 @@ class _GuestQrScannerScreenState extends State<GuestQrScannerScreen>
 
     switch (state) {
       case AppLifecycleState.resumed:
-        unawaited(_controller.start());
+        if (!_handling) unawaited(_startCameraSafely());
       case AppLifecycleState.inactive:
       case AppLifecycleState.paused:
       case AppLifecycleState.hidden:
@@ -65,7 +70,8 @@ class _GuestQrScannerScreenState extends State<GuestQrScannerScreen>
 
   Future<void> _handleCode(String rawCode) async {
     final code = rawCode.trim();
-    if (_handling || code.isEmpty) return;
+    if (_handling || _manualEntryOpen || code.isEmpty) return;
+    if (_awaitingRetry && code == _lastCode) return;
 
     final now = DateTime.now();
     if (_lastCode == code &&
@@ -78,6 +84,7 @@ class _GuestQrScannerScreenState extends State<GuestQrScannerScreen>
     _lastScanAt = now;
     setState(() {
       _handling = true;
+      _awaitingRetry = false;
       _message = 'Checking this EcoTag…';
       _messageType = _GuestScanMessageType.progress;
     });
@@ -107,7 +114,9 @@ class _GuestQrScannerScreenState extends State<GuestQrScannerScreen>
         if (!mounted) return;
         setState(() {
           _handling = false;
-          _lastCode = null;
+          // Do not reopen the same profile immediately while its label remains
+          // in the camera frame. A different label or Scan again is accepted.
+          _awaitingRetry = true;
           _message = 'Plant profile opened. Ready to scan another label.';
           _messageType = _GuestScanMessageType.success;
         });
@@ -115,8 +124,10 @@ class _GuestQrScannerScreenState extends State<GuestQrScannerScreen>
       }
 
       await HapticFeedback.vibrate();
+      if (!mounted) return;
       setState(() {
         _handling = false;
+        _awaitingRetry = true;
         _message = result.message;
         _messageType = _isNeutralStatus(result.status)
             ? _GuestScanMessageType.neutral
@@ -126,6 +137,7 @@ class _GuestQrScannerScreenState extends State<GuestQrScannerScreen>
       if (!mounted) return;
       setState(() {
         _handling = false;
+        _awaitingRetry = true;
         _message = userFacingError(
           error,
           fallback: 'The label could not be checked. Please try again.',
@@ -175,50 +187,33 @@ class _GuestQrScannerScreenState extends State<GuestQrScannerScreen>
   }
 
   Future<void> _showManualEntry() async {
-    final controller = TextEditingController();
+    if (_handling || _manualEntryOpen) return;
+    _manualEntryOpen = true;
     final code = await showDialog<String>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Enter EcoTag code'),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          autocorrect: false,
-          enableSuggestions: false,
-          textCapitalization: TextCapitalization.characters,
-          textInputAction: TextInputAction.done,
-          onSubmitted: (value) => Navigator.pop(dialogContext, value.trim()),
-          decoration: const InputDecoration(
-            labelText: 'EcoTag code',
-            hintText: 'Example: ECOTAG-202610-000001',
-            prefixIcon: Icon(Icons.qr_code_rounded),
-            border: OutlineInputBorder(),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () =>
-                Navigator.pop(dialogContext, controller.text.trim()),
-            child: const Text('View plant'),
-          ),
-        ],
-      ),
+      builder: (_) => const _GuestCodeEntryDialog(),
     );
-    controller.dispose();
-    if (code != null && code.isNotEmpty) await _handleCode(code);
+    _manualEntryOpen = false;
+    if (!mounted) return;
+    if (code != null && code.isNotEmpty) {
+      _awaitingRetry = false;
+      _lastCode = null;
+      _lastScanAt = null;
+      await _handleCode(code);
+    }
   }
 
   void _resetScanner() {
+    if (_handling) return;
     setState(() {
       _handling = false;
+      _awaitingRetry = false;
       _lastCode = null;
+      _lastScanAt = null;
       _message = 'Place another EcoTag label inside the frame.';
       _messageType = _GuestScanMessageType.neutral;
     });
+    unawaited(_startCameraSafely());
   }
 
   @override
@@ -373,13 +368,17 @@ class _GuestQrScannerScreenState extends State<GuestQrScannerScreen>
                   ),
                 ),
               ),
-              if (_messageType == _GuestScanMessageType.error) ...[
+              if (_awaitingRetry && !_handling) ...[
                 const SizedBox(width: 10),
                 Expanded(
                   child: FilledButton.icon(
                     onPressed: _resetScanner,
                     icon: const Icon(Icons.refresh_rounded),
-                    label: const Text('Try again'),
+                    label: Text(
+                      _messageType == _GuestScanMessageType.error
+                          ? 'Try again'
+                          : 'Scan again',
+                    ),
                     style: FilledButton.styleFrom(
                       minimumSize: const Size.fromHeight(48),
                       backgroundColor: AppColors.green,
@@ -479,5 +478,51 @@ class _CameraErrorView extends StatelessWidget {
         ),
       ),
     ),
+  );
+}
+
+class _GuestCodeEntryDialog extends StatefulWidget {
+  const _GuestCodeEntryDialog();
+  @override
+  State<_GuestCodeEntryDialog> createState() => _GuestCodeEntryDialogState();
+}
+
+class _GuestCodeEntryDialogState extends State<_GuestCodeEntryDialog> {
+  final _controller = TextEditingController();
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => AlertDialog(
+    scrollable: true,
+    title: const Text('Enter EcoTag code'),
+    content: TextField(
+      controller: _controller,
+      autofocus: true,
+      autocorrect: false,
+      enableSuggestions: false,
+      textCapitalization: TextCapitalization.characters,
+      textInputAction: TextInputAction.done,
+      onSubmitted: (value) => Navigator.pop(context, value.trim()),
+      decoration: const InputDecoration(
+        labelText: 'EcoTag code',
+        hintText: 'Example: ECOTAG-202610-000001',
+        prefixIcon: Icon(Icons.qr_code_rounded),
+        border: OutlineInputBorder(),
+      ),
+    ),
+    actions: [
+      TextButton(
+        onPressed: () => Navigator.pop(context),
+        child: const Text('Cancel'),
+      ),
+      FilledButton(
+        onPressed: () => Navigator.pop(context, _controller.text.trim()),
+        child: const Text('View plant'),
+      ),
+    ],
   );
 }

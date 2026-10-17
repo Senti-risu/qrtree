@@ -130,6 +130,19 @@ all mobile filter taps, and a rendered desktop preview.
 adoption of the shared component. QR/account preview PNGs are rendered from the
 shared widgets with sample records, not a live signed-in Supabase session.
 
+## Guest scanner retry
+
+Guest scanning now uses normal camera detection rather than permanent native
+duplicate suppression. The UI accepts the same code again on Try again/Scan
+again or explicit manual entry. It still blocks concurrent requests and holds
+the previous label after a result so it cannot flood lookup requests or reopen
+a profile immediately on return. A different label remains scannable. Camera
+frames are ignored while the manual-entry dialog is open. The existing public
+guest lookup RPC and read-only access rules are unchanged; no new SQL is needed.
+`guest_scanner_retry_test.dart` exercises these paths using simulated camera
+events and a fake guest lookup. Camera permission and actual device scanning
+still need a check on the installed APK or supported secure browser.
+
 Before distributing an APK, manually test on an actual phone:
 
 1. Register as College Admin and Inspection Team. Move backward through all four
