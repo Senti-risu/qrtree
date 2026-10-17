@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../theme/app_colors.dart';
+import '../../utils/health_status_label.dart';
 
 class PlantListPage extends StatefulWidget {
   const PlantListPage({super.key});
@@ -186,7 +187,7 @@ class _PlantListPageState extends State<PlantListPage> {
     return plants.where((plant) {
       final health = plant['health_status']?.toString().toLowerCase() ?? '';
 
-      return health == selectedFilter.toLowerCase();
+      return healthStatusLabel(health) == selectedFilter;
     }).toList();
   }
 
@@ -331,9 +332,7 @@ class _PlantListPageState extends State<PlantListPage> {
       children: [
         Icon(icon, size: 18),
         const SizedBox(width: 6),
-        Text(
-          health.isEmpty ? '—' : health[0].toUpperCase() + health.substring(1),
-        ),
+        Text(healthStatusLabel(health)),
       ],
     );
   }
@@ -413,8 +412,8 @@ class _PlantListPageState extends State<PlantListPage> {
               runSpacing: 12,
               children: [
                 filterButton('All', count: totalCount),
-                filterButton('Alive', count: aliveCount),
-                filterButton('Dying', count: dyingCount),
+                filterButton('Healthy', count: aliveCount),
+                filterButton('Needs attention', count: dyingCount),
                 filterButton('Dead', count: deadCount),
               ],
             ),

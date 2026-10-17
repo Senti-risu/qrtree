@@ -7,7 +7,9 @@ import '../../services/inspection_service.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_layout.dart';
 import '../../utils/user_facing_error.dart';
+import '../../utils/health_status_label.dart';
 import '../../widgets/app_card.dart';
+import '../../widgets/app_filter_sheet.dart';
 import '../../widgets/app_error_state.dart';
 import '../../widgets/app_shell.dart';
 import '../plants/plant_detail_screen.dart';
@@ -81,7 +83,13 @@ class _InspectionHistoryScreenState extends State<InspectionHistoryScreen> {
     super.dispose();
   }
 
-  List<Map<String, dynamic>> get _visibleInspections {
+  List<Map<String, dynamic>> get _visibleInspections =>
+      _matchingInspections(_healthFilter, _growthFilter);
+
+  List<Map<String, dynamic>> _matchingInspections(
+    String healthFilter,
+    String growthFilter,
+  ) {
     final term = _searchController.text.trim().toLowerCase();
     return _inspections.where((inspection) {
       final plant = _map(inspection['plant']);
@@ -95,8 +103,8 @@ class _InspectionHistoryScreenState extends State<InspectionHistoryScreen> {
           )['growth_stage']?.toString().trim() ??
           'Unknown';
 
-      if (_healthFilter != 'all' && health != _healthFilter) return false;
-      if (_growthFilter != 'all' && growth != _growthFilter) return false;
+      if (healthFilter != 'all' && health != healthFilter) return false;
+      if (growthFilter != 'all' && growth != growthFilter) return false;
       if (term.isEmpty) return true;
 
       final searchable = [
@@ -160,141 +168,37 @@ class _InspectionHistoryScreenState extends State<InspectionHistoryScreen> {
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
-      backgroundColor: Colors.transparent,
+      showDragHandle: true,
       builder: (sheetContext) => StatefulBuilder(
-        builder: (context, setSheetState) => Container(
-          decoration: const BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-          ),
-          child: SafeArea(
-            top: false,
-            child: SingleChildScrollView(
-              padding: EdgeInsets.fromLTRB(
-                20,
-                12,
-                20,
-                16 + MediaQuery.viewInsetsOf(context).bottom,
+        builder: (context, setSheetState) => AppFilterSheet(
+          title: 'Filter inspections',
+          applyLabel:
+              'Apply · ${_matchingInspections(draftHealth, draftGrowth).length} results',
+          onReset: () => setSheetState(() {
+            draftHealth = 'all';
+            draftGrowth = 'all';
+          }),
+          onApply: () =>
+              Navigator.pop(sheetContext, (draftHealth, draftGrowth)),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _sheetFilterChoices(
+                label: 'Health status',
+                allLabel: 'All health',
+                value: draftHealth,
+                options: healthOptions,
+                onChanged: (value) => setSheetState(() => draftHealth = value),
               ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Center(
-                    child: Container(
-                      width: 42,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: AppColors.border,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: AppColors.primaryContainer,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Icon(
-                          Icons.tune_rounded,
-                          color: AppColors.green,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      const Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Filter inspections',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w800,
-                                color: AppColors.darkGreen,
-                              ),
-                            ),
-                            SizedBox(height: 2),
-                            Text(
-                              'Narrow results by plant condition',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: AppColors.textSecondary,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      IconButton(
-                        tooltip: 'Close filters',
-                        onPressed: () => Navigator.pop(sheetContext),
-                        icon: const Icon(Icons.close_rounded),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 22),
-                  _sheetFilterChoices(
-                    label: 'HEALTH STATUS',
-                    allLabel: 'All health',
-                    value: draftHealth,
-                    options: healthOptions,
-                    onChanged: (value) =>
-                        setSheetState(() => draftHealth = value),
-                  ),
-                  const SizedBox(height: 20),
-                  _sheetFilterChoices(
-                    label: 'GROWTH STAGE',
-                    allLabel: 'All stages',
-                    value: draftGrowth,
-                    options: growthOptions,
-                    onChanged: (value) =>
-                        setSheetState(() => draftGrowth = value),
-                  ),
-                  const SizedBox(height: 26),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: () => setSheetState(() {
-                            draftHealth = 'all';
-                            draftGrowth = 'all';
-                          }),
-                          style: OutlinedButton.styleFrom(
-                            minimumSize: const Size.fromHeight(48),
-                            side: const BorderSide(color: AppColors.green),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          child: const Text('Reset'),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: FilledButton(
-                          onPressed: () => Navigator.pop(sheetContext, (
-                            draftHealth,
-                            draftGrowth,
-                          )),
-                          style: FilledButton.styleFrom(
-                            minimumSize: const Size.fromHeight(48),
-                            backgroundColor: AppColors.green,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          child: const Text('Apply filters'),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+              const SizedBox(height: AppSpacing.lg),
+              _sheetFilterChoices(
+                label: 'Growth stage',
+                allLabel: 'All stages',
+                value: draftGrowth,
+                options: growthOptions,
+                onChanged: (value) => setSheetState(() => draftGrowth = value),
               ),
-            ),
+            ],
           ),
         ),
       ),
@@ -346,7 +250,7 @@ class _InspectionHistoryScreenState extends State<InspectionHistoryScreen> {
                         color: AppColors.green,
                       )
                     : null,
-                label: Text(option.$2),
+                label: Text(healthStatusLabel(option.$2)),
                 labelStyle: TextStyle(
                   fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
                   color: selected ? AppColors.darkGreen : AppColors.textPrimary,
@@ -805,7 +709,7 @@ class _InspectionHistoryScreenState extends State<InspectionHistoryScreen> {
                             ),
                           )
                         : const Icon(Icons.fact_check_outlined, size: 18),
-                    label: Text(busy ? 'Opening…' : 'Inspect'),
+                    label: Text(busy ? 'Opening…' : 'Start inspection'),
                   ),
               ],
             );
@@ -1120,7 +1024,7 @@ class _InspectionHistoryScreenState extends State<InspectionHistoryScreen> {
                   children: [
                     if (_healthFilter != 'all')
                       _appliedFilterChip(
-                        _healthFilter,
+                        healthStatusLabel(_healthFilter),
                         () => setState(() => _healthFilter = 'all'),
                       ),
                     if (_growthFilter != 'all')
@@ -1363,7 +1267,10 @@ class _InspectionHistoryScreenState extends State<InspectionHistoryScreen> {
           ...sortedOptions.map(
             (option) => DropdownMenuItem(
               value: option,
-              child: Text(option, overflow: TextOverflow.ellipsis),
+              child: Text(
+                healthStatusLabel(option),
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
           ),
         ],
@@ -1412,9 +1319,9 @@ class _InspectionHistoryScreenState extends State<InspectionHistoryScreen> {
   Widget _inspectionCard(Map<String, dynamic> inspection) {
     final plant = _map(inspection['plant']);
     final classification = _map(plant['plant_classification']);
-    final health =
-        _map(inspection['health_status'])['status_name']?.toString() ??
-        'Unknown';
+    final health = healthStatusLabel(
+      _map(inspection['health_status'])['status_name'],
+    );
     final growth =
         _map(inspection['growth_status'])['growth_stage']?.toString() ??
         'Unknown';

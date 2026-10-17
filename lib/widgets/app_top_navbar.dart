@@ -4,6 +4,7 @@ import '../models/app_role.dart';
 import '../services/app_session.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_layout.dart';
+import 'app_navigation_guard.dart';
 
 class AppTopNavbar extends StatelessWidget {
   final String userName;
@@ -106,6 +107,10 @@ class AppTopNavbar extends StatelessWidget {
             onPressed:
                 onLogoutTap ??
                 () async {
+                  if (!await AppNavigationGuard.confirm(context) ||
+                      !context.mounted) {
+                    return;
+                  }
                   try {
                     await AppSession.end();
                   } catch (_) {

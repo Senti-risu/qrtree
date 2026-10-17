@@ -38,6 +38,7 @@ class AppShell extends StatelessWidget {
 
   final bool showMobileNavigation;
   final bool showQrButton;
+  final Widget? bottomAction;
 
   final EdgeInsetsGeometry desktopPadding;
   final EdgeInsetsGeometry mobilePadding;
@@ -66,6 +67,7 @@ class AppShell extends StatelessWidget {
 
     this.showMobileNavigation = true,
     this.showQrButton = true,
+    this.bottomAction,
 
     this.desktopPadding = const EdgeInsets.all(AppSpacing.xl),
 
@@ -173,6 +175,7 @@ class AppShell extends StatelessWidget {
     final textScale = MediaQuery.textScalerOf(context).scale(1);
     final scaleAdjustment = (textScale - 1).clamp(0.0, 1.0).toDouble();
     final toolbarHeight = 68.0 + (18 * scaleAdjustment);
+    final keyboardVisible = MediaQuery.viewInsetsOf(context).bottom > 0;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -255,13 +258,23 @@ class AppShell extends StatelessWidget {
 
       body: SafeArea(
         top: false,
-        child: Padding(padding: mobilePadding, child: child),
+        child: Padding(
+          padding: mobilePadding.add(
+            EdgeInsets.only(
+              bottom: _canScanQr && showMobileNavigation && !keyboardVisible
+                  ? 28
+                  : 0,
+            ),
+          ),
+          child: child,
+        ),
       ),
 
       // ========================================================
       // QR SCANNER BUTTON
       // ========================================================
-      floatingActionButton: _canScanQr && showMobileNavigation
+      floatingActionButton:
+          _canScanQr && showMobileNavigation && !keyboardVisible
           ? FloatingActionButton(
               tooltip: 'Scan QR code',
 
@@ -299,25 +312,47 @@ class AppShell extends StatelessWidget {
       // ========================================================
       // MOBILE NAVIGATION
       // ========================================================
-      bottomNavigationBar: showMobileNavigation
-          ? AppMobileNavbar(
-              activeRoute: activeRoute,
+      bottomNavigationBar: showMobileNavigation || bottomAction != null
+          ? Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (bottomAction != null)
+                  Padding(
+                    padding: EdgeInsets.fromLTRB(
+                      12,
+                      4,
+                      12,
+                      keyboardVisible
+                          ? MediaQuery.viewInsetsOf(context).bottom
+                          : 4,
+                    ),
+                    child: SafeArea(
+                      top: false,
+                      bottom: keyboardVisible,
+                      child: bottomAction!,
+                    ),
+                  ),
+                if (showMobileNavigation && !keyboardVisible)
+                  AppMobileNavbar(
+                    activeRoute: activeRoute,
 
-              userId: userId,
+                    userId: userId,
 
-              username: username,
+                    username: username,
 
-              role: role,
+                    role: role,
 
-              campusId: campusId,
+                    campusId: campusId,
 
-              collegeId: collegeId,
+                    collegeId: collegeId,
 
-              canScanQr: _canScanQr,
+                    canScanQr: _canScanQr,
 
-              displayName: _displayUserName,
+                    displayName: _displayUserName,
 
-              displayRole: _displayUserRole,
+                    displayRole: _displayUserRole,
+                  ),
+              ],
             )
           : null,
     );

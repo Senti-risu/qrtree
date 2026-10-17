@@ -380,7 +380,7 @@ class RecentPlantsTable extends StatelessWidget {
     final healthName = health['status_name']?.toString().toLowerCase() ?? '';
     final healthLabel = switch (healthName) {
       'alive' => 'Healthy',
-      'dying' => 'At Risk',
+      'dying' => 'Needs attention',
       'dead' => 'Dead',
       _ => 'Unknown',
     };
@@ -406,7 +406,7 @@ class RecentPlantsTable extends StatelessWidget {
 
   Color _healthColor(String health) => switch (health) {
     'Healthy' => AppColors.green,
-    'At Risk' => AppColors.warningAccent,
+    'Needs attention' => AppColors.warningAccent,
     'Dead' => AppColors.danger,
     _ => AppColors.textSecondary,
   };

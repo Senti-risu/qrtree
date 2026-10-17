@@ -178,8 +178,8 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
 
   String _health(Map<String, dynamic> plant) {
     final value = _related(plant, 'health_status', 'status_name').toLowerCase();
-    if (value == 'alive' || value == 'healthy') return 'Alive';
-    if (value == 'dying' || value == 'at risk') return 'Dying';
+    if (value == 'alive' || value == 'healthy') return 'Healthy';
+    if (value == 'dying' || value == 'at risk') return 'Needs attention';
     if (value == 'dead') return 'Dead';
     return 'Unknown';
   }
@@ -340,8 +340,12 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
           pw.Row(
             children: [
               _pdfMetric('Total Plants', plants.length, PdfColors.green800),
-              _pdfMetric('Alive', _count('Alive'), PdfColors.green),
-              _pdfMetric('At Risk', _count('Dying'), PdfColors.orange800),
+              _pdfMetric('Healthy', _count('Healthy'), PdfColors.green),
+              _pdfMetric(
+                'Needs attention',
+                _count('Needs attention'),
+                PdfColors.orange800,
+              ),
               _pdfMetric('Dead', _count('Dead'), PdfColors.red700),
               _pdfMetric('Inspected', inspected, PdfColors.blue700),
               _pdfMetric(
@@ -937,13 +941,13 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
 
   static const _reportHealthOptions = [
     'All',
-    'Alive',
-    'Dying',
+    'Healthy',
+    'Needs attention',
     'Dead',
     'Unknown',
   ];
 
-  Color _reportHealthColor(String value) => value == 'Dying'
+  Color _reportHealthColor(String value) => value == 'Needs attention'
       ? AppColors.warningAccent
       : value == 'Dead'
       ? AppColors.danger
@@ -953,9 +957,9 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
 
   IconData _reportHealthIcon(String value) => value == 'All'
       ? Icons.apps_rounded
-      : value == 'Alive'
+      : value == 'Healthy'
       ? Icons.eco_rounded
-      : value == 'Dying'
+      : value == 'Needs attention'
       ? Icons.warning_amber_rounded
       : value == 'Dead'
       ? Icons.local_florist_outlined
@@ -1381,15 +1385,15 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
             width,
           ),
           _kpi(
-            'Alive',
-            _count('Alive'),
+            'Healthy',
+            _count('Healthy'),
             Icons.eco_rounded,
             AppColors.green,
             width,
           ),
           _kpi(
-            'Dying',
-            _count('Dying'),
+            'Needs attention',
+            _count('Needs attention'),
             Icons.warning_amber_rounded,
             AppColors.warningAccent,
             width,
@@ -1515,8 +1519,8 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
 
   Widget _healthChart() {
     final values = [
-      ('Alive', _count('Alive'), AppColors.green),
-      ('Dying', _count('Dying'), AppColors.warningAccent),
+      ('Healthy', _count('Healthy'), AppColors.green),
+      ('Needs attention', _count('Needs attention'), AppColors.warningAccent),
       ('Dead', _count('Dead'), AppColors.danger),
       ('Unknown', _count('Unknown'), AppColors.textSecondary),
     ];
@@ -2258,9 +2262,9 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
   }
 
   Widget _healthChip(String value) {
-    final color = value == 'Alive'
+    final color = value == 'Healthy'
         ? AppColors.green
-        : value == 'Dying'
+        : value == 'Needs attention'
         ? AppColors.warningAccent
         : value == 'Dead'
         ? AppColors.danger

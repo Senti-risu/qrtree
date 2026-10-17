@@ -660,6 +660,6 @@ class _InspectionFormScreenState extends State<InspectionFormScreen> {
       : label == 'Needs attention'
       ? Icons.warning_amber_rounded
       : label == 'Dead'
-      ? Icons.local_florist_outlined
+      ? Icons.cancel_outlined
       : Icons.help_outline_rounded;
 }

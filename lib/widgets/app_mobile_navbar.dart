@@ -7,6 +7,7 @@ import '../services/app_session.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_layout.dart';
 import 'app_mobile_more_sheet.dart';
+import 'app_navigation_guard.dart';
 
 class AppMobileNavbar extends StatelessWidget {
   final String activeRoute;
@@ -65,6 +66,11 @@ class AppMobileNavbar extends StatelessWidget {
           route: '/manage-accounts',
         ),
         _MobileDestination(
+          icon: Icons.eco_rounded,
+          label: 'Plants',
+          route: '/plant-list',
+        ),
+        _MobileDestination(
           icon: Icons.more_horiz_rounded,
           label: 'More',
           isMore: true,
@@ -107,7 +113,6 @@ class AppMobileNavbar extends StatelessWidget {
   bool get _isMoreActive {
     if (role == 'college_admin') {
       return const {
-        '/register-plant',
         '/qr-management',
         '/inspection-accounts',
         '/reports',
@@ -115,7 +120,7 @@ class AppMobileNavbar extends StatelessWidget {
       }.contains(activeRoute);
     }
     if (role == 'inspection_team') {
-      return activeRoute == '/reports' || activeRoute == '/register-plant';
+      return activeRoute == '/reports';
     }
     if (const {
       'super_admin',
@@ -178,7 +183,9 @@ class AppMobileNavbar extends StatelessWidget {
   }) {
     final active = destination.isMore
         ? _isMoreActive
-        : activeRoute == destination.route;
+        : activeRoute == destination.route ||
+              (destination.route == '/plant-list' &&
+                  activeRoute == '/register-plant');
     final color = active ? AppColors.green : AppColors.inactiveNav;
 
     return Semantics(
@@ -193,7 +200,7 @@ class AppMobileNavbar extends StatelessWidget {
               await _openMore(context);
               return;
             }
-            if (!active && destination.route != null) {
+            if (destination.route != null && activeRoute != destination.route) {
               _navigate(context, destination.route!);
             }
           },
@@ -202,7 +209,19 @@ class AppMobileNavbar extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(destination.icon, size: 24, color: color),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 3,
+                  ),
+                  decoration: BoxDecoration(
+                    color: active
+                        ? AppColors.primaryContainer
+                        : Colors.transparent,
+                    borderRadius: AppRadii.fullyRounded,
+                  ),
+                  child: Icon(destination.icon, size: 24, color: color),
+                ),
                 const SizedBox(height: AppSpacing.xs),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 2),
@@ -278,6 +297,9 @@ class AppMobileNavbar extends StatelessWidget {
         await _showHelp(context);
         return;
       case AppMobileMoreAction.logout:
+        if (!await AppNavigationGuard.confirm(context) || !context.mounted) {
+          return;
+        }
         final shouldLogout = await _confirmLogout(context);
         if (!shouldLogout || !context.mounted) return;
         try {
@@ -395,7 +417,7 @@ class AppMobileNavbar extends StatelessWidget {
   // NAVIGATION
   // ============================================================
 
-  void _navigate(BuildContext context, String route) {
+  Future<void> _navigate(BuildContext context, String route) async {
     if (const {
       '/register-plant',
       '/qr-management',
@@ -419,6 +441,7 @@ class AppMobileNavbar extends StatelessWidget {
       return;
     }
 
+    if (!await AppNavigationGuard.confirm(context) || !context.mounted) return;
     Navigator.pushReplacementNamed(context, route, arguments: _userArguments);
   }
 

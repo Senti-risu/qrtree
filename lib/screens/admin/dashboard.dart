@@ -450,7 +450,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       },
 
       child: SingleChildScrollView(
-        padding: EdgeInsets.only(bottom: isDesktop ? 0 : 48),
+        padding: EdgeInsets.zero,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -555,7 +555,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            if (_role == 'college_admin') ...[
+            if (_role == 'college_admin' || _role == 'inspection_team') ...[
               DashboardPriorityLayout(
                 work: _buildMonitoringWork(),
                 recent: _totalPlants > 1 ? _buildHealthChartCard() : null,
@@ -575,7 +575,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
             const SizedBox(height: AppSpacing.xl),
 
-            if (_role != 'college_admin' && _totalPlants > 1)
+            if (_role != 'college_admin' &&
+                _role != 'inspection_team' &&
+                _totalPlants > 1)
               _buildHealthChartCard(),
           ],
         );
@@ -733,7 +735,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             runSpacing: 8,
             children: [
               if (_totalPlants > 0)
-                FilledButton.icon(
+                OutlinedButton.icon(
                   onPressed: _overdueCount + _dueTodayCount > 0
                       ? () => _openInspectionQueue('action')
                       : _openPlantList,
@@ -746,7 +748,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         : 'Review plants',
                   ),
                 ),
-              OutlinedButton.icon(
+              FilledButton.icon(
                 onPressed: () async {
                   await Navigator.pushNamed(
                     context,
@@ -955,7 +957,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ),
 
       DashboardStatCard(
-        title: 'At Risk',
+        title: 'Needs attention',
         compact: !AppBreakpoints.isDesktop(contentWidth),
         onTap: _openNeedsAttention,
 
@@ -1004,14 +1006,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
   // ============================================================
 
   Widget _buildResponsiveAnalytics(double contentWidth) {
-    final recentPlants = _role == 'college_admin'
+    final recentPlants =
+        (_role == 'college_admin' || _role == 'inspection_team')
         ? (_recentPlants.isEmpty ? null : _buildRecentPlantShortlist())
         : _buildResponsiveRecentPlants(contentWidth);
     final actions = _role == 'university_admin'
         ? CampusOverviewCard(counts: _campusPlantCounts)
         : _buildQuickActionsCard();
     if (recentPlants == null) return actions;
-    if (!AppBreakpoints.isPhone(contentWidth)) {
+    if (contentWidth >= 720 &&
+        MediaQuery.textScalerOf(context).scale(1) < 1.6) {
       return Row(
         crossAxisAlignment: CrossAxisAlignment.start,
 

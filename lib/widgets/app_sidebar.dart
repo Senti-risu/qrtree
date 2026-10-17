@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/app_role.dart';
+import 'app_navigation_guard.dart';
 
 import '../theme/app_colors.dart';
 import '../theme/app_layout.dart';
@@ -156,7 +157,10 @@ class AppSidebar extends StatelessWidget {
     );
   }
 
-  void _handleNavigation(BuildContext context, _NavItemData item) {
+  Future<void> _handleNavigation(
+    BuildContext context,
+    _NavItemData item,
+  ) async {
     if (item.route == activeRoute) return;
 
     if (!item.enabled) {
@@ -179,6 +183,7 @@ class AppSidebar extends StatelessWidget {
       return;
     }
 
+    if (!await AppNavigationGuard.confirm(context) || !context.mounted) return;
     Navigator.pushReplacementNamed(
       context,
       item.route,

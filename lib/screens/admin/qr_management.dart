@@ -8,6 +8,7 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_layout.dart';
 import '../../utils/user_facing_error.dart';
 import '../../widgets/app_card.dart';
+import '../../widgets/app_filter_sheet.dart';
 import '../../widgets/app_page_header.dart';
 import '../../widgets/app_shell.dart';
 import '../../widgets/qr_mobile_tag_list.dart';
@@ -230,172 +231,38 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
-      backgroundColor: Colors.transparent,
+      showDragHandle: true,
       builder: (sheetContext) => StatefulBuilder(
-        builder: (context, setSheetState) => Container(
-          decoration: const BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-          ),
-          child: SafeArea(
-            top: false,
-            child: SingleChildScrollView(
-              padding: EdgeInsets.fromLTRB(
-                20,
-                12,
-                20,
-                16 + MediaQuery.viewInsetsOf(context).bottom,
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Center(
-                    child: Container(
-                      width: 42,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: AppColors.border,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: AppColors.primaryContainer,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Icon(
-                          Icons.tune_rounded,
-                          color: AppColors.green,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      const Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Filter QR tags',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w800,
-                                color: AppColors.darkGreen,
-                              ),
-                            ),
-                            SizedBox(height: 2),
-                            Text(
-                              'Choose which tag status to display',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: AppColors.textSecondary,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      IconButton(
-                        tooltip: 'Close filters',
-                        onPressed: () => Navigator.pop(sheetContext),
-                        icon: const Icon(Icons.close_rounded),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 22),
-                  const Text(
-                    'STATUS',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: _statusFilters.entries.map((entry) {
-                      final selected = draftFilter == entry.key;
-                      return ChoiceChip(
-                        selected: selected,
-                        showCheckmark: false,
-                        avatar: selected
-                            ? const Icon(
-                                Icons.check_rounded,
-                                size: 17,
-                                color: AppColors.green,
-                              )
-                            : null,
+        builder: (context, setSheetState) => AppFilterSheet(
+          title: 'Filter QR tags',
+          applyLabel: 'Apply filters',
+          onReset: () => setSheetState(() => draftFilter = 'all'),
+          onApply: () => Navigator.pop(sheetContext, draftFilter),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Tag status'),
+              const SizedBox(height: AppSpacing.sm),
+              Wrap(
+                spacing: AppSpacing.sm,
+                runSpacing: AppSpacing.sm,
+                children: _statusFilters.entries
+                    .map(
+                      (entry) => ChoiceChip(
                         label: Text(entry.value),
-                        labelStyle: TextStyle(
-                          fontWeight: selected
-                              ? FontWeight.w700
-                              : FontWeight.w500,
-                          color: selected
-                              ? AppColors.darkGreen
-                              : AppColors.textPrimary,
-                        ),
-                        selectedColor: AppColors.primaryContainer,
-                        backgroundColor: AppColors.background,
-                        side: BorderSide(
-                          color: selected ? AppColors.green : AppColors.border,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
+                        selected: draftFilter == entry.key,
                         onSelected: (_) =>
                             setSheetState(() => draftFilter = entry.key),
-                      );
-                    }).toList(),
-                  ),
-                  const SizedBox(height: 12),
-                  TextButton.icon(
-                    onPressed: _showStatusGuide,
-                    icon: const Icon(Icons.help_outline_rounded),
-                    label: const Text('What do these statuses mean?'),
-                  ),
-                  const SizedBox(height: 26),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: () =>
-                              setSheetState(() => draftFilter = 'all'),
-                          style: OutlinedButton.styleFrom(
-                            minimumSize: const Size.fromHeight(48),
-                            side: const BorderSide(color: AppColors.green),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          child: const Text('Reset'),
-                        ),
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: FilledButton(
-                          onPressed: () =>
-                              Navigator.pop(sheetContext, draftFilter),
-                          style: FilledButton.styleFrom(
-                            minimumSize: const Size.fromHeight(48),
-                            backgroundColor: AppColors.green,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          child: const Text('Apply filters'),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+                    )
+                    .toList(),
               ),
-            ),
+              const SizedBox(height: AppSpacing.md),
+              const Text(
+                'Apply to load matching tags. Your search text is kept.',
+                style: TextStyle(color: AppColors.textSecondary),
+              ),
+            ],
           ),
         ),
       ),
@@ -924,7 +791,7 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
             OutlinedButton.icon(
               onPressed: _tags.isEmpty ? null : _printAvailable,
               icon: const Icon(Icons.print_outlined),
-              label: const Text('Print Available'),
+              label: const Text('Print available'),
             ),
             OutlinedButton.icon(
               onPressed: () => Navigator.pushNamed(
@@ -940,10 +807,21 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
             return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                for (var index = 0; index < actions.length; index++) ...[
-                  actions[index],
-                  if (index < actions.length - 1)
-                    const SizedBox(height: AppSpacing.sm),
+                actions.first,
+                const SizedBox(height: AppSpacing.sm),
+                if (constraints.maxWidth >= 340 &&
+                    MediaQuery.textScalerOf(context).scale(1) <= 1.1)
+                  Row(
+                    children: [
+                      Expanded(child: actions[1]),
+                      const SizedBox(width: AppSpacing.sm),
+                      Expanded(child: actions[2]),
+                    ],
+                  )
+                else ...[
+                  actions[1],
+                  const SizedBox(height: AppSpacing.sm),
+                  actions[2],
                 ],
               ],
             );
@@ -1237,7 +1115,7 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
         const Icon(Icons.tune_rounded, size: 15, color: AppColors.green),
         const SizedBox(width: 5),
         Text(
-          '$_activeFilterCount active',
+          _statusFilters[_filter] ?? 'All tags',
           style: const TextStyle(
             fontSize: 11,
             fontWeight: FontWeight.w700,
@@ -1335,6 +1213,13 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
                 ),
               ],
             ),
+            if (_activeFilterCount > 0) ...[
+              const SizedBox(height: AppSpacing.sm),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: _activeFilterPill(),
+              ),
+            ],
           ],
         );
       }

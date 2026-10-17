@@ -5,7 +5,7 @@ import '../theme/app_layout.dart';
 
 class AppCard extends StatelessWidget {
   final Widget child;
-  final EdgeInsetsGeometry padding;
+  final EdgeInsetsGeometry? padding;
   final double? width;
   final double? height;
   final EdgeInsetsGeometry? margin;
@@ -19,7 +19,7 @@ class AppCard extends StatelessWidget {
   const AppCard({
     super.key,
     required this.child,
-    this.padding = const EdgeInsets.all(AppSpacing.xl),
+    this.padding,
     this.width,
     this.height,
     this.margin,
@@ -38,7 +38,13 @@ class AppCard extends StatelessWidget {
       height: height,
       margin: margin,
       alignment: alignment,
-      padding: padding,
+      padding:
+          padding ??
+          EdgeInsets.all(
+            AppBreakpoints.isPhone(MediaQuery.sizeOf(context).width)
+                ? AppSpacing.lg
+                : AppSpacing.xl,
+          ),
       clipBehavior: clipBehavior,
       decoration: BoxDecoration(
         color: color,

@@ -12,6 +12,8 @@ import '../../widgets/app_card.dart';
 import '../../widgets/app_error_state.dart';
 import '../../widgets/app_page_header.dart';
 import '../../widgets/app_shell.dart';
+import '../../widgets/app_navigation_guard.dart';
+import '../../widgets/registration_progress.dart';
 import '../../widgets/forms/app_searchable_dropdown.dart';
 import '../../widgets/forms/app_text_field.dart';
 import '../../widgets/forms/planting_campus_dropdown.dart';
@@ -47,6 +49,7 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
   final PlantService _plantService = PlantService();
   final QrPrintService _qrPrintService = QrPrintService();
   final ImagePicker _imagePicker = ImagePicker();
+  final ScrollController _formScroll = ScrollController();
 
   static const int _maxVarietyLength = 100;
   static const int _maxPlanterLength = 120;
@@ -143,6 +146,7 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
 
   @override
   void dispose() {
+    _formScroll.dispose();
     for (final controller in [
       _varietyController,
       _scientificNameController,
@@ -307,8 +311,9 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
 
   List<String> get _healthStatusNames {
     return _healthStatuses
-        .map((row) => _titleCase(row['status_name']?.toString() ?? ''))
+        .map((row) => _friendlyHealth(row['status_name']?.toString()))
         .where((value) => value.isNotEmpty)
+        .toSet()
         .toList();
   }
 
@@ -522,7 +527,7 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
     }
 
     final matches = _healthStatuses.where(
-      (row) => _titleCase(row['status_name']?.toString() ?? '') == value,
+      (row) => _friendlyHealth(row['status_name']?.toString()) == value,
     );
 
     if (matches.isEmpty) {
@@ -696,11 +701,17 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
   void _nextMobileStep() {
     if (_mobileStep == 0 && !_validatePlantStep()) return;
     if (_mobileStep == 1 && !_validateLocationStep()) return;
-    setState(() => _mobileStep = (_mobileStep + 1).clamp(0, 2).toInt());
+    _goToStep((_mobileStep + 1).clamp(0, 3).toInt());
   }
 
   void _previousMobileStep() {
-    setState(() => _mobileStep = (_mobileStep - 1).clamp(0, 2).toInt());
+    _goToStep((_mobileStep - 1).clamp(0, 3).toInt());
+  }
+
+  void _goToStep(int step) {
+    FocusScope.of(context).unfocus();
+    setState(() => _mobileStep = step);
+    if (_formScroll.hasClients) _formScroll.jumpTo(0);
   }
 
   Future<bool> _confirmPossibleDuplicates(
@@ -1008,7 +1019,8 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
   // ============================================================
 
   Future<bool> _confirmDiscard() async {
-    if (!_hasUnsavedChanges || _saving) return true;
+    if (_saving) return false;
+    if (!_hasUnsavedChanges) return true;
     return await showDialog<bool>(
           context: context,
           builder: (context) => AlertDialog(
@@ -1038,7 +1050,7 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
   Widget build(BuildContext context) {
     final media = MediaQuery.of(context);
     final width = media.size.width;
-    final phone = width < AppBreakpoints.phone;
+    final phone = width < AppBreakpoints.desktop;
     final desktop = width >= AppBreakpoints.desktop;
 
     Widget body;
@@ -1062,7 +1074,7 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
     }
 
     return PopScope(
-      canPop: _allowPop || !_hasUnsavedChanges,
+      canPop: !_saving && (_allowPop || !_hasUnsavedChanges),
       onPopInvokedWithResult: (didPop, _) async {
         if (didPop || _saving) return;
         final discard = await _confirmDiscard();
@@ -1070,27 +1082,43 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
         setState(() => _allowPop = true);
         Navigator.of(this.context).pop();
       },
-      child: AppShell(
-        activeRoute: '/register-plant',
-        mobileTitle: 'Register Plant',
-        mobileSubtitle: 'Register and profile a new campus plant',
-        userId: widget.userId,
-        username: widget.username,
-        role: widget.role,
-        campusId: widget.campusId,
-        collegeId: widget.collegeId,
-        userName: widget.username,
-        userRole: _roleLabel(widget.role),
-        onRefresh: _loadData,
-        // Scanning is a separate task. Hiding the docked scanner here keeps it
-        // from covering the form's primary action and avoids losing edits.
-        showQrButton: false,
-        child: SingleChildScrollView(
-          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-          padding: EdgeInsets.only(
-            bottom: media.viewInsets.bottom + AppSpacing.xl,
+      child: AppNavigationGuard(
+        canLeave: _confirmDiscard,
+        child: AppShell(
+          activeRoute: '/register-plant',
+          mobileTitle: 'Register Plant',
+          mobileSubtitle: 'Register and profile a new campus plant',
+          userId: widget.userId,
+          username: widget.username,
+          role: widget.role,
+          campusId: widget.campusId,
+          collegeId: widget.collegeId,
+          userName: widget.username,
+          userRole: _roleLabel(widget.role),
+          onRefresh: _saving
+              ? null
+              : () async {
+                  if (await _confirmDiscard() && mounted) _loadData();
+                },
+          bottomAction:
+              phone &&
+                  !_loading &&
+                  _loadError == null &&
+                  _capabilities.canRegisterPlants
+              ? _mobileActions(
+                  stack: width < 360 || media.textScaler.scale(1) > 1.25,
+                  compact: true,
+                )
+              : null,
+          // Scanning is a separate task. Hiding the docked scanner here keeps it
+          // from covering the form's primary action and avoids losing edits.
+          showQrButton: false,
+          child: SingleChildScrollView(
+            controller: _formScroll,
+            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+            padding: EdgeInsets.only(bottom: AppSpacing.md),
+            child: body,
           ),
-          child: body,
         ),
       ),
     );
@@ -1168,26 +1196,28 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
 
   Widget _mobileForm() {
     final media = MediaQuery.of(context);
-    final textScale = media.textScaler.scale(1);
     final compactHeight = media.size.height < 720;
-    final stackActions = media.size.width < 360 || textScale > 1.25;
     final sectionGap = compactHeight ? AppSpacing.md : AppSpacing.lg;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _mobileSteps(compact: compactHeight),
+        RegistrationProgress(
+          currentStep: _mobileStep,
+          onStepSelected: _saving ? null : _goToStep,
+        ),
         SizedBox(height: sectionGap),
         if (_mobileStep == 0) ...[
           _qrCard(),
           SizedBox(height: sectionGap),
-          _plantSection(),
+          _plantSection(includePhoto: false),
         ] else if (_mobileStep == 1)
           _locationSection()
+        else if (_mobileStep == 2)
+          _photoSection()
         else
           _reviewSection(compact: compactHeight),
         SizedBox(height: sectionGap),
-        _mobileActions(stack: stackActions, compact: compactHeight),
       ],
     );
   }
@@ -1201,20 +1231,24 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
         minimumSize: const Size.fromHeight(AppLayout.minimumTapTarget),
       ),
     );
-    final primaryButton = _mobileStep < 2
+    final primaryButton = _mobileStep < 3
         ? FilledButton.icon(
             onPressed: _saving ? null : _nextMobileStep,
             icon: const Icon(Icons.arrow_forward_rounded),
             label: Text(
-              _mobileStep == 0 ? 'Continue to location' : 'Review plant',
+              const [
+                'Continue to location',
+                'Continue to photo',
+                'Review plant',
+              ][_mobileStep],
               maxLines: 2,
               textAlign: TextAlign.center,
             ),
             style: FilledButton.styleFrom(
-              minimumSize: const Size.fromHeight(52),
+              minimumSize: const Size.fromHeight(AppLayout.minimumTapTarget),
             ),
           )
-        : SizedBox(height: 52, child: _registerButton());
+        : _registerButton();
 
     return AppCard(
       padding: EdgeInsets.all(compact ? AppSpacing.sm : AppSpacing.md),
@@ -1255,66 +1289,25 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
     label: Text(_saving ? 'Registering…' : 'Register Plant'),
   );
 
-  Widget _mobileSteps({required bool compact}) => AppCard(
-    padding: EdgeInsets.symmetric(
-      horizontal: compact ? AppSpacing.md : AppSpacing.lg,
-      vertical: compact ? AppSpacing.sm : AppSpacing.md,
-    ),
-    child: Row(
-      children: [
-        _stepBadge(0, 'Plant'),
-        _stepLine(0),
-        _stepBadge(1, 'Location'),
-        _stepLine(1),
-        _stepBadge(2, 'Review'),
-      ],
-    ),
-  );
-
-  Widget _stepBadge(int step, String label) => Expanded(
+  Widget _photoSection() => _card(
     child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        CircleAvatar(
-          radius: 14,
-          backgroundColor: step <= _mobileStep
-              ? AppColors.primary
-              : AppColors.primaryContainer,
-          child: step < _mobileStep
-              ? const Icon(
-                  Icons.check_rounded,
-                  size: 16,
-                  color: AppColors.onPrimary,
-                )
-              : Text(
-                  '${step + 1}',
-                  style: TextStyle(
-                    color: step == _mobileStep
-                        ? AppColors.onPrimary
-                        : AppColors.darkGreen,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
+        Text('Plant photo', style: Theme.of(context).textTheme.titleLarge),
+        const SizedBox(height: AppSpacing.sm),
+        const Text(
+          'Optional. Add a clear photo to help your team identify this plant.',
         ),
-        const SizedBox(height: AppSpacing.xs),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 11,
-            fontWeight: step == _mobileStep ? FontWeight.w800 : FontWeight.w600,
-            color: step <= _mobileStep
-                ? AppColors.darkGreen
-                : AppColors.textSecondary,
-          ),
+        const SizedBox(height: AppSpacing.lg),
+        PlantImagePickerField(
+          imageBytes: _selectedImageBytes,
+          imageName: _selectedImage?.name,
+          isPicking: _isPickingImage,
+          onPick: _pickImage,
+          onRemove: _removeImage,
         ),
       ],
     ),
-  );
-
-  Widget _stepLine(int beforeStep) => Container(
-    width: 22,
-    height: 2,
-    color: beforeStep < _mobileStep ? AppColors.primary : AppColors.border,
   );
 
   Widget _validationBanner(String message) {
@@ -1538,7 +1531,7 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
   // PLANT SECTION
   // ============================================================
 
-  Widget _plantSection() {
+  Widget _plantSection({bool includePhoto = true}) {
     final theme = Theme.of(context);
 
     return _card(
@@ -1667,15 +1660,16 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
             ),
           ),
 
-          const SizedBox(height: AppSpacing.xl),
-
-          PlantImagePickerField(
-            imageBytes: _selectedImageBytes,
-            imageName: _selectedImage?.name,
-            isPicking: _isPickingImage,
-            onPick: _pickImage,
-            onRemove: _removeImage,
-          ),
+          if (includePhoto) ...[
+            const SizedBox(height: AppSpacing.lg),
+            PlantImagePickerField(
+              imageBytes: _selectedImageBytes,
+              imageName: _selectedImage?.name,
+              isPicking: _isPickingImage,
+              onPick: _pickImage,
+              onRemove: _removeImage,
+            ),
+          ],
         ],
       ),
     );
@@ -1799,8 +1793,8 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
           onTap: _pickDate,
           child: InputDecorator(
             decoration: const InputDecoration(),
-            child: SizedBox(
-              height: 24,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 24),
               child: Row(
                 children: [
                   Expanded(

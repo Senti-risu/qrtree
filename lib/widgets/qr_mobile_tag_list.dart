@@ -89,8 +89,8 @@ class QrMobileTagList extends StatelessWidget {
                   ),
                 ),
               ),
-            // Keep the final record and paging action above the docked scanner.
-            const SliverToBoxAdapter(child: SizedBox(height: 72)),
+            // AppShell reserves scanner clearance for every mobile screen.
+            const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.lg)),
           ],
         ),
       );
