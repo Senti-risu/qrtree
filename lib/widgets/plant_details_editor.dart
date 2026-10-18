@@ -2,7 +2,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../models/plant_record_lock.dart';
-import '../screens/admin/plant_service.dart';
+import '../services/plant_service.dart';
 import '../services/plant_details_editor_service.dart';
 import '../utils/user_facing_error.dart';
 import '../theme/app_typography.dart';

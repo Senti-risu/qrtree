@@ -1,6 +1,6 @@
 import 'dart:typed_data';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../screens/admin/plant_service.dart';
+import 'plant_service.dart';
 import 'app_session.dart';
 import 'inspection_service.dart';
 import 'plant_location_service.dart';

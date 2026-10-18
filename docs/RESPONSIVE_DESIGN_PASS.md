@@ -57,7 +57,7 @@ is not changed. No new SQL migration is needed for this design pass.
 
 ## Verification
 
-`test/mobile_design_layout_test.dart` checks every staff role at 320×600,
+`test/widget/mobile_design_layout_test.dart` checks every staff role at 320×600,
 390×844, and 844×390 with enlarged text, scanner clearance, keyboard clearance,
 navigation guards, four-step progress, and wrapping plant cards. Cards also run
 at 1440×1000. The filter footer is tested in short landscape with enlarged text.

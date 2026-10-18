@@ -7,7 +7,7 @@ import '../../services/qr_service.dart';
 import '../../models/app_role.dart';
 import '../../theme/app_colors.dart';
 import '../../utils/user_facing_error.dart';
-import '../admin/register_plants.dart';
+import '../admin/registration/register_plant_screen.dart';
 import '../plants/plant_detail_screen.dart';
 
 enum _ScanMessageType { neutral, progress, success, error }

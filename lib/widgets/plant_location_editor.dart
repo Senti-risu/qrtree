@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../screens/admin/plant_service.dart';
+import '../services/plant_service.dart';
 import '../services/plant_location_service.dart';
 import '../utils/user_facing_error.dart';
 import 'forms/planting_campus_dropdown.dart';

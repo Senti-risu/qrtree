@@ -8,6 +8,19 @@ String userFacingError(
 }) {
   final raw = error.toString().replaceFirst('Exception: ', '').trim();
   final value = raw.toLowerCase();
+  if (value.contains('a newer inspection exists')) {
+    return 'A newer inspection is already recorded. Your draft is saved. Review the plant history before making a new observation.';
+  }
+  if (value.contains('plant is archived or dead')) {
+    return 'This plant is archived or confirmed Dead. Your inspection remains on this device; ask your College Admin to review it.';
+  }
+  if (value.contains('outside your assigned college') ||
+      value.contains('account that owns this draft')) {
+    return 'This inspection belongs to another account or assignment. Sign in with the assigned Inspection Team account. The draft is still saved.';
+  }
+  if (value.contains('observation date cannot')) {
+    return 'The observation date is invalid. Check the device clock and review the saved draft before making a new observation.';
+  }
   if (value.contains('secure device storage is unavailable')) {
     return 'This device could not securely save your sign-in. Restart the '
         'updated app and try again. In a browser, use HTTPS or localhost.';

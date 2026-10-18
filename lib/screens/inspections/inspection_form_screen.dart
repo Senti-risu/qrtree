@@ -1,11 +1,13 @@
 import 'dart:typed_data';
+import 'dart:convert';
+import '../../services/inspection_draft_store.dart';
+import '../../services/inspection_sync_service.dart';
 
 import 'package:flutter/material.dart';
 import '../../theme/app_typography.dart';
 import 'package:image_picker/image_picker.dart';
 
-import '../../screens/admin/plant_service.dart';
-import '../../services/inspection_service.dart';
+import '../../services/plant_service.dart';
 import '../../theme/app_colors.dart';
 import '../../utils/user_facing_error.dart';
 import '../../widgets/app_error_state.dart';
@@ -15,11 +17,13 @@ import '../../widgets/dead_plant_lock.dart';
 class InspectionFormScreen extends StatefulWidget {
   final Map<String, dynamic> plant;
   final int userId;
+  final Map<String, dynamic>? draft;
 
   const InspectionFormScreen({
     super.key,
     required this.plant,
     required this.userId,
+    this.draft,
   });
 
   @override
@@ -27,10 +31,11 @@ class InspectionFormScreen extends StatefulWidget {
 }
 
 class _InspectionFormScreenState extends State<InspectionFormScreen> {
-  final _inspectionService = InspectionService();
   final _plantService = PlantService();
   final _imagePicker = ImagePicker();
   final _observation = TextEditingController();
+  final _draftStore = InspectionDraftStore();
+  late final String _draftId;
 
   List<Map<String, dynamic>> _health = [];
   List<Map<String, dynamic>> _growth = [];
@@ -59,6 +64,15 @@ class _InspectionFormScreenState extends State<InspectionFormScreen> {
   @override
   void initState() {
     super.initState();
+    _draftId = widget.draft?['id'] as String? ?? InspectionDraftStore.newId();
+    _observation.text = widget.draft?['observation'] as String? ?? '';
+    if (widget.draft?['photo'] != null) {
+      _photo = XFile.fromData(
+        base64Decode(widget.draft!['photo'] as String),
+        name: 'inspection.jpg',
+        mimeType: 'image/jpeg',
+      );
+    }
     _observation.addListener(_refreshDirtyState);
     _loadOptions();
   }
@@ -73,18 +87,26 @@ class _InspectionFormScreenState extends State<InspectionFormScreen> {
       _loadError = null;
     });
     try {
-      final results = await Future.wait([
-        _plantService.getHealthStatuses(),
-        _plantService.getGrowthStatuses(),
-      ]);
+      List<List<Map<String, dynamic>>> results;
+      try {
+        results = await Future.wait([
+          _plantService.getHealthStatuses(),
+          _plantService.getGrowthStatuses(),
+        ]).timeout(const Duration(seconds: 12));
+        await _draftStore.cacheOptions(widget.userId, results);
+      } catch (_) {
+        final cached = await _draftStore.options(widget.userId);
+        if (cached == null) rethrow;
+        results = cached;
+      }
       if (!mounted) return;
       final currentHealth = widget.plant['health_status_id'] as int?;
       final currentGrowth = widget.plant['growth_status_id'] as int?;
       setState(() {
         _health = results[0];
         _growth = results[1];
-        _healthId = currentHealth;
-        _growthId = currentGrowth;
+        _healthId = widget.draft?['healthId'] as int? ?? currentHealth;
+        _growthId = widget.draft?['growthId'] as int? ?? currentGrowth;
         _initialHealthId = currentHealth;
         _initialGrowthId = currentGrowth;
         _loading = false;
@@ -182,35 +204,20 @@ class _InspectionFormScreenState extends State<InspectionFormScreen> {
 
     setState(() => _saving = true);
     try {
-      final latest = await _inspectionService.getPlant(
-        widget.plant['plant_id'] as int,
-      );
-      if (!PlantRecordLock.canEdit(latest)) {
-        throw StateError(
-          PlantRecordLock.isDead(latest)
-              ? 'Dead plant is locked'
-              : 'Plant is archived',
+      final draft = await _persistDraft(ready: true);
+      try {
+        await InspectionSyncService(
+          store: _draftStore,
+        ).submit(widget.userId, draft);
+      } catch (error) {
+        if (!mounted) return;
+        _allowPop = true;
+        _message(
+          'Saved on this device, pending upload. Open Offline inspections to retry. ${userFacingError(error)}',
         );
+        Navigator.pop(context, true);
+        return;
       }
-      String? photoUrl;
-      if (_photo != null) {
-        final extension = _photo!.name.contains('.')
-            ? _photo!.name.split('.').last.toLowerCase()
-            : 'jpg';
-        photoUrl = await _inspectionService.uploadInspectionPhoto(
-          plantId: widget.plant['plant_id'] as int,
-          bytes: await _photo!.readAsBytes(),
-          extension: extension,
-        );
-      }
-      await _inspectionService.saveInspection(
-        plantId: widget.plant['plant_id'] as int,
-        inspectedBy: widget.userId,
-        healthStatusId: _healthId!,
-        growthStatusId: _growthId!,
-        observation: _observation.text.trim(),
-        photoUrl: photoUrl,
-      );
       if (!mounted) return;
       _allowPop = true;
       _message('Inspection saved successfully.');
@@ -225,6 +232,45 @@ class _InspectionFormScreenState extends State<InspectionFormScreen> {
         ),
         error: true,
       );
+    }
+  }
+
+  Future<Map<String, dynamic>> _persistDraft({required bool ready}) async {
+    if (widget.draft?['ready'] == true) {
+      throw StateError(
+        'Pending inspections cannot be edited. Retry from the outbox.',
+      );
+    }
+    final draft = <String, dynamic>{
+      'id': _draftId,
+      'plantId': widget.plant['plant_id'],
+      'plant': widget.plant,
+      'healthId': _healthId,
+      'growthId': _growthId,
+      'observation': _observation.text.trim(),
+      'ready': ready,
+      'observedAt':
+          widget.draft?['observedAt'] ??
+          DateTime.now().toUtc().toIso8601String(),
+      if (_photo != null) 'photo': base64Encode(await _photo!.readAsBytes()),
+    };
+    await _draftStore.save(widget.userId, draft);
+    return draft;
+  }
+
+  Future<void> _saveDraft() async {
+    setState(() => _saving = true);
+    try {
+      await _persistDraft(ready: false);
+      if (!mounted) return;
+      _allowPop = true;
+      _message('Inspection draft and photo saved on this device.');
+      Navigator.pop(context);
+    } catch (e) {
+      if (mounted) {
+        setState(() => _saving = false);
+        _message(userFacingError(e), error: true);
+      }
     }
   }
 
@@ -292,6 +338,12 @@ class _InspectionFormScreenState extends State<InspectionFormScreen> {
         backgroundColor: AppColors.background,
         appBar: AppBar(
           title: const Text('Inspect Plant'),
+          actions: [
+            TextButton(
+              onPressed: _saving || _loading ? null : _saveDraft,
+              child: const Text('Save draft'),
+            ),
+          ],
           backgroundColor: AppColors.background,
         ),
         body: PlantRecordLock.isDead(widget.plant)

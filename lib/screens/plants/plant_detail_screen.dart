@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../widgets/plant_timeline.dart';
 import '../../models/inspection_schedule.dart';
 
 import '../../models/app_role.dart';
@@ -16,7 +17,7 @@ import '../../widgets/qr_problem_dialog.dart';
 import '../../widgets/plant_details_presentation.dart';
 import '../../widgets/plant_detail_content.dart';
 import '../../widgets/plant_ecotag_header.dart';
-import '../admin/plant_service.dart';
+import '../../services/plant_service.dart';
 import '../inspections/inspection_form_screen.dart';
 import '../qr/qr_problem_reports_screen.dart';
 
@@ -308,6 +309,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
             const SizedBox(height: 14),
           ],
           if (_history.isNotEmpty) _historySection(),
+          PlantTimeline(key: ValueKey(_plant), plantId: widget.plantId),
         ],
       ),
     );
