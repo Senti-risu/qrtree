@@ -19,9 +19,13 @@ flutter test
 flutter run
 ```
 
-Set the Supabase endpoint and publishable client key in
-`lib/config/supabase_config.dart` for your intended project. Never put a
-service-role key in the client. Test camera permissions and scanning on a phone.
+Supabase configuration reads the `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY`
+build defines. `SUPABASE_ANON_KEY` is also supported for the existing GitHub
+workflow; `SUPABASE_PUBLISHABLE_KEY` takes precedence if both are supplied.
+Without build defines, `lib/config/supabase_config.dart` retains the local
+development defaults. Set both URL and client key for a different deployment.
+Never put a service-role key in the client. Test camera permissions and scanning
+on a phone.
 
 ## Database setup and upgrades
 
@@ -32,14 +36,18 @@ data before using a fresh Supabase project.
 
 Apply unapplied migrations in filename order, beginning with
 `202608230001_add_plant_inspections.sql` and ending with
-`202610180003_monitoring_outcomes.sql`. Use Supabase SQL Editor or your established
+`202610190001_campus_only_lookup_creation.sql`. Use Supabase SQL Editor or your established
 migration runner, and record applied filenames. Do not reapply older function
 definitions after newer migrations. Verify upgrades against a staging copy first.
 
-Deploy the newest migration before distributing this client. It adds request
+Deploy the unapplied migrations before distributing this client. Monitoring adds request
 IDs and observation timestamps to inspections, the staff timeline, and scope-checked
 outcome reporting. Existing inspections remain readable, using their submission
 time when no observation timestamp exists. Images use the `plant-images` bucket.
+
+Campus, Town and Barangay are selection-only in the current app. The older
+lookup-creation migrations remain in history; the app no longer calls them.
+See [Adding location options](docs/LOCATION_LOOKUPS.md).
 
 The initial active `users` account must have the `super_admin` role. Provision it
 through your trusted administrative setup, then create other accounts in EcoTag.

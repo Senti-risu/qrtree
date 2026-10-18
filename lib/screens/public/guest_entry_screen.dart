@@ -3,9 +3,8 @@ import 'package:flutter/services.dart';
 
 import '../../services/guest_service.dart';
 import '../../theme/app_colors.dart';
-import '../../theme/app_layout.dart';
 import '../../utils/user_facing_error.dart';
-import '../../widgets/app_card.dart';
+import '../auth/widgets/auth_entry_layout.dart';
 
 class GuestEntryScreen extends StatefulWidget {
   const GuestEntryScreen({super.key, this.service});
@@ -87,202 +86,108 @@ class _GuestEntryScreenState extends State<GuestEntryScreen> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    final textScale = MediaQuery.textScalerOf(context).scale(1);
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        leading: IconButton(
-          onPressed: _isSubmitting ? null : _goBack,
-          tooltip: 'Back to access options',
-          icon: const Icon(Icons.arrow_back_rounded),
-        ),
-        titleSpacing: 0,
-        title: const _EcoTagTitle(),
-      ),
-      body: SafeArea(
-        top: false,
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final compact = AppBreakpoints.isPhone(constraints.maxWidth);
-            final pagePadding = compact ? 16.0 : 32.0;
-            return SingleChildScrollView(
-              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-              padding: EdgeInsets.all(pagePadding),
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  minHeight: (constraints.maxHeight - pagePadding * 2).clamp(
-                    0,
-                    double.infinity,
-                  ),
+  Widget build(BuildContext context) => AuthEntryLayout(
+    title: 'Guest access',
+    readOnly: true,
+    onBack: _isSubmitting ? null : _goBack,
+    child: Form(
+      key: _formKey,
+      child: AutofillGroup(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextFormField(
+              controller: _nameController,
+              enabled: !_isSubmitting,
+              maxLength: 60,
+              textCapitalization: TextCapitalization.words,
+              textInputAction: TextInputAction.next,
+              autofillHints: const [AutofillHints.name],
+              onTapOutside: (_) =>
+                  FocusManager.instance.primaryFocus?.unfocus(),
+              decoration: const InputDecoration(
+                labelText: 'Name (optional)',
+                hintText: 'Enter your name',
+                fillColor: AppColors.surfaceSubtle,
+                prefixIcon: Icon(Icons.person_outline_rounded),
+                counterText: '',
+              ),
+            ),
+            const SizedBox(height: 20),
+            TextFormField(
+              controller: _ageController,
+              enabled: !_isSubmitting,
+              keyboardType: TextInputType.number,
+              textInputAction: TextInputAction.done,
+              inputFormatters: [
+                FilteringTextInputFormatter.digitsOnly,
+                LengthLimitingTextInputFormatter(3),
+              ],
+              onTapOutside: (_) =>
+                  FocusManager.instance.primaryFocus?.unfocus(),
+              onFieldSubmitted: (_) => _continueAsGuest(),
+              decoration: const InputDecoration(
+                labelText: 'Age (required)',
+                hintText: 'Enter your age',
+                fillColor: AppColors.surfaceSubtle,
+                prefixIcon: Icon(Icons.cake_outlined),
+              ),
+              validator: (value) {
+                final raw = value?.trim() ?? '';
+                if (raw.isEmpty) return 'Enter your age.';
+                final age = int.tryParse(raw);
+                if (age == null || age < 1 || age > 120) {
+                  return 'Enter an age from 1 to 120.';
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 20),
+            const Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(
+                  Icons.privacy_tip_outlined,
+                  color: AppColors.green,
+                  size: 18,
                 ),
-                child: Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 560),
-                    child: AppCard(
-                      padding: EdgeInsets.all(compact ? 20 : 32),
-                      child: Form(
-                        key: _formKey,
-                        child: AutofillGroup(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Semantics(
-                                header: true,
-                                child: Text(
-                                  'Continue as a guest',
-                                  style: Theme.of(
-                                    context,
-                                  ).textTheme.headlineLarge,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                'Explore public EcoTag information without an administrator account.',
-                                style: Theme.of(context).textTheme.bodyMedium
-                                    ?.copyWith(
-                                      color: AppColors.textSecondary,
-                                      height: 1.45,
-                                    ),
-                              ),
-                              SizedBox(height: compact ? 24 : 28),
-                              TextFormField(
-                                controller: _nameController,
-                                enabled: !_isSubmitting,
-                                maxLength: 60,
-                                textCapitalization: TextCapitalization.words,
-                                textInputAction: TextInputAction.next,
-                                autofillHints: const [AutofillHints.name],
-                                decoration: const InputDecoration(
-                                  labelText: 'Name (optional)',
-                                  hintText: 'How should EcoTag welcome you?',
-                                  prefixIcon: Icon(
-                                    Icons.person_outline_rounded,
-                                  ),
-                                  helperText: 'Your name is not saved.',
-                                  counterText: '',
-                                ),
-                              ),
-                              const SizedBox(height: 18),
-                              TextFormField(
-                                controller: _ageController,
-                                enabled: !_isSubmitting,
-                                keyboardType: TextInputType.number,
-                                textInputAction: TextInputAction.done,
-                                inputFormatters: [
-                                  FilteringTextInputFormatter.digitsOnly,
-                                  LengthLimitingTextInputFormatter(3),
-                                ],
-                                onFieldSubmitted: (_) => _continueAsGuest(),
-                                decoration: const InputDecoration(
-                                  labelText: 'Age',
-                                  hintText: 'Enter your age',
-                                  prefixIcon: Icon(Icons.cake_outlined),
-                                  helperText:
-                                      'Required for anonymous visitor statistics.',
-                                ),
-                                validator: (value) {
-                                  final raw = value?.trim() ?? '';
-                                  if (raw.isEmpty) return 'Enter your age.';
-                                  final age = int.tryParse(raw);
-                                  if (age == null || age < 1 || age > 120) {
-                                    return 'Enter an age from 1 to 120.';
-                                  }
-                                  return null;
-                                },
-                              ),
-                              const SizedBox(height: 20),
-                              DecoratedBox(
-                                decoration: BoxDecoration(
-                                  color: AppColors.primaryContainer,
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: const Padding(
-                                  padding: EdgeInsets.all(14),
-                                  child: Row(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Icon(
-                                        Icons.privacy_tip_outlined,
-                                        color: AppColors.green,
-                                        size: 21,
-                                      ),
-                                      SizedBox(width: 10),
-                                      Expanded(
-                                        child: Text(
-                                          'Privacy: only your age is recorded for statistics. Your optional name stays in this visit and is never sent to the database.',
-                                          style: TextStyle(
-                                            color: AppColors.darkGreen,
-                                            height: 1.4,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                              SizedBox(height: compact ? 22 : 26),
-                              SizedBox(
-                                height: textScale >= 1.5 ? 60 : 52,
-                                child: FilledButton.icon(
-                                  onPressed: _isSubmitting
-                                      ? null
-                                      : _continueAsGuest,
-                                  icon: _isSubmitting
-                                      ? const SizedBox(
-                                          width: 20,
-                                          height: 20,
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 2.3,
-                                            color: Colors.white,
-                                          ),
-                                        )
-                                      : const Icon(Icons.arrow_forward_rounded),
-                                  label: Text(
-                                    _isSubmitting
-                                        ? 'Opening guest view…'
-                                        : 'Continue as guest',
-                                    textAlign: TextAlign.center,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
+                SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'Privacy: only your age is recorded for statistics. Your optional name stays in this visit and is never sent to the database.',
+                    style: TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 12,
+                      height: 1.5,
                     ),
                   ),
                 ),
+              ],
+            ),
+            const SizedBox(height: 28),
+            ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 52),
+              child: FilledButton(
+                onPressed: _isSubmitting ? null : _continueAsGuest,
+                child: _isSubmitting
+                    ? const SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.5,
+                          color: AppColors.onPrimary,
+                        ),
+                      )
+                    : const Text(
+                        'Continue as guest',
+                        textAlign: TextAlign.center,
+                      ),
               ),
-            );
-          },
+            ),
+          ],
         ),
       ),
-    );
-  }
-}
-
-class _EcoTagTitle extends StatelessWidget {
-  const _EcoTagTitle();
-
-  @override
-  Widget build(BuildContext context) {
-    return const Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(Icons.eco_rounded, color: AppColors.green),
-        SizedBox(width: 8),
-        Text(
-          'EcoTag Guest Access',
-          overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-            color: AppColors.darkGreen,
-            fontWeight: FontWeight.w800,
-          ),
-        ),
-      ],
-    );
-  }
+    ),
+  );
 }

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'app_colors.dart';
 import 'app_layout.dart';
 import 'app_typography.dart';
+import 'app_page_transitions.dart';
 
 class AppTheme {
   AppTheme._();
@@ -105,6 +106,16 @@ class AppTheme {
     final compactTextTheme = _compactTextTheme(base.textTheme);
 
     return base.copyWith(
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: {
+          TargetPlatform.android: AppPageTransitionsBuilder(),
+          TargetPlatform.iOS: AppPageTransitionsBuilder(),
+          TargetPlatform.macOS: AppPageTransitionsBuilder(),
+          TargetPlatform.windows: AppPageTransitionsBuilder(),
+          TargetPlatform.linux: AppPageTransitionsBuilder(),
+          TargetPlatform.fuchsia: AppPageTransitionsBuilder(),
+        },
+      ),
       textTheme: compactTextTheme.copyWith(
         headlineLarge: compactTextTheme.headlineLarge?.copyWith(
           fontSize: 26,

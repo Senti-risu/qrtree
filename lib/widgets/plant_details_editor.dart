@@ -372,7 +372,6 @@ class _PlantDetailsEditorState extends State<PlantDetailsEditor> {
                       readOnly: true,
                       decoration: const InputDecoration(
                         labelText: 'Scientific name',
-                        helperText: 'Based on the selected common name.',
                       ),
                     ),
                     const SizedBox(height: 12),

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'widgets/qr_numbering_info.dart';
 import '../../widgets/app_workspace_page.dart';
 import '../../widgets/compact_filter_panel.dart';
 import '../../theme/app_typography.dart';
@@ -582,44 +583,7 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Enter how many new QR tags you want to generate.',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryContainer,
-                    borderRadius: BorderRadius.all(Radius.circular(12)),
-                  ),
-                  child: Padding(
-                    padding: EdgeInsets.all(12),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Icon(
-                          Icons.info_outline_rounded,
-                          color: AppColors.green,
-                          size: 20,
-                        ),
-                        SizedBox(width: 9),
-                        Expanded(
-                          child: Text(
-                            'Format: ECOTAG-YYYYMM-000001. YYYYMM is the creation month and year; the last number starts at 1 and continues globally without resetting.',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: AppColors.darkGreen,
-                              height: 1.4,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
+                const QrNumberingInfo(),
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: controller,

@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../theme/app_layout.dart';
+import '../theme/app_page_transitions.dart';
 
 /// One route for named links, plant lists, inspection queues, and scanners.
 /// Keeping the route non-opaque preserves the previous page behind web details.
@@ -25,7 +26,7 @@ Route<T> plantDetailsRoute<T>({
           child: builder(context),
         ),
     transitionsBuilder: (context, animation, secondaryAnimation, child) =>
-        FadeTransition(opacity: animation, child: child),
+        AppPageTransition(animation: animation, child: child),
     transitionDuration: const Duration(milliseconds: 180),
     reverseTransitionDuration: const Duration(milliseconds: 150),
   );

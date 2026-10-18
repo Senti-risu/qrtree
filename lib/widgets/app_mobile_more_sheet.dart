@@ -34,7 +34,6 @@ Future<AppMobileMoreAction?> showAppMobileMoreSheet(
           action: AppMobileMoreAction.profile,
           icon: Icons.person_outline_rounded,
           title: 'My Profile',
-          subtitle: 'View your account and access details',
         ),
       ],
     ),
@@ -46,19 +45,16 @@ Future<AppMobileMoreAction?> showAppMobileMoreSheet(
             action: AppMobileMoreAction.registerPlant,
             icon: Icons.add_circle_outline_rounded,
             title: 'Register Plant',
-            subtitle: 'Add a new campus plant',
           ),
           _MoreItem(
             action: AppMobileMoreAction.qrManagement,
             icon: Icons.qr_code_2_rounded,
             title: 'QR Management',
-            subtitle: 'Generate, print, and manage QR tags',
           ),
           _MoreItem(
             action: AppMobileMoreAction.userManagement,
             icon: Icons.manage_accounts_outlined,
             title: 'User Management',
-            subtitle: 'Manage Inspection Team accounts',
           ),
         ],
       ),
@@ -70,7 +66,6 @@ Future<AppMobileMoreAction?> showAppMobileMoreSheet(
             action: AppMobileMoreAction.registerPlant,
             icon: Icons.add_circle_outline_rounded,
             title: 'Register Plant',
-            subtitle: 'Register a plant for your assigned college',
           ),
         ],
       ),
@@ -82,7 +77,6 @@ Future<AppMobileMoreAction?> showAppMobileMoreSheet(
             action: AppMobileMoreAction.qrReports,
             icon: Icons.report_problem_outlined,
             title: 'QR problem reports',
-            subtitle: 'Track damaged, faded, missing, or incorrect labels',
           ),
         ],
       ),
@@ -101,14 +95,12 @@ Future<AppMobileMoreAction?> showAppMobileMoreSheet(
               action: AppMobileMoreAction.reports,
               icon: Icons.bar_chart_rounded,
               title: 'Reports',
-              subtitle: 'View plant monitoring reports',
             ),
           if (role != 'inspection_team')
             const _MoreItem(
               action: AppMobileMoreAction.activityLog,
               icon: Icons.history_rounded,
               title: 'Activity Log',
-              subtitle: 'Review important account and plant changes',
             ),
         ],
       ),
@@ -119,7 +111,6 @@ Future<AppMobileMoreAction?> showAppMobileMoreSheet(
           action: AppMobileMoreAction.help,
           icon: Icons.help_outline_rounded,
           title: 'How to use EcoTag',
-          subtitle: 'Quick guidance for scanning, plants, and inspections',
         ),
       ],
     ),
@@ -130,7 +121,6 @@ Future<AppMobileMoreAction?> showAppMobileMoreSheet(
           action: AppMobileMoreAction.logout,
           icon: Icons.logout_rounded,
           title: 'Sign out',
-          subtitle: 'Return to the EcoTag login screen',
           destructive: true,
         ),
       ],
@@ -560,14 +550,12 @@ class _MoreItem {
   final AppMobileMoreAction action;
   final IconData icon;
   final String title;
-  final String subtitle;
   final bool destructive;
 
   const _MoreItem({
     required this.action,
     required this.icon,
     required this.title,
-    required this.subtitle,
     this.destructive = false,
   });
 }
@@ -607,12 +595,6 @@ class _MoreTile extends StatelessWidget {
             color: item.destructive ? AppColors.danger : AppColors.textPrimary,
             fontWeight: FontWeight.w700,
           ),
-        ),
-        subtitle: Text(
-          item.subtitle,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: const TextStyle(fontSize: 11),
         ),
         trailing: Icon(
           Icons.chevron_right_rounded,

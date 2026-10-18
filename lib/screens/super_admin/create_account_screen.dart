@@ -3,10 +3,16 @@ import 'package:flutter/material.dart';
 import '../../models/admin_account.dart';
 import '../../services/super_admin_service.dart';
 import '../../theme/app_colors.dart';
+import '../../widgets/forms/app_searchable_dropdown.dart';
 
 class CreateAdminAccountDialog extends StatefulWidget {
-  const CreateAdminAccountDialog({super.key, required this.actorUserId});
+  const CreateAdminAccountDialog({
+    super.key,
+    required this.actorUserId,
+    this.service,
+  });
   final int actorUserId;
+  final SuperAdminService? service;
 
   @override
   State<CreateAdminAccountDialog> createState() =>
@@ -20,7 +26,7 @@ class _CreateAdminAccountDialogState extends State<CreateAdminAccountDialog> {
     'college_admin': 'College Admin',
   };
 
-  final _service = SuperAdminService();
+  late final SuperAdminService _service;
   final _formKey = GlobalKey<FormState>();
   final _username = TextEditingController();
   final _password = TextEditingController();
@@ -35,10 +41,12 @@ class _CreateAdminAccountDialogState extends State<CreateAdminAccountDialog> {
   bool _saving = false;
   bool _obscure = true;
   String? _loadError;
+  String? _campusError;
 
   @override
   void initState() {
     super.initState();
+    _service = widget.service ?? SuperAdminService();
     _loadOptions();
   }
 
@@ -77,11 +85,25 @@ class _CreateAdminAccountDialogState extends State<CreateAdminAccountDialog> {
       _campusId = value;
       _collegeId = null;
       _colleges = const [];
+      _campusError = null;
     });
     if (value != null && _role == 'college_admin') {
-      final colleges = await _service.getColleges(value);
-      if (mounted) setState(() => _colleges = colleges);
+      try {
+        final colleges = await _service.getColleges(value);
+        if (mounted && _campusId == value) setState(() => _colleges = colleges);
+      } catch (error) {
+        _showError('Could not load colleges. Please select the campus again.');
+      }
     }
+  }
+
+  void _selectCampusName(String? name) {
+    if (name == null) {
+      _campusChanged(null);
+      return;
+    }
+    final matches = _campuses.where((item) => item.name == name);
+    if (matches.isNotEmpty) _campusChanged(matches.first.id);
   }
 
   Future<void> _submit() async {
@@ -92,6 +114,10 @@ class _CreateAdminAccountDialogState extends State<CreateAdminAccountDialog> {
       return;
     }
     if (!_formKey.currentState!.validate()) return;
+    if (_role != 'university_admin' && _campusId == null) {
+      setState(() => _campusError = 'Select an available campus.');
+      return;
+    }
     setState(() => _saving = true);
     try {
       await _service.createAccount(
@@ -193,32 +219,34 @@ class _CreateAdminAccountDialogState extends State<CreateAdminAccountDialog> {
                           _campusId = null;
                           _collegeId = null;
                           _colleges = const [];
+                          _campusError = null;
                         });
                       },
                     ),
                     if (_role != 'university_admin') ...[
                       const SizedBox(height: 14),
-                      DropdownButtonFormField<int>(
-                        isExpanded: true,
-                        initialValue: _campusId,
-                        decoration: const InputDecoration(
-                          labelText: 'Campus',
-                          border: OutlineInputBorder(),
-                        ),
-                        items: _campuses.map((campus) {
-                          final locked =
-                              _role == 'campus_admin' &&
-                              _activeCampusIds.contains(campus.id);
-                          return DropdownMenuItem(
-                            value: campus.id,
-                            enabled: !locked,
-                            child: _lockedOption(campus.name, locked),
-                          );
-                        }).toList(),
-                        onChanged: _campusChanged,
-                        validator: (value) => value == null
-                            ? 'Select an available campus.'
-                            : null,
+                      AppSearchableDropdown(
+                        key: ValueKey('account-campus-$_role'),
+                        label: 'Campus',
+                        isRequired: true,
+                        value: _campusId == null
+                            ? null
+                            : _campuses
+                                  .firstWhere((item) => item.id == _campusId)
+                                  .name,
+                        items: _campuses.map((item) => item.name).toList(),
+                        disabledItems: _role == 'campus_admin'
+                            ? _campuses
+                                  .where(
+                                    (item) =>
+                                        _activeCampusIds.contains(item.id),
+                                  )
+                                  .map((item) => item.name)
+                                  .toSet()
+                            : const {},
+                        enabled: !_saving,
+                        errorText: _campusError,
+                        onChanged: _selectCampusName,
                       ),
                     ],
                     if (_role == 'college_admin') ...[

@@ -3,9 +3,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../services/app_session.dart';
 import '../../theme/app_colors.dart';
-import '../../theme/app_layout.dart';
 import '../../utils/user_facing_error.dart';
-import '../../widgets/app_card.dart';
+import 'widgets/auth_entry_layout.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -23,7 +22,7 @@ class _LoginScreenState extends State<LoginScreen> {
   String? _usernameError;
   String? _passwordError;
 
-  final SupabaseClient supabase = Supabase.instance.client;
+  late final SupabaseClient supabase = Supabase.instance.client;
 
   Future<void> _handleLogin() async {
     final username = _usernameController.text.trim();
@@ -175,189 +174,94 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final compact = MediaQuery.sizeOf(context).width < AppBreakpoints.phone;
-
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: EdgeInsets.all(compact ? AppSpacing.lg : AppSpacing.xl),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 450),
-              child: AppCard(
-                padding: EdgeInsets.all(
-                  compact ? AppSpacing.xl : AppSpacing.xl * 1.5,
-                ),
-                child: Column(
-                  children: [
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: TextButton.icon(
-                        onPressed: _isLoading
-                            ? null
-                            : () => Navigator.pushNamedAndRemoveUntil(
-                                context,
-                                '/login',
-                                (route) => false,
-                              ),
-                        icon: const Icon(Icons.arrow_back_rounded, size: 20),
-                        label: const Text('Choose another access type'),
-                      ),
-                    ),
-
-                    const SizedBox(height: AppSpacing.md),
-
-                    Container(
-                      width: 92,
-                      height: 92,
-                      decoration: const BoxDecoration(
-                        color: AppColors.primaryContainer,
-                        borderRadius: AppRadii.extraLarge,
-                      ),
-                      child: const Icon(
-                        Icons.eco,
-                        size: 48,
-                        color: AppColors.primary,
-                      ),
-                    ),
-
-                    const SizedBox(height: AppSpacing.xl),
-
-                    Text(
-                      'EcoTag',
-                      style: theme.textTheme.displaySmall?.copyWith(
-                        fontSize: 40,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.darkGreen,
-                      ),
-                    ),
-
-                    const SizedBox(height: AppSpacing.sm),
-
-                    Text(
-                      'Admin & Inspection Team sign in',
-                      textAlign: TextAlign.center,
-                      style: theme.textTheme.titleLarge?.copyWith(
-                        fontSize: 19,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-
-                    const SizedBox(height: AppSpacing.xs),
-
-                    Text(
-                      'Use the account issued to you by EcoTag.',
-                      textAlign: TextAlign.center,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-
-                    const SizedBox(height: AppSpacing.xl),
-
-                    TextField(
-                      controller: _usernameController,
-                      enabled: !_isLoading,
-                      onChanged: (_) {
-                        if (_usernameError != null) {
-                          setState(() => _usernameError = null);
-                        }
-                      },
-                      textInputAction: TextInputAction.next,
-                      autofillHints: const [AutofillHints.username],
-                      decoration: InputDecoration(
-                        labelText: 'Username',
-                        hintText: 'Enter your username',
-                        errorText: _usernameError,
-                        prefixIcon: const Icon(Icons.person_outline),
-                      ),
-                    ),
-
-                    const SizedBox(height: AppSpacing.lg),
-
-                    TextField(
-                      controller: _passwordController,
-                      enabled: !_isLoading,
-                      onChanged: (_) {
-                        if (_passwordError != null) {
-                          setState(() => _passwordError = null);
-                        }
-                      },
-                      obscureText: _obscurePassword,
-                      textInputAction: TextInputAction.done,
-                      autofillHints: const [AutofillHints.password],
-                      onSubmitted: (_) {
-                        if (!_isLoading) {
-                          _handleLogin();
-                        }
-                      },
-                      decoration: InputDecoration(
-                        labelText: 'Password',
-                        hintText: 'Enter your password',
-                        errorText: _passwordError,
-                        prefixIcon: const Icon(Icons.lock_outline),
-                        suffixIcon: IconButton(
-                          onPressed: _isLoading
-                              ? null
-                              : () {
-                                  setState(() {
-                                    _obscurePassword = !_obscurePassword;
-                                  });
-                                },
-                          icon: Icon(
-                            _obscurePassword
-                                ? Icons.visibility_off
-                                : Icons.visibility,
-                          ),
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: AppSpacing.xl),
-
-                    SizedBox(
-                      width: double.infinity,
-                      height: 52,
-                      child: FilledButton(
-                        onPressed: _isLoading ? null : _handleLogin,
-                        child: _isLoading
-                            ? const SizedBox(
-                                width: 24,
-                                height: 24,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2.5,
-                                  color: AppColors.onPrimary,
-                                ),
-                              )
-                            : Text(
-                                'Sign in',
-                                style: theme.textTheme.labelLarge?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.onPrimary,
-                                ),
-                              ),
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-                    const Text(
-                      'This device remembers your sign-in until you log out or '
-                      'your session expires. Always log out on shared devices.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                  ],
+  Widget build(BuildContext context) => AuthEntryLayout(
+    title: 'Staff sign in',
+    onBack: _isLoading
+        ? null
+        : () => Navigator.pushNamedAndRemoveUntil(
+            context,
+            '/login',
+            (_) => false,
+          ),
+    child: AutofillGroup(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          TextField(
+            controller: _usernameController,
+            enabled: !_isLoading,
+            autocorrect: false,
+            enableSuggestions: false,
+            onTapOutside: (_) => FocusManager.instance.primaryFocus?.unfocus(),
+            onChanged: (_) {
+              if (_usernameError != null) setState(() => _usernameError = null);
+            },
+            textInputAction: TextInputAction.next,
+            autofillHints: const [AutofillHints.username],
+            decoration: InputDecoration(
+              labelText: 'Username',
+              hintText: 'Enter your username',
+              errorText: _usernameError,
+              fillColor: AppColors.surfaceSubtle,
+              prefixIcon: const Icon(Icons.person_outline),
+            ),
+          ),
+          const SizedBox(height: 20),
+          TextField(
+            controller: _passwordController,
+            enabled: !_isLoading,
+            autocorrect: false,
+            enableSuggestions: false,
+            onTapOutside: (_) => FocusManager.instance.primaryFocus?.unfocus(),
+            onChanged: (_) {
+              if (_passwordError != null) setState(() => _passwordError = null);
+            },
+            obscureText: _obscurePassword,
+            textInputAction: TextInputAction.done,
+            autofillHints: const [AutofillHints.password],
+            onSubmitted: (_) {
+              if (!_isLoading) _handleLogin();
+            },
+            decoration: InputDecoration(
+              labelText: 'Password',
+              hintText: 'Enter your password',
+              errorText: _passwordError,
+              fillColor: AppColors.surfaceSubtle,
+              prefixIcon: const Icon(Icons.lock_outline),
+              suffixIcon: IconButton(
+                tooltip: _obscurePassword ? 'Show password' : 'Hide password',
+                onPressed: _isLoading
+                    ? null
+                    : () => setState(() {
+                        _obscurePassword = !_obscurePassword;
+                      }),
+                icon: Icon(
+                  _obscurePassword
+                      ? Icons.visibility_off_outlined
+                      : Icons.visibility_outlined,
                 ),
               ),
             ),
           ),
-        ),
+          const SizedBox(height: 28),
+          ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 52),
+            child: FilledButton(
+              onPressed: _isLoading ? null : _handleLogin,
+              child: _isLoading
+                  ? const SizedBox(
+                      width: 22,
+                      height: 22,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.5,
+                        color: AppColors.onPrimary,
+                      ),
+                    )
+                  : const Text('Sign in', textAlign: TextAlign.center),
+            ),
+          ),
+        ],
       ),
-    );
-  }
+    ),
+  );
 }

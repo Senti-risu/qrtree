@@ -6,6 +6,7 @@ import '../../../widgets/monitoring_outcomes_card.dart';
 import '../../../models/inspection_schedule.dart';
 import '../../../widgets/app_workspace_page.dart';
 import '../../../theme/app_typography.dart';
+import 'widgets/report_readable_widgets.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
@@ -633,7 +634,7 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
               Text(
                 '$_advancedFilterCount ${_advancedFilterCount == 1 ? 'filter' : 'filters'} applied',
                 style: const TextStyle(
-                  fontSize: 12,
+                  fontSize: AppTypography.caption,
                   fontWeight: FontWeight.w700,
                   color: AppColors.darkGreen,
                 ),
@@ -670,7 +671,10 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
       Expanded(
         child: Text(
           '${_filteredPlants.length} of ${_plants.length} plants match',
-          style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+          style: const TextStyle(
+            fontSize: AppTypography.caption,
+            color: AppColors.textSecondary,
+          ),
         ),
       ),
       if (_hasActiveFilters)
@@ -820,7 +824,7 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
     child: Text(
       '$count active',
       style: const TextStyle(
-        fontSize: 11,
+        fontSize: AppTypography.caption,
         fontWeight: FontWeight.w800,
         color: AppColors.warning,
       ),
@@ -838,7 +842,7 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
     child: Text(
       count.toString(),
       style: const TextStyle(
-        fontSize: 10,
+        fontSize: AppTypography.caption,
         fontWeight: FontWeight.w800,
         color: Colors.white,
       ),
@@ -938,14 +942,14 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
                             Text(
                               'Filter report',
                               style: TextStyle(
-                                fontSize: 18,
+                                fontSize: AppTypography.sectionTitle,
                                 fontWeight: FontWeight.w800,
                               ),
                             ),
                             Text(
                               'Refine the records shown in analytics',
                               style: TextStyle(
-                                fontSize: 12,
+                                fontSize: AppTypography.caption,
                                 color: AppColors.textSecondary,
                               ),
                             ),
@@ -970,7 +974,7 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
                         const Text(
                           'DATE & LOCATION',
                           style: TextStyle(
-                            fontSize: 10,
+                            fontSize: AppTypography.caption,
                             fontWeight: FontWeight.w800,
                             color: AppColors.textSecondary,
                             letterSpacing: .8,
@@ -1011,7 +1015,7 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
                         const Text(
                           'PLANT DETAILS',
                           style: TextStyle(
-                            fontSize: 10,
+                            fontSize: AppTypography.caption,
                             fontWeight: FontWeight.w800,
                             color: AppColors.textSecondary,
                             letterSpacing: .8,
@@ -1048,7 +1052,7 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
                         const Text(
                           'HEALTH STATUS',
                           style: TextStyle(
-                            fontSize: 10,
+                            fontSize: AppTypography.caption,
                             fontWeight: FontWeight.w800,
                             color: AppColors.textSecondary,
                             letterSpacing: .8,
@@ -1277,7 +1281,7 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
-                    fontSize: 11,
+                    fontSize: AppTypography.caption,
                     color: AppColors.textSecondary,
                   ),
                 ),
@@ -1307,7 +1311,12 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
     },
   );
 
-  Widget _chartCard(String title, String subtitle, Widget chart) => AppCard(
+  Widget _chartCard(
+    String title,
+    String subtitle,
+    Widget chart, {
+    bool naturalHeight = false,
+  }) => AppCard(
     padding: const EdgeInsets.fromLTRB(18, 17, 18, 16),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1323,10 +1332,22 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
         const SizedBox(height: 3),
         Text(
           subtitle,
-          style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+          style: const TextStyle(
+            fontSize: AppTypography.caption,
+            color: AppColors.textSecondary,
+          ),
         ),
         const SizedBox(height: 16),
-        SizedBox(height: 220, child: chart),
+        if (naturalHeight)
+          chart
+        else
+          SizedBox(
+            height:
+                220 +
+                32 *
+                    (MediaQuery.textScalerOf(context).scale(1) - 1).clamp(0, 2),
+            child: chart,
+          ),
       ],
     ),
   );
@@ -1342,54 +1363,8 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
     return _chartCard(
       'Plant Health',
       'Current health status distribution',
-      total == 0
-          ? _emptyChart()
-          : Row(
-              children: [
-                Expanded(
-                  child: PieChart(
-                    PieChartData(
-                      centerSpaceRadius: 46,
-                      sectionsSpace: 3,
-                      sections: values
-                          .where((item) => item.$2 > 0)
-                          .map(
-                            (item) => PieChartSectionData(
-                              value: item.$2.toDouble(),
-                              color: item.$3,
-                              radius: 34,
-                              showTitle: false,
-                            ),
-                          )
-                          .toList(),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: values
-                      .where((item) => item.$2 > 0)
-                      .map(
-                        (item) => Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 4),
-                          child: Row(
-                            children: [
-                              Container(width: 9, height: 9, color: item.$3),
-                              const SizedBox(width: 7),
-                              Text(
-                                '${item.$1}  ${item.$2}',
-                                style: const TextStyle(fontSize: 11),
-                              ),
-                            ],
-                          ),
-                        ),
-                      )
-                      .toList(),
-                ),
-              ],
-            ),
+      total == 0 ? _emptyChart() : ReportHealthDistribution(values: values),
+      naturalHeight: total > 0,
     );
   }
 
@@ -1441,58 +1416,87 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
       1,
       (value, item) => math.max(value, item.value),
     );
-    return BarChart(
-      BarChartData(
-        maxY: maximum * 1.25,
-        alignment: BarChartAlignment.spaceAround,
-        gridData: const FlGridData(show: false),
-        borderData: FlBorderData(show: false),
-        titlesData: FlTitlesData(
-          topTitles: const AxisTitles(
-            sideTitles: SideTitles(showTitles: false),
-          ),
-          rightTitles: const AxisTitles(
-            sideTitles: SideTitles(showTitles: false),
-          ),
-          leftTitles: const AxisTitles(
-            sideTitles: SideTitles(showTitles: false),
-          ),
-          bottomTitles: AxisTitles(
-            sideTitles: SideTitles(
-              showTitles: true,
-              reservedSize: 42,
-              getTitlesWidget: (value, meta) {
-                final index = value.toInt();
-                if (index < 0 || index >= shown.length) return const SizedBox();
-                final label = shown[index].key;
-                return Padding(
-                  padding: const EdgeInsets.only(top: 8),
-                  child: Text(
-                    label.length > 10 ? '${label.substring(0, 9)}…' : label,
-                    style: const TextStyle(fontSize: 9),
-                    textAlign: TextAlign.center,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final scale = MediaQuery.textScalerOf(context).scale(1).clamp(1, 2);
+        final chartWidth = math.max(
+          constraints.maxWidth,
+          shown.length * 72.0 * scale,
+        );
+        return SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: SizedBox(
+            width: chartWidth,
+            child: BarChart(
+              BarChartData(
+                maxY: maximum * 1.25,
+                alignment: BarChartAlignment.spaceAround,
+                gridData: const FlGridData(show: false),
+                borderData: FlBorderData(show: false),
+                titlesData: FlTitlesData(
+                  topTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
                   ),
-                );
-              },
+                  rightTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
+                  leftTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
+                  bottomTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      reservedSize:
+                          48 *
+                          MediaQuery.textScalerOf(context).scale(1).clamp(1, 2),
+                      getTitlesWidget: (value, meta) {
+                        final index = value.toInt();
+                        if (index < 0 || index >= shown.length) {
+                          return const SizedBox();
+                        }
+                        final label = shown[index].key;
+                        return Padding(
+                          padding: const EdgeInsets.only(top: 8),
+                          child: SizedBox(
+                            width: chartWidth / shown.length - 12,
+                            child: Tooltip(
+                              message: label,
+                              child: Text(
+                                label,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontSize: AppTypography.caption,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ),
+                barGroups: shown.asMap().entries.map((entry) {
+                  return BarChartGroupData(
+                    x: entry.key,
+                    barRods: [
+                      BarChartRodData(
+                        toY: entry.value.value.toDouble(),
+                        color: color,
+                        width: 18,
+                        borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(5),
+                        ),
+                      ),
+                    ],
+                  );
+                }).toList(),
+              ),
             ),
           ),
-        ),
-        barGroups: shown.asMap().entries.map((entry) {
-          return BarChartGroupData(
-            x: entry.key,
-            barRods: [
-              BarChartRodData(
-                toY: entry.value.value.toDouble(),
-                color: color,
-                width: 18,
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(5),
-                ),
-              ),
-            ],
-          );
-        }).toList(),
-      ),
+        );
+      },
     );
   }
 
@@ -1553,12 +1557,13 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
             bottomTitles: AxisTitles(
               sideTitles: SideTitles(
                 showTitles: true,
-                reservedSize: 28,
+                reservedSize:
+                    32 * MediaQuery.textScalerOf(context).scale(1).clamp(1, 2),
                 getTitlesWidget: (value, meta) => Padding(
                   padding: const EdgeInsets.only(top: 7),
                   child: Text(
                     names[months[value.toInt().clamp(0, 5)].month - 1],
-                    style: const TextStyle(fontSize: 10),
+                    style: const TextStyle(fontSize: AppTypography.caption),
                   ),
                 ),
               ),
@@ -1774,7 +1779,7 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
           Text(
             '${plants.length} matching records',
             style: const TextStyle(
-              fontSize: 11,
+              fontSize: AppTypography.caption,
               color: AppColors.textSecondary,
             ),
           ),
@@ -1840,7 +1845,7 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                       style: const TextStyle(
-                                        fontSize: 10,
+                                        fontSize: AppTypography.caption,
                                         fontStyle: FontStyle.italic,
                                         color: AppColors.textSecondary,
                                       ),
@@ -1960,20 +1965,16 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
                   children: [
                     Text(
                       name,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        fontSize: 14,
+                        fontSize: AppTypography.body,
                         fontWeight: FontWeight.w800,
                         color: AppColors.darkGreen,
                       ),
                     ),
                     Text(
                       scientificName,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        fontSize: 10,
+                        fontSize: AppTypography.caption,
                         fontStyle: FontStyle.italic,
                         color: AppColors.textSecondary,
                       ),
@@ -1981,11 +1982,14 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
                   ],
                 ),
               ),
-              const SizedBox(width: 8),
-              _healthChip(_health(plant)),
             ],
           ),
-          const SizedBox(height: 11),
+          const SizedBox(height: 8),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: _healthChip(_health(plant)),
+          ),
+          const SizedBox(height: 12),
           Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
@@ -1995,10 +1999,8 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
             ),
             child: Text(
               _tag(plant),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
               style: const TextStyle(
-                fontSize: 11,
+                fontSize: AppTypography.caption,
                 fontWeight: FontWeight.w600,
                 color: AppColors.textSecondary,
               ),
@@ -2007,7 +2009,9 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
           const SizedBox(height: 11),
           LayoutBuilder(
             builder: (_, constraints) {
-              final itemWidth = constraints.maxWidth >= 280
+              final itemWidth =
+                  constraints.maxWidth >= 280 &&
+                      MediaQuery.textScalerOf(context).scale(1) < 1.4
                   ? (constraints.maxWidth - 10) / 2
                   : constraints.maxWidth;
               return Wrap(
@@ -2053,27 +2057,8 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
     );
   }
 
-  Widget _mobileReportDetail(String label, String value, double width) {
-    return SizedBox(
-      width: width,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: const TextStyle(fontSize: 9, color: AppColors.textSecondary),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            value,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
-          ),
-        ],
-      ),
-    );
-  }
+  Widget _mobileReportDetail(String label, String value, double width) =>
+      ReportDetailField(label: label, value: value, width: width);
 
   Widget _healthChip(String value) {
     final color = value == 'Healthy'
@@ -2092,7 +2077,7 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
       child: Text(
         value,
         style: TextStyle(
-          fontSize: 11,
+          fontSize: AppTypography.caption,
           fontWeight: FontWeight.w700,
           color: color,
         ),

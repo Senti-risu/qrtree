@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../theme/app_colors.dart';
 import '../../../../theme/app_layout.dart';
+import '../../../../theme/app_typography.dart';
 
 class PlantImagePickerField extends StatelessWidget {
   final Uint8List? imageBytes;
@@ -31,7 +32,7 @@ class PlantImagePickerField extends StatelessWidget {
       children: [
         Text(
           'Upload Image',
-          style: theme.textTheme.labelMedium?.copyWith(
+          style: theme.textTheme.labelLarge?.copyWith(
             color: AppColors.darkGreen,
             fontWeight: FontWeight.w600,
           ),
@@ -42,7 +43,10 @@ class PlantImagePickerField extends StatelessWidget {
           borderRadius: AppRadii.medium,
           child: Container(
             width: double.infinity,
-            height: 180,
+            height:
+                180 +
+                48 *
+                    (MediaQuery.textScalerOf(context).scale(1) - 1).clamp(0, 2),
             clipBehavior: Clip.antiAlias,
             decoration: BoxDecoration(
               color: AppColors.surface,
@@ -162,17 +166,20 @@ class _EmptyImageState extends StatelessWidget {
               ),
         const SizedBox(height: AppSpacing.md),
         Text(
-          isPicking ? 'Opening gallery...' : 'Click to upload image',
+          isPicking ? 'Opening gallery...' : 'Choose photo',
           style: const TextStyle(
             color: AppColors.primary,
-            fontSize: 13,
+            fontSize: AppTypography.label,
             fontWeight: FontWeight.w600,
           ),
         ),
         const SizedBox(height: AppSpacing.xs),
         const Text(
           'PNG, JPG or JPEG',
-          style: TextStyle(color: AppColors.textSecondary, fontSize: 10),
+          style: TextStyle(
+            color: AppColors.textSecondary,
+            fontSize: AppTypography.caption,
+          ),
         ),
       ],
     );

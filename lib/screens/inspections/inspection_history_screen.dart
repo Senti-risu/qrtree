@@ -221,7 +221,7 @@ class _InspectionHistoryScreenState extends State<InspectionHistoryScreen> {
       Text(
         label,
         style: const TextStyle(
-          fontSize: 11,
+          fontSize: AppTypography.caption,
           fontWeight: FontWeight.w800,
           color: AppColors.textSecondary,
         ),
@@ -491,7 +491,7 @@ class _InspectionHistoryScreenState extends State<InspectionHistoryScreen> {
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
-                                fontSize: 12,
+                                fontSize: AppTypography.caption,
                                 color: AppColors.textSecondary,
                               ),
                             ),
@@ -501,7 +501,7 @@ class _InspectionHistoryScreenState extends State<InspectionHistoryScreen> {
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
-                                fontSize: 11,
+                                fontSize: AppTypography.caption,
                                 color: AppColors.textSecondary,
                               ),
                             ),
@@ -626,11 +626,17 @@ class _InspectionHistoryScreenState extends State<InspectionHistoryScreen> {
       const SizedBox(width: 5),
       Text(
         '$label: ',
-        style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+        style: const TextStyle(
+          fontSize: AppTypography.caption,
+          color: AppColors.textSecondary,
+        ),
       ),
       Text(
         value,
-        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
+        style: const TextStyle(
+          fontSize: AppTypography.caption,
+          fontWeight: FontWeight.w700,
+        ),
       ),
     ],
   );
@@ -682,7 +688,7 @@ class _InspectionHistoryScreenState extends State<InspectionHistoryScreen> {
           Text(
             label,
             style: TextStyle(
-              fontSize: 11,
+              fontSize: AppTypography.caption,
               fontWeight: FontWeight.w800,
               color: foreground,
             ),
@@ -1008,7 +1014,7 @@ class _InspectionHistoryScreenState extends State<InspectionHistoryScreen> {
               '$_activeFilterCount',
               style: const TextStyle(
                 color: Colors.white,
-                fontSize: 11,
+                fontSize: AppTypography.caption,
                 fontWeight: FontWeight.w800,
               ),
             ),
@@ -1030,7 +1036,10 @@ class _InspectionHistoryScreenState extends State<InspectionHistoryScreen> {
         child: Text(
           '${_visibleInspections.length} of ${_inspections.length} records',
           overflow: TextOverflow.ellipsis,
-          style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+          style: const TextStyle(
+            fontSize: AppTypography.caption,
+            color: AppColors.textSecondary,
+          ),
         ),
       ),
     ],
@@ -1051,7 +1060,7 @@ class _InspectionHistoryScreenState extends State<InspectionHistoryScreen> {
         Text(
           '$_activeFilterCount active',
           style: const TextStyle(
-            fontSize: 11,
+            fontSize: AppTypography.caption,
             fontWeight: FontWeight.w700,
             color: AppColors.darkGreen,
           ),
@@ -1066,7 +1075,7 @@ class _InspectionHistoryScreenState extends State<InspectionHistoryScreen> {
     deleteIcon: const Icon(Icons.close_rounded, size: 16),
     deleteIconColor: AppColors.green,
     labelStyle: const TextStyle(
-      fontSize: 11,
+      fontSize: AppTypography.caption,
       fontWeight: FontWeight.w700,
       color: AppColors.darkGreen,
     ),
@@ -1233,7 +1242,7 @@ class _InspectionHistoryScreenState extends State<InspectionHistoryScreen> {
                             Text(
                               date,
                               style: const TextStyle(
-                                fontSize: 11,
+                                fontSize: AppTypography.caption,
                                 color: AppColors.textSecondary,
                               ),
                             ),
@@ -1274,7 +1283,7 @@ class _InspectionHistoryScreenState extends State<InspectionHistoryScreen> {
                           Text(
                             date,
                             style: const TextStyle(
-                              fontSize: 11,
+                              fontSize: AppTypography.caption,
                               color: AppColors.textSecondary,
                             ),
                           ),
@@ -1338,11 +1347,14 @@ class _InspectionHistoryScreenState extends State<InspectionHistoryScreen> {
       const SizedBox(height: 7),
       Text(
         'Inspected by $inspector',
-        style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+        style: const TextStyle(
+          fontSize: AppTypography.caption,
+          color: AppColors.textSecondary,
+        ),
       ),
       if (observation.isNotEmpty) ...[
         const SizedBox(height: 7),
-        Text(observation, style: const TextStyle(fontSize: 12)),
+        Text(observation, style: const TextStyle(fontSize: AppTypography.body)),
       ],
     ],
   );
@@ -1358,12 +1370,14 @@ class _InspectionHistoryScreenState extends State<InspectionHistoryScreen> {
       children: [
         Icon(icon, size: 13, color: AppColors.green),
         const SizedBox(width: 4),
-        Text(
-          text,
-          style: const TextStyle(
-            fontSize: 10,
-            fontWeight: FontWeight.w600,
-            color: AppColors.darkGreen,
+        Flexible(
+          child: Text(
+            text,
+            style: const TextStyle(
+              fontSize: AppTypography.caption,
+              fontWeight: FontWeight.w600,
+              color: AppColors.darkGreen,
+            ),
           ),
         ),
       ],

@@ -375,19 +375,11 @@ class _InspectionFormScreenState extends State<InspectionFormScreen> {
                 children: [
                   _plantSummary(commonName),
                   const SizedBox(height: 18),
-                  _sectionHeading(
-                    number: '1',
-                    title: 'Add a current photo',
-                    subtitle: 'Recommended for tracking visible changes',
-                  ),
+                  _sectionHeading(number: '1', title: 'Photo (optional)'),
                   const SizedBox(height: 10),
                   _photoField(),
                   const SizedBox(height: 22),
-                  _sectionHeading(
-                    number: '2',
-                    title: 'Confirm the condition',
-                    subtitle: 'Choose what you observe today',
-                  ),
+                  _sectionHeading(number: '2', title: 'Confirm the condition'),
                   const SizedBox(height: 10),
                   _healthChoices(),
                   if (_selectionError != null) ...[
@@ -404,12 +396,7 @@ class _InspectionFormScreenState extends State<InspectionFormScreen> {
                   const SizedBox(height: 14),
                   _growthDropdown(),
                   const SizedBox(height: 22),
-                  _sectionHeading(
-                    number: '3',
-                    title: 'Add observations',
-                    subtitle:
-                        'Describe damage, symptoms, or maintenance needed',
-                  ),
+                  _sectionHeading(number: '3', title: 'Add observations'),
                   const SizedBox(height: 10),
                   TextField(
                     controller: _observation,
@@ -518,53 +505,38 @@ class _InspectionFormScreenState extends State<InspectionFormScreen> {
     );
   }
 
-  Widget _sectionHeading({
-    required String number,
-    required String title,
-    required String subtitle,
-  }) => Row(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Container(
-        width: 28,
-        height: 28,
-        alignment: Alignment.center,
-        decoration: const BoxDecoration(
-          color: AppColors.green,
-          shape: BoxShape.circle,
-        ),
-        child: Text(
-          number,
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w800,
+  Widget _sectionHeading({required String number, required String title}) =>
+      Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 28,
+            height: 28,
+            alignment: Alignment.center,
+            decoration: const BoxDecoration(
+              color: AppColors.green,
+              shape: BoxShape.circle,
+            ),
+            child: Text(
+              number,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
           ),
-        ),
-      ),
-      const SizedBox(width: 10),
-      Expanded(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
               title,
               style: const TextStyle(
                 fontSize: AppTypography.sectionTitle,
                 fontWeight: FontWeight.w800,
               ),
             ),
-            Text(
-              subtitle,
-              style: const TextStyle(
-                fontSize: 12,
-                color: AppColors.textSecondary,
-              ),
-            ),
-          ],
-        ),
-      ),
-    ],
-  );
+          ),
+        ],
+      );
 
   Widget _photoField() => InkWell(
     onTap: _choosePhotoSource,
@@ -671,7 +643,6 @@ class _InspectionFormScreenState extends State<InspectionFormScreen> {
         : null,
     decoration: InputDecoration(
       labelText: 'Growth stage',
-      helperText: 'Keep the existing stage or select a new one.',
       filled: true,
       fillColor: Colors.white,
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),

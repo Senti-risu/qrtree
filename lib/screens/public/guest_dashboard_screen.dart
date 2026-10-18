@@ -592,20 +592,6 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
               ),
             ),
           ),
-          const SizedBox(height: 14),
-          const Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Icon(Icons.visibility_outlined, color: AppColors.green, size: 20),
-              SizedBox(width: 9),
-              Expanded(
-                child: Text(
-                  'Guest access is read-only. Plant management and inspection tools are available only to authorized CSU personnel.',
-                  style: TextStyle(color: AppColors.textSecondary, height: 1.4),
-                ),
-              ),
-            ],
-          ),
         ],
       ),
     );

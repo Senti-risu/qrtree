@@ -61,7 +61,7 @@ void main() {
 
     expect(find.text('Admin & Inspection Team'), findsOneWidget);
     expect(find.text('Guest'), findsOneWidget);
-    expect(find.textContaining('verified securely'), findsOneWidget);
+    expect(find.textContaining('verified securely'), findsNothing);
     expect(tester.takeException(), isNull);
   });
 

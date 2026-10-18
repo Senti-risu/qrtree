@@ -15,6 +15,7 @@ import '../../../widgets/app_card.dart';
 import '../../../widgets/app_error_state.dart';
 import '../../../widgets/app_shell.dart';
 import '../../../widgets/app_navigation_guard.dart';
+import '../../../widgets/registration_exit_dialog.dart';
 import '../../../widgets/registration_progress.dart';
 import '../../../widgets/forms/app_searchable_dropdown.dart';
 import '../../../widgets/forms/app_text_field.dart';
@@ -546,7 +547,16 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
   }
 
   void _selectCommonName(String? value) {
-    if (value == null || _plantType == null) {
+    if (value == null) {
+      setState(() {
+        _hasUnsavedChanges = true;
+        _commonName = null;
+        _selectedClassificationId = null;
+        _scientificNameController.clear();
+      });
+      return;
+    }
+    if (_plantType == null) {
       return;
     }
 
@@ -613,7 +623,15 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
   }
 
   void _selectCollege(String? value) {
-    if (value == null || _selectedCampusId == null) {
+    if (value == null) {
+      setState(() {
+        _hasUnsavedChanges = true;
+        _college = null;
+        _selectedCollegeId = null;
+      });
+      return;
+    }
+    if (_selectedCampusId == null) {
       return;
     }
 
@@ -682,7 +700,15 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
   }
 
   void _selectBarangay(String? value) {
-    if (value == null || _selectedTownId == null) {
+    if (value == null) {
+      setState(() {
+        _barangay = null;
+        _selectedBarangayId = null;
+        _hasUnsavedChanges = true;
+      });
+      return;
+    }
+    if (_selectedTownId == null) {
       return;
     }
 
@@ -712,6 +738,11 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
 
   void _selectGrowthStage(String? value) {
     if (value == null) {
+      setState(() {
+        _hasUnsavedChanges = true;
+        _growthStage = null;
+        _selectedGrowthStatusId = null;
+      });
       return;
     }
 
@@ -735,6 +766,11 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
 
   void _selectHealthStatus(String? value) {
     if (value == null) {
+      setState(() {
+        _hasUnsavedChanges = true;
+        _healthStatus = null;
+        _selectedHealthStatusId = null;
+      });
       return;
     }
 
@@ -1267,27 +1303,7 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
     if (!_hasUnsavedChanges) return true;
     final choice = await showDialog<String>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Leave this registration?'),
-        content: const Text(
-          'Save a draft on this device, discard this registration, or stay to continue editing.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, 'stay'),
-            child: const Text('Stay'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, 'discard'),
-            style: FilledButton.styleFrom(backgroundColor: AppColors.danger),
-            child: const Text('Discard'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, 'save'),
-            child: const Text('Save draft'),
-          ),
-        ],
-      ),
+      builder: (context) => const RegistrationExitDialog(),
     );
     if (!mounted || choice == null || choice == 'stay') return false;
     if (choice == 'save') return _saveDraft();
@@ -1519,26 +1535,16 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
           padding: const EdgeInsets.all(AppSpacing.lg),
           child: LayoutBuilder(
             builder: (context, constraints) {
-              const hint = Text(
-                'Check the required fields before registering. A draft does not create a plant record.',
-              );
               if (constraints.maxWidth < 650 ||
                   MediaQuery.textScalerOf(context).scale(1) >= 1.4) {
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    hint,
-                    const SizedBox(height: AppSpacing.md),
-                    _registerButton(),
-                  ],
+                return SizedBox(
+                  width: double.infinity,
+                  child: _registerButton(),
                 );
               }
-              return Row(
-                children: [
-                  const Expanded(child: hint),
-                  const SizedBox(width: AppSpacing.lg),
-                  _registerButton(),
-                ],
+              return Align(
+                alignment: Alignment.centerRight,
+                child: _registerButton(),
               );
             },
           ),
@@ -2137,6 +2143,7 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
 
           // BARANGAY FILTERED BY TOWN
           AppSearchableDropdown(
+            key: ValueKey('barangay-town-$_selectedTownId'),
             label: 'Barangay',
             isRequired: true,
             errorText: _showLocationErrors && _selectedBarangayId == null
