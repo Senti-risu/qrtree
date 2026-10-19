@@ -87,7 +87,7 @@ class _GuestEntryScreenState extends State<GuestEntryScreen> {
 
   @override
   Widget build(BuildContext context) => AuthEntryLayout(
-    title: 'Guest access',
+    title: 'Guest Access',
     readOnly: true,
     onBack: _isSubmitting ? null : _goBack,
     child: Form(
@@ -180,7 +180,7 @@ class _GuestEntryScreenState extends State<GuestEntryScreen> {
                         ),
                       )
                     : const Text(
-                        'Continue as guest',
+                        'Continue As Guest',
                         textAlign: TextAlign.center,
                       ),
               ),

@@ -7,8 +7,11 @@ import '../../../models/inspection_schedule.dart';
 import '../../../widgets/app_workspace_page.dart';
 import '../../../theme/app_typography.dart';
 import 'widgets/report_readable_widgets.dart';
-import 'package:pdf/pdf.dart';
-import 'package:pdf/widgets.dart' as pw;
+import '../../../services/report_export_data.dart';
+import '../../../services/report_export_service.dart';
+import '../../../widgets/report_export_dialog.dart';
+import '../../../utils/user_facing_error.dart';
+import '../../../models/app_role.dart';
 import 'package:printing/printing.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -46,6 +49,7 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
   final Map<int, DateTime> _inspectionDates = {};
   List<Map<String, dynamic>> _plants = [];
   bool _loading = true;
+  bool _exporting = false;
   String? _error;
   DateTimeRange? _dateRange;
   String _campus = 'All';
@@ -81,6 +85,9 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
       _error = null;
     });
     try {
+      if (!RoleCapabilities.fromValue(widget.role).canViewReports) {
+        throw Exception('Staff report access required.');
+      }
       if (widget.role == 'campus_admin' && widget.campusId == null) {
         throw Exception('This Campus Admin account has no assigned campus.');
       }
@@ -98,20 +105,40 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
         plant_classification (common_name, scientific_name, plant_type),
         campus:campus!plant_campus_id_fkey (campus_name), college (college_name),
         growth_status (growth_stage), health_status (status_name),
-        qr_tag:qr_tag!plant_qr_tag_id_fkey(qr_code_string)
+        qr_tag:qr_tag!plant_qr_tag_id_fkey(qr_code_string),
+        town(town_name), barangay(barangay_name)
       ''')
           .isFilter('archived_at', null);
       if (widget.role == 'campus_admin') {
         query = query.eq('campus_id', widget.campusId!);
       } else if (widget.role == 'college_admin' ||
           widget.role == 'inspection_team') {
-        query = query.eq('college_id', widget.collegeId!);
+        if (widget.campusId == null) {
+          throw Exception('This account has no assigned campus.');
+        }
+        query = query
+            .eq('campus_id', widget.campusId!)
+            .eq('college_id', widget.collegeId!);
       }
-      final plants = List<Map<String, dynamic>>.from(
-        await query.order('created_at', ascending: false),
-      );
+      final plants = <Map<String, dynamic>>[];
+      for (var offset = 0; ; offset += 500) {
+        final page = List<Map<String, dynamic>>.from(
+          await query
+              .order('created_at', ascending: false)
+              .order('plant_id')
+              .range(offset, offset + 499),
+        );
+        plants.addAll(page);
+        if (page.length < 500) break;
+      }
 
       final inspections = <int, DateTime>{};
+      for (final plant in plants) {
+        final last = DateTime.tryParse(
+          plant['last_inspected_on']?.toString() ?? '',
+        );
+        if (last != null) inspections[plant['plant_id'] as int] = last;
+      }
       final ids = plants.map((plant) => plant['plant_id'] as int).toList();
       if (ids.isNotEmpty) {
         try {
@@ -185,7 +212,7 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
   String _health(Map<String, dynamic> plant) {
     final value = _related(plant, 'health_status', 'status_name').toLowerCase();
     if (value == 'alive' || value == 'healthy') return 'Healthy';
-    if (value == 'dying' || value == 'at risk') return 'Needs attention';
+    if (value == 'dying' || value == 'at risk') return 'Needs Attention';
     if (value == 'dead') return 'Dead';
     return 'Unknown';
   }
@@ -283,177 +310,105 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
     );
   }
 
-  Future<void> _exportPdf() async {
-    final plants = _filteredPlants;
-    final document = pw.Document(
-      title: 'EcoTag Plant Monitoring Report',
-      author: widget.username,
+  Future<void> _openReportExport() async {
+    if (_exporting || _loading || _error != null) return;
+    final choice = await showDialog<ReportExportChoice>(
+      context: context,
+      builder: (_) => const ReportExportDialog(),
     );
-    final generated = DateTime.now();
-    final inspected = plants.where(_inspected).length;
-
-    document.addPage(
-      pw.MultiPage(
-        pageFormat: PdfPageFormat.a4.landscape,
-        margin: const pw.EdgeInsets.all(28),
-        header: (_) => pw.Container(
-          padding: const pw.EdgeInsets.only(bottom: 10),
-          decoration: const pw.BoxDecoration(
-            border: pw.Border(
-              bottom: pw.BorderSide(color: PdfColor.fromInt(0xFFD8EAD8)),
-            ),
-          ),
-          child: pw.Row(
-            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-            children: [
-              pw.Column(
-                crossAxisAlignment: pw.CrossAxisAlignment.start,
-                children: [
-                  pw.Text(
-                    'EcoTag',
-                    style: pw.TextStyle(
-                      fontSize: 22,
-                      fontWeight: pw.FontWeight.bold,
-                      color: const PdfColor.fromInt(0xFF2E7D32),
-                    ),
-                  ),
-                  pw.Text('Plant Management and Monitoring System'),
-                ],
-              ),
-              pw.Text(
-                'Generated ${_formatDate(generated)}',
-                style: const pw.TextStyle(fontSize: 9),
-              ),
-            ],
-          ),
-        ),
-        footer: (context) => pw.Align(
-          alignment: pw.Alignment.centerRight,
-          child: pw.Text(
-            'Page ${context.pageNumber} of ${context.pagesCount}',
-            style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey600),
-          ),
-        ),
-        build: (_) => [
-          pw.SizedBox(height: 12),
-          pw.Text(
-            'Reports & Analytics',
-            style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold),
-          ),
-          pw.Text(
-            '$_scopeLabel · ${plants.length} matching plant records',
-            style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey700),
-          ),
-          pw.SizedBox(height: 14),
-          pw.Row(
-            children: [
-              _pdfMetric('Total Plants', plants.length, PdfColors.green800),
-              _pdfMetric('Healthy', _count('Healthy'), PdfColors.green),
-              _pdfMetric(
-                'Needs attention',
-                _count('Needs attention'),
-                PdfColors.orange800,
-              ),
-              _pdfMetric('Dead', _count('Dead'), PdfColors.red700),
-              _pdfMetric('Inspected', inspected, PdfColors.blue700),
-              _pdfMetric(
-                'Pending',
-                plants.length - inspected,
-                PdfColors.orange,
-              ),
-            ],
-          ),
-          pw.SizedBox(height: 18),
-          pw.Text(
-            'Detailed Plant Report',
-            style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold),
-          ),
-          pw.SizedBox(height: 8),
-          if (plants.isEmpty)
-            pw.Padding(
-              padding: const pw.EdgeInsets.all(24),
-              child: pw.Center(
-                child: pw.Text('No data for the selected filters.'),
-              ),
+    if (choice == null || !mounted) return;
+    setState(() => _exporting = true);
+    final service = ReportExportService();
+    try {
+      final plants = _filteredPlants
+          .map(
+            (p) => <String, dynamic>{
+              ...p,
+              'last_inspected_on':
+                  p['last_inspected_on'] ??
+                  _inspectionDates[p['plant_id']]?.toIso8601String(),
+            },
+          )
+          .toList();
+      final filters = [
+        'Campus: $_campus',
+        'College: $_college',
+        'Type: $_plantType',
+        'Health: $_healthStatus',
+        'Growth: $_growthStage',
+        if (_searchController.text.trim().isNotEmpty)
+          'Search: ${_searchController.text.trim()}',
+        'Registration dates: ${_dateRange == null ? "All" : "${ReportExportData.date(_dateRange!.start)} to ${ReportExportData.date(_dateRange!.end)}"}',
+      ].join('; ');
+      if (choice.kind != ReportKind.outcomes) {
+        await service.validatePlants(
+          plants.map((p) => p['plant_id'] as int).toList(),
+        );
+      }
+      final history = choice.kind == ReportKind.history
+          ? await service.history(
+              plants.map((p) => p['plant_id'] as int).toList(),
+              start: choice.period?.start,
+              end: choice.period?.end,
             )
-          else
-            pw.TableHelper.fromTextArray(
-              headers: const [
-                'QR ID',
-                'Plant',
-                'Type',
-                'Campus',
-                'College',
-                'Stage',
-                'Health',
-                'Registered',
-                'Last inspection',
-              ],
-              data: plants
-                  .map(
-                    (plant) => [
-                      _tag(plant),
-                      _related(plant, 'plant_classification', 'common_name'),
-                      _related(plant, 'plant_classification', 'plant_type'),
-                      _related(plant, 'campus', 'campus_name'),
-                      _related(plant, 'college', 'college_name'),
-                      _related(plant, 'growth_status', 'growth_stage'),
-                      _health(plant),
-                      _formatDate(_createdAt(plant), empty: 'Unknown'),
-                      _formatDate(_inspectionDates[plant['plant_id'] as int]),
-                    ],
-                  )
-                  .toList(),
-              headerDecoration: const pw.BoxDecoration(
-                color: PdfColor.fromInt(0xFFE8F5E9),
-              ),
-              headerStyle: pw.TextStyle(
-                fontSize: 8,
-                fontWeight: pw.FontWeight.bold,
-                color: const PdfColor.fromInt(0xFF2E7D32),
-              ),
-              cellStyle: const pw.TextStyle(fontSize: 7),
-              cellPadding: const pw.EdgeInsets.all(5),
-              border: pw.TableBorder.all(
-                color: const PdfColor.fromInt(0xFFD8EAD8),
-                width: .5,
+          : <Map<String, dynamic>>[];
+      final outcomes = choice.kind == ReportKind.outcomes
+          ? await service.outcomes()
+          : null;
+      if (!mounted) return;
+      final generated = ReportExportData.manilaNow();
+      final report = ReportExportData.build(
+        kind: choice.kind,
+        plants: plants,
+        history: history,
+        outcomes: outcomes,
+        scope:
+            '$_scopeLabel (Campus ID: ${widget.campusId ?? "All"}; College ID: ${widget.collegeId ?? "All"})',
+        preparedBy: widget.username,
+        filters: filters,
+        generated: generated,
+        inspectionPeriod: choice.period == null
+            ? 'All inspection dates'
+            : '${ReportExportData.date(choice.period!.start)} to ${ReportExportData.date(choice.period!.end)}',
+      );
+      final filename =
+          'EcoTag_${choice.kind.name}_${ReportExportData.date(generated)}_${generated.hour.toString().padLeft(2, "0")}${generated.minute.toString().padLeft(2, "0")}';
+      if (choice.format == ReportExportFormat.pdf) {
+        final bytes = await service.pdfBytes(report);
+        if (!mounted) return;
+        await Printing.layoutPdf(
+          name: '$filename.pdf',
+          onLayout: (_) async => bytes,
+        );
+      } else {
+        final saved = await service.saveCsv(report, filename);
+        if (saved && mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Spreadsheet saved or sent to your browser downloads.',
               ),
             ),
-        ],
-      ),
-    );
-
-    await Printing.layoutPdf(
-      name:
-          'EcoTag_Report_${generated.year}-${generated.month}-${generated.day}.pdf',
-      onLayout: (_) => document.save(),
-    );
-  }
-
-  pw.Widget _pdfMetric(String label, int value, PdfColor color) => pw.Expanded(
-    child: pw.Container(
-      margin: const pw.EdgeInsets.only(right: 6),
-      padding: const pw.EdgeInsets.all(9),
-      decoration: pw.BoxDecoration(
-        border: pw.Border.all(color: const PdfColor.fromInt(0xFFD8EAD8)),
-        borderRadius: pw.BorderRadius.circular(6),
-      ),
-      child: pw.Column(
-        crossAxisAlignment: pw.CrossAxisAlignment.start,
-        children: [
-          pw.Text(
-            value.toString(),
-            style: pw.TextStyle(
-              fontSize: 16,
-              fontWeight: pw.FontWeight.bold,
-              color: color,
+          );
+        }
+      }
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              userFacingError(
+                error,
+                fallback: 'Report export failed. Please try again.',
+              ),
             ),
           ),
-          pw.Text(label, style: const pw.TextStyle(fontSize: 8)),
-        ],
-      ),
-    ),
-  );
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _exporting = false);
+    }
+  }
 
   String _tag(Map<String, dynamic> plant) {
     final tag = _map(plant['qr_tag'])['qr_code_string']?.toString();
@@ -462,11 +417,12 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
 
   bool get _universityScope =>
       widget.role == 'university_admin' || widget.role == 'super_admin';
-  String get _scopeLabel => widget.role == 'college_admin'
-      ? 'Assigned college'
+  String get _scopeLabel =>
+      widget.role == 'college_admin' || widget.role == 'inspection_team'
+      ? 'Assigned College'
       : widget.role == 'campus_admin'
-      ? 'Assigned campus'
-      : 'All campuses';
+      ? 'Assigned Campus'
+      : 'All Campuses';
 
   @override
   Widget build(BuildContext context) {
@@ -488,17 +444,25 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
                 subtitle:
                     '$_scopeLabel · plant health, growth, and inspections',
                 trailing: FilledButton.icon(
-                  onPressed: _loading ? null : _exportPdf,
+                  onPressed: _loading || _exporting || _error != null
+                      ? null
+                      : _openReportExport,
                   icon: const Icon(Icons.picture_as_pdf_outlined),
-                  label: const Text('Export PDF'),
+                  label: Text(
+                    _exporting ? 'Preparing Report...' : 'Export Report',
+                  ),
                 ),
               )
             : Align(
                 alignment: Alignment.centerRight,
                 child: FilledButton.icon(
-                  onPressed: _loading ? null : _exportPdf,
+                  onPressed: _loading || _exporting || _error != null
+                      ? null
+                      : _openReportExport,
                   icon: const Icon(Icons.picture_as_pdf_outlined),
-                  label: const Text('Export PDF'),
+                  label: Text(
+                    _exporting ? 'Preparing Report...' : 'Export Report',
+                  ),
                 ),
               ),
         tools: !_loading && _error == null ? _filterCard() : null,
@@ -685,7 +649,7 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
             visualDensity: VisualDensity.compact,
             padding: const EdgeInsets.symmetric(horizontal: 8),
           ),
-          child: const Text('Clear all'),
+          child: const Text('Clear All'),
         ),
     ],
   );
@@ -700,7 +664,7 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
       suffixIcon: _searchController.text.isEmpty
           ? null
           : IconButton(
-              tooltip: 'Clear search',
+              tooltip: 'Clear Search',
               onPressed: () {
                 _searchController.clear();
                 setState(() {});
@@ -761,12 +725,12 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
   static const _reportHealthOptions = [
     'All',
     'Healthy',
-    'Needs attention',
+    'Needs Attention',
     'Dead',
     'Unknown',
   ];
 
-  Color _reportHealthColor(String value) => value == 'Needs attention'
+  Color _reportHealthColor(String value) => value == 'Needs Attention'
       ? AppColors.warningAccent
       : value == 'Dead'
       ? AppColors.danger
@@ -778,7 +742,7 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
       ? Icons.apps_rounded
       : value == 'Healthy'
       ? Icons.eco_rounded
-      : value == 'Needs attention'
+      : value == 'Needs Attention'
       ? Icons.warning_amber_rounded
       : value == 'Dead'
       ? Icons.local_florist_outlined
@@ -875,7 +839,7 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
           Expanded(
             child: Text(
               value == null
-                  ? 'All dates'
+                  ? 'All Dates'
                   : '${_shortDate(value.start)} – ${_shortDate(value.end)}',
               overflow: TextOverflow.ellipsis,
             ),
@@ -941,14 +905,14 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Filter report',
+                              'Filter Report',
                               style: TextStyle(
                                 fontSize: AppTypography.sectionTitle,
                                 fontWeight: FontWeight.w800,
                               ),
                             ),
                             Text(
-                              'Refine the records shown in analytics',
+                              'Refine The Records Shown In Analytics',
                               style: TextStyle(
                                 fontSize: AppTypography.caption,
                                 color: AppColors.textSecondary,
@@ -958,7 +922,7 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
                         ),
                       ),
                       IconButton(
-                        tooltip: 'Close filters',
+                        tooltip: 'Close Filters',
                         onPressed: () => Navigator.pop(sheetContext),
                         icon: const Icon(Icons.close_rounded),
                       ),
@@ -1024,7 +988,7 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
                         ),
                         const SizedBox(height: 10),
                         _dropdown(
-                          'Plant type',
+                          'Plant Type',
                           pendingPlantType,
                           _options(
                             (plant) => _related(
@@ -1038,7 +1002,7 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
                         ),
                         const SizedBox(height: 10),
                         _dropdown(
-                          'Growth stage',
+                          'Growth Stage',
                           pendingGrowth,
                           _options(
                             (plant) => _related(
@@ -1122,7 +1086,7 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
                             minimumSize: const Size.fromHeight(48),
                             backgroundColor: AppColors.green,
                           ),
-                          child: const Text('Apply filters'),
+                          child: const Text('Apply Filters'),
                         ),
                       ),
                     ],
@@ -1211,8 +1175,8 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
             width,
           ),
           _kpi(
-            'Needs attention',
-            _count('Needs attention'),
+            'Needs Attention',
+            _count('Needs Attention'),
             Icons.warning_amber_rounded,
             AppColors.warningAccent,
             width,
@@ -1356,7 +1320,7 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
   Widget _healthChart() {
     final values = [
       ('Healthy', _count('Healthy'), AppColors.green),
-      ('Needs attention', _count('Needs attention'), AppColors.warningAccent),
+      ('Needs Attention', _count('Needs Attention'), AppColors.warningAccent),
       ('Dead', _count('Dead'), AppColors.danger),
       ('Unknown', _count('Unknown'), AppColors.textSecondary),
     ];
@@ -1388,7 +1352,7 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
     );
     return _chartCard(
       'Growth Stage',
-      'Plants by development stage',
+      'Plants By Development Stage',
       counts.isEmpty ? _emptyChart() : _barChart(counts, AppColors.green),
     );
   }
@@ -1597,7 +1561,7 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
 
   Widget _emptyChart() => const Center(
     child: Text(
-      'No data for the selected filters',
+      'No Data For The Selected Filters',
       style: TextStyle(color: AppColors.textSecondary),
     ),
   );
@@ -1640,8 +1604,8 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
           ),
           const SizedBox(height: 18),
           _metricRow('Inspected', inspected, AppColors.info),
-          _metricRow('Pending inspection', pending, AppColors.warningAccent),
-          _metricRow('Overdue inspections', overdue, AppColors.danger),
+          _metricRow('Pending Inspection', pending, AppColors.warningAccent),
+          _metricRow('Overdue Inspections', overdue, AppColors.danger),
           const SizedBox(height: 15),
           Row(
             children: [
@@ -2025,7 +1989,7 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
                     itemWidth,
                   ),
                   _mobileReportDetail(
-                    'Growth stage',
+                    'Growth Stage',
                     _related(plant, 'growth_status', 'growth_stage'),
                     itemWidth,
                   ),
@@ -2045,7 +2009,7 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
                     itemWidth,
                   ),
                   _mobileReportDetail(
-                    'Last inspection',
+                    'Last Inspection',
                     _formatDate(_inspectionDates[plantId]),
                     itemWidth,
                   ),
@@ -2064,7 +2028,7 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
   Widget _healthChip(String value) {
     final color = value == 'Healthy'
         ? AppColors.green
-        : value == 'Needs attention'
+        : value == 'Needs Attention'
         ? AppColors.warningAccent
         : value == 'Dead'
         ? AppColors.danger
@@ -2104,7 +2068,7 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
             OutlinedButton.icon(
               onPressed: _loadReport,
               icon: const Icon(Icons.refresh),
-              label: const Text('Try again'),
+              label: const Text('Try Again'),
             ),
           ],
         ),
@@ -2114,7 +2078,7 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
 
   String _shortDate(DateTime date) => '${date.month}/${date.day}/${date.year}';
 
-  String _formatDate(DateTime? date, {String empty = 'Not inspected'}) {
+  String _formatDate(DateTime? date, {String empty = 'Not Inspected'}) {
     if (date == null) return empty;
     const months = [
       'Jan',

@@ -336,7 +336,7 @@ class AppMobileNavbar extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           const Text(
-            'How to use EcoTag',
+            'How To Use EcoTag',
             style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.w800,
@@ -351,19 +351,19 @@ class AppMobileNavbar extends StatelessWidget {
           const SizedBox(height: AppSpacing.lg),
           const _HelpStep(
             icon: Icons.qr_code_scanner_rounded,
-            title: 'Scan a label',
+            title: 'Scan A QR',
             body:
                 'Use the center Scan button, place the QR inside the frame, and follow the result shown.',
           ),
           const _HelpStep(
             icon: Icons.local_florist_outlined,
-            title: 'Find a plant',
+            title: 'Find A Plant',
             body:
                 'Open Plants, search by name or tag, then tap a card to view its details.',
           ),
           const _HelpStep(
             icon: Icons.fact_check_outlined,
-            title: 'Record an inspection',
+            title: 'Record An Inspection',
             body:
                 'Confirm the plant, add a current photo, select its condition, and save your observations.',
           ),
@@ -378,7 +378,7 @@ class AppMobileNavbar extends StatelessWidget {
             width: double.infinity,
             child: FilledButton(
               onPressed: () => Navigator.pop(sheetContext),
-              child: const Text('Got it'),
+              child: const Text('Got It'),
             ),
           ),
         ],
@@ -404,7 +404,7 @@ class AppMobileNavbar extends StatelessWidget {
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: AppColors.danger),
             onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('Sign out'),
+            child: const Text('Sign Out'),
           ),
         ],
       ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../theme/app_typography.dart';
 import '../../theme/app_colors.dart';
+import '../../utils/word_capitalization.dart';
 
 /// Physical planting location; deliberately independent of account ownership.
 class PlantingCampusDropdown extends StatelessWidget {
@@ -29,7 +30,7 @@ class PlantingCampusDropdown extends StatelessWidget {
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
       Text(
-        isRequired ? 'Planting campus *' : 'Planting campus',
+        isRequired ? 'Planting Campus *' : 'Planting Campus',
         style: const TextStyle(
           color: AppColors.darkGreen,
           fontSize: AppTypography.label,
@@ -46,7 +47,7 @@ class PlantingCampusDropdown extends StatelessWidget {
           color: AppColors.textPrimary,
         ),
         hint: const Text(
-          'Select campus or Outside campus',
+          'Select Campus Or Outside Campus',
           style: TextStyle(fontSize: AppTypography.body),
         ),
         decoration: InputDecoration(
@@ -58,12 +59,12 @@ class PlantingCampusDropdown extends StatelessWidget {
           helperMaxLines: 2,
         ),
         items: [
-          const DropdownMenuItem(value: outside, child: Text('Outside campus')),
+          const DropdownMenuItem(value: outside, child: Text('Outside Campus')),
           for (final campus in campuses)
             DropdownMenuItem(
               value: '${campus['campus_id']}',
               child: Text(
-                '${campus['campus_name']}',
+                capitalizeWords('${campus['campus_name']}'),
                 overflow: TextOverflow.ellipsis,
               ),
             ),

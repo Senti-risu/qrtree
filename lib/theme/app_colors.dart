@@ -7,46 +7,46 @@ import 'package:flutter/material.dart';
 class AppColors {
   AppColors._();
 
-  static const Color background = Color(0xFFF4F8F5);
+  static const Color background = Color(0xFFF5F7F3);
 
   static const Color surface = Colors.white;
 
   /// A quiet surface used for search fields, filters, and secondary regions.
-  static const Color surfaceVariant = Color(0xFFF1F8F1);
+  static const Color surfaceVariant = Color(0xFFF6F8F1);
 
   /// A neutral surface for disabled and read-only inputs.
   static const Color surfaceDisabled = Color(0xFFF0F2F0);
 
-  static const Color surfaceSubtle = Color(0xFFF8FBF9);
+  static const Color surfaceSubtle = Color(0xFFFAFBF8);
 
   // Dark enough to meet WCAG AA when used for normal-sized text on white.
-  static const Color green = Color(0xFF117A3D);
+  static const Color green = Color(0xFF176344);
 
-  static const Color primary = Color(0xFF2E7D32);
+  static const Color primary = Color(0xFF176344);
 
   static const Color primaryLight = Color(0xFF43A047);
 
-  static const Color primaryContainer = Color(0xFFE8F5E9);
+  static const Color primaryContainer = Color(0xFFEDF4E8);
 
   static const Color secondary = Color(0xFF00796B);
 
   static const Color secondaryContainer = Color(0xFFE0F2F1);
 
-  static const Color darkGreen = Color(0xFF075E38);
+  static const Color darkGreen = Color(0xFF124B38);
 
-  static const Color border = Color(0xFFDCE8DF);
+  static const Color border = Color(0xFFE6EBE5);
 
   static const Color borderStrong = Color(0xFFC7D8CB);
 
-  static const Color navbarBorder = Color(0xFFE5ECE7);
+  static const Color navbarBorder = border;
 
-  static const Color textPrimary = Color(0xFF1A2E1A);
+  static const Color textPrimary = Color(0xFF1C3029);
 
-  static const Color textSecondary = Color(0xFF56665B);
+  static const Color textSecondary = Color(0xFF5E6D63);
 
   static const Color textDisabled = Color(0xFF8B948E);
 
-  static const Color inactiveNav = Color(0xFF626B65);
+  static const Color inactiveNav = Color(0xFF69786E);
 
   static const Color healthy = Color(0xFF43A047);
 
@@ -74,14 +74,14 @@ class AppColors {
   static const Color filterAccent = warningAccent;
 
   /// Shared chart colors keep analytics and status legends consistent.
-  static const Color chartHealthy = healthy;
-  static const Color chartAtRisk = Color(0xFFFF9800);
-  static const Color chartDead = Color(0xFFE53935);
-  static const Color chartUnknown = Color(0xFF78909C);
+  static const Color chartHealthy = Color(0xFF7B9D64);
+  static const Color chartAtRisk = Color(0xFFD8BB72);
+  static const Color chartDead = Color(0xFFC88D7B);
+  static const Color chartUnknown = Color(0xFFBAC0B0);
 
   static const Color onPrimary = Colors.white;
 
-  static const Color cardShadow = Color(0x0F075E38);
+  static const Color cardShadow = Color(0x03213B20);
 
   static const Color softShadow = Color(0x11000000);
 

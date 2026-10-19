@@ -3,7 +3,10 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'app_session.dart';
 
 class QrService {
-  final SupabaseClient _supabase = Supabase.instance.client;
+  QrService({SupabaseClient? client})
+    : _supabase = client ?? Supabase.instance.client;
+
+  final SupabaseClient _supabase;
 
   /// Returns the lifecycle name used by the current app. Older databases used
   /// `lost`; those rows are treated as retired so the UI has one clear terminal
@@ -124,6 +127,11 @@ class QrService {
         rpc: 'college_admin_mark_qr_damaged',
         params: {'p_qr_tag_id': qrTagId, 'p_reason': _requiredReason(reason)},
       );
+
+  Future<void> confirmReprinted({required int qrTagId}) => _lifecycleAction(
+    rpc: 'college_admin_confirm_qr_reprinted',
+    params: {'p_qr_tag_id': qrTagId},
+  );
 
   Future<void> retireTag({required int qrTagId, required String reason}) =>
       _lifecycleAction(

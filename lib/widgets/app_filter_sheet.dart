@@ -43,7 +43,7 @@ class AppFilterSheet extends StatelessWidget {
                     ),
                   ),
                   IconButton(
-                    tooltip: 'Close filters',
+                    tooltip: 'Close Filters',
                     onPressed: () => Navigator.pop(context),
                     icon: const Icon(Icons.close_rounded),
                   ),

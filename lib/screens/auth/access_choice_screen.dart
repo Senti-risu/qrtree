@@ -167,7 +167,7 @@ class _ChoicePanel extends StatelessWidget {
               onPressed: () =>
                   Navigator.pushNamedAndRemoveUntil(context, '/', (_) => false),
               icon: const Icon(Icons.arrow_back_rounded, size: 18),
-              label: const Text('Back to EcoTag home'),
+              label: const Text('Back To EcoTag Home'),
             ),
           ),
           const SizedBox(height: 24),
@@ -186,7 +186,7 @@ class _ChoicePanel extends StatelessWidget {
               final staff = _AccessCard(
                 icon: Icons.admin_panel_settings_outlined,
                 title: 'Admin & Inspection Team',
-                action: 'Staff sign in',
+                action: 'Staff Sign In',
                 color: AppColors.green,
                 primary: true,
                 onTap: () => Navigator.pushNamed(context, '/staff-login'),
@@ -194,7 +194,7 @@ class _ChoicePanel extends StatelessWidget {
               final guest = _AccessCard(
                 icon: Icons.public_rounded,
                 title: 'Guest',
-                action: 'Continue as guest',
+                action: 'Continue As Guest',
                 color: AppColors.secondary,
                 onTap: () => Navigator.pushNamed(context, '/guest-entry'),
               );

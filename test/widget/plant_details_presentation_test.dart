@@ -9,7 +9,7 @@ Widget detailContent(BuildContext context) => Scaffold(
   appBar: AppBar(
     title: const Text('Plant Details'),
     leading: IconButton(
-      tooltip: 'Close plant details',
+      tooltip: 'Close Plant Details',
       icon: const Icon(Icons.close),
       onPressed: () => Navigator.pop(context, 'closed'),
     ),
@@ -81,7 +81,7 @@ void main() {
       );
       expect(find.text('Last detail'), findsOneWidget);
       expect(tester.takeException(), isNull);
-      await tester.tap(find.byTooltip('Close plant details'));
+      await tester.tap(find.byTooltip('Close Plant Details'));
       await tester.pumpAndSettle();
       expect(find.text('Open plant'), findsOneWidget);
       expect(result, 'closed');
@@ -152,11 +152,11 @@ void main() {
                     imageUrl: '',
                   ),
                   PlantDetailFields(
-                    title: 'Managed by',
+                    title: 'Managed By',
                     rows: {
-                      'Managing college':
+                      'Managing College':
                           'College of Information and Computing Sciences',
-                      'Managing campus':
+                      'Managing Campus':
                           'Cagayan State University, Lasam Campus',
                     },
                   ),

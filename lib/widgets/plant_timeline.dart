@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'media_preview.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../services/app_session.dart';
 import '../utils/user_facing_error.dart';
@@ -38,7 +39,7 @@ class _PlantTimelineState extends State<PlantTimeline> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const Text(
-            'Plant timeline',
+            'Plant Timeline',
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           FutureBuilder<List<dynamic>>(
@@ -80,12 +81,15 @@ class _PlantTimelineState extends State<PlantTimeline> {
                           if (event['photo_url'] != null)
                             Padding(
                               padding: const EdgeInsets.only(top: 8),
-                              child: Image.network(
-                                '${event['photo_url']}',
-                                height: 160,
-                                fit: BoxFit.contain,
-                                errorBuilder: (_, _, _) =>
-                                    const Text('Photo unavailable'),
+                              child: ViewablePhoto(
+                                url: '${event['photo_url']}',
+                                child: Image.network(
+                                  '${event['photo_url']}',
+                                  height: 160,
+                                  fit: BoxFit.contain,
+                                  errorBuilder: (_, _, _) =>
+                                      const Text('Photo Unavailable'),
+                                ),
                               ),
                             ),
                         ],
@@ -94,7 +98,7 @@ class _PlantTimelineState extends State<PlantTimeline> {
                   if (_visible < events.length)
                     TextButton(
                       onPressed: () => setState(() => _visible += 10),
-                      child: const Text('Show earlier events'),
+                      child: const Text('Show Earlier Events'),
                     ),
                 ],
               );

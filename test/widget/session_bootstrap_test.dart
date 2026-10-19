@@ -55,8 +55,8 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.text('Dashboard loaded'), findsNothing);
-    expect(find.text('Unable to check saved sign-in'), findsOneWidget);
-    await tester.tap(find.text('Try again'));
+    expect(find.text('Unable To Check Saved Sign-In'), findsOneWidget);
+    await tester.tap(find.text('Try Again'));
     await tester.pumpAndSettle();
     expect(find.text('Dashboard loaded'), findsOneWidget);
   });
@@ -69,7 +69,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Forget saved sign-in and log in'));
+    await tester.tap(find.text('Forget Saved Sign-In And Log In'));
     await tester.pumpAndSettle();
     expect(forgotten, isTrue);
     expect(find.text('Login required'), findsOneWidget);

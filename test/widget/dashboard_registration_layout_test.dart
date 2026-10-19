@@ -23,7 +23,7 @@ void main() {
               child: DashboardSummaryLayout(
                 stats: const AppCard(child: Text('Summary cards')),
                 overview: const DashboardPriorityLayout(
-                  work: AppCard(child: Text('Inspection overview')),
+                  work: AppCard(child: Text('Inspection Overview')),
                   recent: AppCard(child: Text('Health overview')),
                 ),
                 analytics: const AppCard(child: Text('Analytics')),
@@ -33,7 +33,7 @@ void main() {
         ),
       );
       final summary = tester.getRect(find.text('Summary cards'));
-      final inspection = tester.getRect(find.text('Inspection overview'));
+      final inspection = tester.getRect(find.text('Inspection Overview'));
       final health = tester.getRect(find.text('Health overview'));
       final analytics = tester.getRect(find.text('Analytics'));
       expect(summary.bottom, lessThan(inspection.top));
@@ -64,7 +64,7 @@ void main() {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Inspection overview'),
+                    const Text('Inspection Overview'),
                     const Text('No inspections due'),
                     FilledButton(
                       key: const Key('scan-action'),
@@ -109,7 +109,7 @@ void main() {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('Inspection overview'),
+                        const Text('Inspection Overview'),
                         Wrap(
                           spacing: 8,
                           runSpacing: 8,
@@ -139,7 +139,7 @@ void main() {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Recent plants'),
+                        Text('Recent Plants'),
                         ListTile(
                           title: Text('Mango'),
                           subtitle: Text('Plant #1 · Healthy'),
@@ -223,7 +223,7 @@ void main() {
                 child: DashboardPriorityLayout(
                   work: const AppCard(
                     key: Key('work'),
-                    child: Text('Inspection overview'),
+                    child: Text('Inspection Overview'),
                   ),
                   recent: AppCard(
                     key: const Key('recent'),
@@ -243,8 +243,8 @@ void main() {
         tester.getTopLeft(find.byKey(const Key('recent'))).dy,
         greaterThan(tester.getBottomLeft(find.byKey(const Key('work'))).dy),
       );
-      expect(find.text('Planting campus'), findsOneWidget);
-      expect(find.text('Outside campus'), findsOneWidget);
+      expect(find.text('Planting Campus'), findsOneWidget);
+      expect(find.text('Outside Campus'), findsOneWidget);
       expect(tester.takeException(), isNull);
     },
   );

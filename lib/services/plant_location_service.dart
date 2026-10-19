@@ -36,9 +36,9 @@ class PlantLocationService {
 
   static String label(Map<String, dynamic> data) =>
       switch (data['planting_location_type']) {
-        'outside' => 'Outside campus',
+        'outside' => 'Outside Campus',
         'inside' =>
           data['planting_campus_name']?.toString() ?? 'Campus not available',
-        _ => 'Not recorded yet',
+        _ => 'Not Recorded Yet',
       };
 }

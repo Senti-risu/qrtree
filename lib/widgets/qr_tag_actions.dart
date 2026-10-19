@@ -9,16 +9,16 @@ class QrTagActions extends StatelessWidget {
   final bool busy;
   final VoidCallback? onPrint;
   final VoidCallback onMarkDamaged;
-  final VoidCallback onReplace;
   final VoidCallback onRetire;
+  final VoidCallback? onView;
 
   const QrTagActions({
     super.key,
     required this.status,
     required this.onPrint,
     required this.onMarkDamaged,
-    required this.onReplace,
     required this.onRetire,
+    this.onView,
     this.busy = false,
   });
 
@@ -28,19 +28,13 @@ class QrTagActions extends StatelessWidget {
     final action = switch (value) {
       'assigned' => (
         Icons.broken_image_outlined,
-        'Mark damaged',
+        'Mark Damaged',
         onMarkDamaged,
         AppColors.warning,
       ),
-      'damaged' => (
-        Icons.swap_horiz_rounded,
-        'Replace label',
-        onReplace,
-        AppColors.green,
-      ),
       'available' => (
         Icons.archive_outlined,
-        'Retire label',
+        'Retire QR',
         onRetire,
         AppColors.danger,
       ),
@@ -51,10 +45,16 @@ class QrTagActions extends StatelessWidget {
       runSpacing: AppSpacing.sm,
       crossAxisAlignment: WrapCrossAlignment.center,
       children: [
+        if (onView != null)
+          OutlinedButton.icon(
+            onPressed: onView,
+            icon: const Icon(Icons.visibility_outlined, size: 19),
+            label: const Text('View QR'),
+          ),
         OutlinedButton.icon(
           onPressed: busy ? null : onPrint,
           icon: const Icon(Icons.print_outlined, size: 19),
-          label: const Text('Print'),
+          label: Text(value == 'damaged' ? 'Reprint QR' : 'Print QR'),
         ),
         if (action != null)
           OutlinedButton.icon(
@@ -72,9 +72,9 @@ class QrTagActions extends StatelessWidget {
                 : Icon(action.$1, size: 19),
             label: Text(action.$2),
           )
-        else
+        else if (value != 'damaged')
           const Tooltip(
-            message: 'This label has reached a final lifecycle state',
+            message: 'This QR has reached a final lifecycle state',
             child: Icon(
               Icons.lock_outline_rounded,
               size: 20,

@@ -3,23 +3,25 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'app_session.dart';
 
 class QrProblemService {
-  final _client = Supabase.instance.client;
+  QrProblemService({SupabaseClient? client})
+    : _client = client ?? Supabase.instance.client;
+  final SupabaseClient _client;
 
   static const problems = {
-    'damaged': 'Damaged or broken',
+    'damaged': 'Damaged Or Broken',
     'faded': 'Faded / cannot scan',
-    'missing': 'Missing label',
-    'incorrect': 'Wrong label on plant',
-    'other': 'Other problem',
+    'missing': 'Missing QR',
+    'incorrect': 'Wrong QR On Plant',
+    'other': 'Other Problem',
   };
 
   Future<void> report(int plantId, String problem, String description) async {
     await _client.rpc(
-      'report_qr_problem',
+      problem == 'damaged' ? 'report_qr_damage' : 'report_qr_problem',
       params: {
         'p_session_token': AppSession.requiredToken,
         'p_plant_id': plantId,
-        'p_problem': problem,
+        if (problem != 'damaged') 'p_problem': problem,
         'p_description': description.trim(),
       },
     );

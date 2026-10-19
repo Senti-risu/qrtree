@@ -57,7 +57,7 @@ void main() {
     );
     await tester.tap(find.text('Save'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Keep editing'));
+    await tester.tap(find.text('Keep Editing'));
     await tester.pumpAndSettle();
     expect(confirmed, isFalse);
     await tester.tap(find.text('Save'));
@@ -82,7 +82,7 @@ void main() {
           ),
         ),
       );
-      expect(find.text('Dead plant — record locked'), findsOneWidget);
+      expect(find.text('Dead Plant — Record Locked'), findsOneWidget);
       expect(find.text('Reopen / correct record'), findsNothing);
       expect(tester.takeException(), isNull);
     },

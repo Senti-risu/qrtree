@@ -13,7 +13,7 @@ class QrNumberingInfo extends StatelessWidget {
       context: context,
       builder: (context) => AlertDialog(
         scrollable: true,
-        title: const Text('QR code format'),
+        title: const Text('QR Code Format'),
         content: const Text(explanation),
         actions: [
           TextButton(
@@ -24,6 +24,6 @@ class QrNumberingInfo extends StatelessWidget {
       ),
     ),
     icon: const Icon(Icons.info_outline_rounded, size: 20),
-    label: const Text('QR code format'),
+    label: const Text('QR Code Format'),
   );
 }

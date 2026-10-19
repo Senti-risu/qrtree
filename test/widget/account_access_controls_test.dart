@@ -85,7 +85,7 @@ void main() {
         );
         expect(find.text(active ? 'Active' : 'Inactive'), findsOneWidget);
         expect(
-          find.byTooltip(active ? 'Deactivate account' : 'Activate account'),
+          find.byTooltip(active ? 'Deactivate Account' : 'Activate Account'),
           findsOneWidget,
         );
         await tester.tap(find.text(active ? 'Active' : 'Inactive'));

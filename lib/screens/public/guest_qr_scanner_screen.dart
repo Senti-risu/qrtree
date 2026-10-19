@@ -41,7 +41,7 @@ class _GuestQrScannerScreenState extends State<GuestQrScannerScreen>
   bool _awaitingRetry = false;
   bool _manualEntryOpen = false;
   String _message =
-      'Place an EcoTag label inside the frame. You can also enter its code manually.';
+      'Place an EcoTag QR inside the frame. You can also enter its code manually.';
   _GuestScanMessageType _messageType = _GuestScanMessageType.neutral;
   String? _lastCode;
   DateTime? _lastScanAt;
@@ -117,7 +117,7 @@ class _GuestQrScannerScreenState extends State<GuestQrScannerScreen>
           // Do not reopen the same profile immediately while its label remains
           // in the camera frame. A different label or Scan again is accepted.
           _awaitingRetry = true;
-          _message = 'Plant profile opened. Ready to scan another label.';
+          _message = 'Plant profile opened. Ready to scan another QR.';
           _messageType = _GuestScanMessageType.success;
         });
         return;
@@ -140,7 +140,7 @@ class _GuestQrScannerScreenState extends State<GuestQrScannerScreen>
         _awaitingRetry = true;
         _message = userFacingError(
           error,
-          fallback: 'The label could not be checked. Please try again.',
+          fallback: 'The QR could not be checked. Please try again.',
         );
         _messageType = _GuestScanMessageType.error;
       });
@@ -210,7 +210,7 @@ class _GuestQrScannerScreenState extends State<GuestQrScannerScreen>
       _awaitingRetry = false;
       _lastCode = null;
       _lastScanAt = null;
-      _message = 'Place another EcoTag label inside the frame.';
+      _message = 'Place another EcoTag QR inside the frame.';
       _messageType = _GuestScanMessageType.neutral;
     });
     unawaited(_startCameraSafely());
@@ -233,12 +233,12 @@ class _GuestQrScannerScreenState extends State<GuestQrScannerScreen>
         backgroundColor: AppColors.scannerBackground,
         actions: [
           IconButton(
-            tooltip: 'Toggle flashlight',
+            tooltip: 'Toggle Flashlight',
             onPressed: _toggleTorch,
             icon: const Icon(Icons.flashlight_on_outlined),
           ),
           IconButton(
-            tooltip: 'Switch camera',
+            tooltip: 'Switch Camera',
             onPressed: _switchCamera,
             icon: const Icon(Icons.cameraswitch_outlined),
           ),
@@ -362,7 +362,7 @@ class _GuestQrScannerScreenState extends State<GuestQrScannerScreen>
                 child: OutlinedButton.icon(
                   onPressed: _handling ? null : _showManualEntry,
                   icon: const Icon(Icons.keyboard_outlined),
-                  label: const Text('Enter code'),
+                  label: const Text('Enter Code'),
                   style: OutlinedButton.styleFrom(
                     minimumSize: const Size.fromHeight(48),
                   ),
@@ -376,7 +376,7 @@ class _GuestQrScannerScreenState extends State<GuestQrScannerScreen>
                     icon: const Icon(Icons.refresh_rounded),
                     label: Text(
                       _messageType == _GuestScanMessageType.error
-                          ? 'Try again'
+                          ? 'Try Again'
                           : 'Scan again',
                     ),
                     style: FilledButton.styleFrom(
@@ -451,7 +451,7 @@ class _CameraErrorView extends StatelessWidget {
             ),
             const SizedBox(height: 14),
             const Text(
-              'Camera unavailable',
+              'Camera Unavailable',
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: Colors.white,
@@ -472,7 +472,7 @@ class _CameraErrorView extends StatelessWidget {
             FilledButton.icon(
               onPressed: onEnterCode,
               icon: const Icon(Icons.keyboard_outlined),
-              label: const Text('Enter code'),
+              label: const Text('Enter Code'),
             ),
           ],
         ),
@@ -498,7 +498,7 @@ class _GuestCodeEntryDialogState extends State<_GuestCodeEntryDialog> {
   @override
   Widget build(BuildContext context) => AlertDialog(
     scrollable: true,
-    title: const Text('Enter EcoTag code'),
+    title: const Text('Enter EcoTag Code'),
     content: TextField(
       controller: _controller,
       autofocus: true,
@@ -508,7 +508,7 @@ class _GuestCodeEntryDialogState extends State<_GuestCodeEntryDialog> {
       textInputAction: TextInputAction.done,
       onSubmitted: (value) => Navigator.pop(context, value.trim()),
       decoration: const InputDecoration(
-        labelText: 'EcoTag code',
+        labelText: 'EcoTag Code',
         hintText: 'Example: ECOTAG-202610-000001',
         prefixIcon: Icon(Icons.qr_code_rounded),
         border: OutlineInputBorder(),
@@ -521,7 +521,7 @@ class _GuestCodeEntryDialogState extends State<_GuestCodeEntryDialog> {
       ),
       FilledButton(
         onPressed: () => Navigator.pop(context, _controller.text.trim()),
-        child: const Text('View plant'),
+        child: const Text('View Plant'),
       ),
     ],
   );

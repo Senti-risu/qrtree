@@ -8,6 +8,12 @@ String userFacingError(
 }) {
   final raw = error.toString().replaceFirst('Exception: ', '').trim();
   final value = raw.toLowerCase();
+  if (value.contains('scientific name changed')) {
+    return 'A scientific name was saved for this plant type while you were editing. Save your draft, reopen registration, and review the saved name.';
+  }
+  if (value.contains('report scope changed')) {
+    return 'Your assignment or plant records changed. Refresh Reports and try exporting again.';
+  }
   if (value.contains('a newer inspection exists')) {
     return 'A newer inspection is already recorded. Your draft is saved. Review the plant history before making a new observation.';
   }
@@ -31,16 +37,16 @@ String userFacingError(
   }
 
   if (value.contains('already have a pending report')) {
-    return 'You already reported this QR label. Check My QR reports for updates.';
+    return 'You already reported this QR. Check My QR Reports for updates.';
   }
   if (value.contains('report has already been reviewed')) {
     return 'This report was already reviewed. Reopen the reports page to see its status.';
   }
   if (value.contains('plant label has changed')) {
-    return 'This plant now has a different QR label or is archived. Dismiss the old report with a review note.';
+    return 'This plant now has a different QR or is archived. Dismiss the old report with a review note.';
   }
   if (value.contains('plant has no assigned qr')) {
-    return 'This plant has no QR label assigned. Contact your College Admin.';
+    return 'This plant has no QR assigned. Contact your College Admin.';
   }
 
   if (value.contains('socket') ||

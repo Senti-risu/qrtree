@@ -52,7 +52,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
 
   Map<String, dynamic> _map(dynamic value) =>
       value is Map ? Map<String, dynamic>.from(value) : {};
-  String _value(dynamic value, [String fallback = 'Not provided']) =>
+  String _value(dynamic value, [String fallback = 'Not Provided']) =>
       value == null || value.toString().trim().isEmpty
       ? fallback
       : value.toString();
@@ -104,7 +104,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
       title: const Text('Plant Details'),
       leading: PlantDetailsPresentation.floatsFor(MediaQuery.sizeOf(context))
           ? IconButton(
-              tooltip: 'Close plant details',
+              tooltip: 'Close Plant Details',
               onPressed: () => Navigator.maybePop(context),
               icon: const Icon(Icons.close_rounded),
             )
@@ -115,7 +115,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
         ? const Center(child: CircularProgressIndicator())
         : _error != null
         ? AppErrorState(
-            title: 'Unable to load this plant',
+            title: 'Unable To Load This Plant',
             message: userFacingError(
               _error!,
               fallback:
@@ -187,27 +187,27 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
             plantId: '${plant['plant_id']}',
             imageUrl: url,
           ),
-          _section('Managed by', {
-            'Managing campus': _value(_map(plant['campus'])['campus_name']),
-            'Managing college': _value(_map(plant['college'])['college_name']),
+          _section('Managed By', {
+            'Managing Campus': _value(_map(plant['campus'])['campus_name']),
+            'Managing College': _value(_map(plant['college'])['college_name']),
           }),
           _section('Plant Classification', {
-            'Plant type': _value(classification['plant_type']),
-            'Common name': _value(classification['common_name']),
-            'Scientific name': _value(classification['scientific_name']),
+            'Plant Type': _value(classification['plant_type']),
+            'Common Name': _value(classification['common_name']),
+            'Scientific Name': _value(classification['scientific_name']),
             'Variety': _value(plant['variety']),
-            'Growth stage': _value(
+            'Growth Stage': _value(
               _map(plant['growth_status'])['growth_stage'],
             ),
-            'Health status': healthStatusLabel(
+            'Health Status': healthStatusLabel(
               _map(plant['health_status'])['status_name'],
             ),
-            'Date planted': _parseDate(plant['date_planted']) == null
+            'Date Planted': _parseDate(plant['date_planted']) == null
                 ? _value(plant['date_planted'])
                 : _formatDate(_parseDate(plant['date_planted'])!),
             'Tree planter': _value(plant['tree_planter']),
           }),
-          _section('Planting location', {
+          _section('Planting Location', {
             'Campus / outside':
                 _locationError ?? PlantLocationService.label(_physicalLocation),
             'Town': _value(_map(plant['town'])['town_name']),
@@ -256,16 +256,18 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                       if (changed == true && mounted) _load();
                     },
                     icon: const Icon(Icons.edit_note_outlined),
-                    label: const Text('Update plant details'),
+                    label: const Text('Update Plant Details'),
                   ),
                 if ((canInspect || canArchive) && !archived)
                   Padding(
                     padding: EdgeInsets.zero,
                     child: OutlinedButton.icon(
-                      onPressed: () =>
-                          showQrProblemDialog(context, widget.plantId),
+                      onPressed: () async {
+                        await showQrProblemDialog(context, widget.plantId);
+                        if (mounted) _load();
+                      },
                       icon: const Icon(Icons.report_problem_outlined),
-                      label: const Text('Report QR problem'),
+                      label: const Text('Report QR Problem'),
                     ),
                   ),
                 if (canInspect || canArchive)
@@ -279,7 +281,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                     ),
                     icon: const Icon(Icons.history_rounded),
                     label: Text(
-                      canArchive ? 'Review QR reports' : 'My QR reports',
+                      canArchive ? 'QR Report History' : 'My QR Reports',
                     ),
                   ),
                 if (canArchive && !archived)
@@ -443,7 +445,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
       builder: (dialogContext) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
           scrollable: true,
-          title: const Text('Inspection schedule'),
+          title: const Text('Inspection Schedule'),
           content: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 420),
             child: Form(
@@ -477,7 +479,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                     controller: intervalController,
                     keyboardType: TextInputType.number,
                     decoration: const InputDecoration(
-                      labelText: 'Repeat every (days)',
+                      labelText: 'Repeat Every (days)',
                       prefixIcon: Icon(Icons.repeat_rounded),
                       border: OutlineInputBorder(),
                     ),
@@ -507,7 +509,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                   int.parse(intervalController.text.trim()),
                 ));
               },
-              child: const Text('Save schedule'),
+              child: const Text('Save Schedule'),
             ),
           ],
         ),
@@ -552,7 +554,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
     if (PlantRecordLock.isDead(plant)) {
       return _section('Inspection Schedule', {
         'Schedule': 'Stopped — plant confirmed Dead',
-        'Last inspection': _value(plant['last_inspected_on']),
+        'Last Inspection': _value(plant['last_inspected_on']),
       });
     }
     final last = _parseDate(plant['last_inspected_on']);
@@ -567,7 +569,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
         AppColors.dangerContainer,
       ),
       'due_today' => (
-        'Due today',
+        'Due Today',
         Icons.today_rounded,
         AppColors.warning,
         AppColors.warningContainer,
@@ -579,7 +581,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
         AppColors.infoContainer,
       ),
       _ => (
-        'Not scheduled',
+        'Not Scheduled',
         Icons.event_busy_outlined,
         AppColors.textSecondary,
         AppColors.surfaceDisabled,
@@ -592,7 +594,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
           RoleCapabilities.fromValue(widget.role).canArchivePlants &&
               plant['archived_at'] == null
           ? IconButton(
-              tooltip: 'Edit inspection schedule',
+              tooltip: 'Edit Inspection Schedule',
               onPressed: _savingAction
                   ? null
                   : () => _editInspectionSchedule(plant),
@@ -629,9 +631,9 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
         ),
       ),
       rows: {
-        'Last inspected': last == null ? 'Not inspected' : _formatDate(last),
-        'Next inspection': next == null ? 'Not scheduled' : _formatDate(next),
-        'Schedule repeats': 'Every $interval day${interval == 1 ? '' : 's'}',
+        'Last Inspected': last == null ? 'Not Inspected' : _formatDate(last),
+        'Next Inspection': next == null ? 'Not Scheduled' : _formatDate(next),
+        'Schedule Repeats': 'Every $interval day${interval == 1 ? '' : 's'}',
       },
     );
   }

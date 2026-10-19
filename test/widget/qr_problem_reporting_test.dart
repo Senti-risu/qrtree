@@ -33,15 +33,15 @@ void main() {
     expect(find.text('Please describe the problem.'), findsOneWidget);
     await tester.tap(find.byType(DropdownButtonFormField<String>));
     await tester.pumpAndSettle();
-    expect(find.text('Missing label'), findsOneWidget);
-    expect(find.text('Wrong label on plant'), findsOneWidget);
-    await tester.tap(find.text('Missing label'));
+    expect(find.text('Missing QR'), findsOneWidget);
+    expect(find.text('Wrong QR On Plant'), findsOneWidget);
+    await tester.tap(find.text('Missing QR'));
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
     await tester.tap(find.text('Cancel'));
     await tester.pumpAndSettle();
     await tester.pump(const Duration(milliseconds: 400));
-    expect(find.text('Report QR problem'), findsNothing);
+    expect(find.text('Report QR Problem'), findsNothing);
   });
 
   for (final role in ['inspection_team', 'college_admin', 'campus_admin']) {
@@ -67,7 +67,7 @@ void main() {
       await tester.tap(find.text('Open More'));
       await tester.pumpAndSettle();
       expect(
-        find.text('QR problem reports'),
+        find.text('QR Problem Reports'),
         role == 'campus_admin' ? findsNothing : findsOneWidget,
       );
       expect(
@@ -85,7 +85,7 @@ void main() {
   test('duplicate and stale QR reports show actionable messages', () {
     expect(
       userFacingError('You already have a pending report for this QR label'),
-      contains('My QR reports'),
+      contains('My QR Reports'),
     );
     expect(
       userFacingError(

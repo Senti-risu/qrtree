@@ -6,6 +6,25 @@ String capitalizeWords(String text) => text.replaceAllMapped(
   (match) => '${match[1]}${match[2]!.toUpperCase()}',
 );
 
+/// Lookup display names only; scientific names and machine values are excluded.
+Map<String, dynamic> capitalizeLookupNames(Map<String, dynamic> row) => {
+  for (final entry in row.entries)
+    entry.key:
+        const {
+              'common_name',
+              'plant_type',
+              'campus_name',
+              'college_name',
+              'town_name',
+              'barangay_name',
+              'growth_stage',
+              'status_name',
+            }.contains(entry.key) &&
+            entry.value is String
+        ? capitalizeWords(entry.value as String)
+        : entry.value,
+};
+
 class WordCapitalizationFormatter extends TextInputFormatter {
   const WordCapitalizationFormatter();
 

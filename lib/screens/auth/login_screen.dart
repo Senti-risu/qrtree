@@ -175,7 +175,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) => AuthEntryLayout(
-    title: 'Staff sign in',
+    title: 'Staff Sign In',
     onBack: _isLoading
         ? null
         : () => Navigator.pushNamedAndRemoveUntil(
@@ -229,7 +229,7 @@ class _LoginScreenState extends State<LoginScreen> {
               fillColor: AppColors.surfaceSubtle,
               prefixIcon: const Icon(Icons.lock_outline),
               suffixIcon: IconButton(
-                tooltip: _obscurePassword ? 'Show password' : 'Hide password',
+                tooltip: _obscurePassword ? 'Show Password' : 'Hide Password',
                 onPressed: _isLoading
                     ? null
                     : () => setState(() {
@@ -257,7 +257,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         color: AppColors.onPrimary,
                       ),
                     )
-                  : const Text('Sign in', textAlign: TextAlign.center),
+                  : const Text('Sign In', textAlign: TextAlign.center),
             ),
           ),
         ],

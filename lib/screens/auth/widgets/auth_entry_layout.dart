@@ -64,7 +64,7 @@ class AuthEntryLayout extends StatelessWidget {
                               Icons.arrow_back_rounded,
                               size: 18,
                             ),
-                            label: const Text('Change access type'),
+                            label: const Text('Change Access Type'),
                             style: TextButton.styleFrom(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 8,
@@ -142,7 +142,7 @@ class AuthEntryLayout extends StatelessWidget {
                               SizedBox(width: 8),
                               Expanded(
                                 child: Text(
-                                  'Read-only access',
+                                  'Read-Only Access',
                                   style: TextStyle(
                                     color: AppColors.secondary,
                                     fontSize: 13,

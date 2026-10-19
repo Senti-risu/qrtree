@@ -189,6 +189,7 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
 
   Map<String, dynamic> _draftData() => {
     'classificationId': _selectedClassificationId,
+    'scientificName': _scientificNameController.text.trim(),
     'plantType': _plantType,
     'growthId': _selectedGrowthStatusId,
     'healthId': _selectedHealthStatusId,
@@ -243,7 +244,7 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, false),
-              child: const Text('Discard draft'),
+              child: const Text('Discard Draft'),
             ),
             FilledButton(
               onPressed: () => Navigator.pop(context, true),
@@ -321,7 +322,10 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
           : _titleCase(classification['plant_type']?.toString() ?? '');
       _commonName = classification?['common_name']?.toString();
       _scientificNameController.text =
-          classification?['scientific_name']?.toString() ?? '';
+          (classification?['scientific_name']?.toString().trim().isNotEmpty ??
+              false)
+          ? classification!['scientific_name'].toString()
+          : data['scientificName']?.toString() ?? '';
       _selectedGrowthStatusId = growth?['growth_status_id'] as int?;
       _growthStage = growth == null
           ? null
@@ -533,6 +537,12 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
   // ============================================================
   // PLANT SELECTIONS
   // ============================================================
+
+  bool get _hasSavedScientificName => _classifications.any(
+    (c) =>
+        c['classification_id'] == _selectedClassificationId &&
+        (c['scientific_name']?.toString().trim().isNotEmpty ?? false),
+  );
 
   void _selectPlantType(String? value) {
     setState(() {
@@ -828,7 +838,7 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
           children: [
             const ListTile(
               title: Text(
-                'Add a plant photo',
+                'Add A Plant Photo',
                 style: TextStyle(fontWeight: FontWeight.w800),
               ),
               subtitle: Text(
@@ -837,12 +847,12 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
             ),
             ListTile(
               leading: const Icon(Icons.photo_camera_outlined),
-              title: const Text('Take a photo'),
+              title: const Text('Take A Photo'),
               onTap: () => Navigator.pop(context, ImageSource.camera),
             ),
             ListTile(
               leading: const Icon(Icons.photo_library_outlined),
-              title: const Text('Choose from gallery'),
+              title: const Text('Choose From Gallery'),
               onTap: () => Navigator.pop(context, ImageSource.gallery),
             ),
             const SizedBox(height: AppSpacing.sm),
@@ -927,6 +937,12 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
     } else if (planterLength > _maxPlanterLength) {
       validationError =
           'Tree planter must be $_maxPlanterLength characters or fewer.';
+    } else if (_scientificNameController.text.trim().runes.length > 200 ||
+        RegExp(
+          r'[\x00-\x1F\x7F]',
+        ).hasMatch(_scientificNameController.text.trim())) {
+      validationError =
+          'Scientific name must contain at most 200 printable characters.';
     } else if (_datePlanted != null && _datePlanted!.isAfter(todayOnly)) {
       validationError = 'Date planted cannot be in the future.';
     }
@@ -995,7 +1011,7 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
               Icons.content_copy_rounded,
               color: AppColors.warning,
             ),
-            title: const Text('Possible duplicate plant'),
+            title: const Text('Possible Duplicate Plant'),
             content: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 460),
               child: Column(
@@ -1040,11 +1056,11 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(dialogContext, false),
-                child: const Text('Review information'),
+                child: const Text('Review Information'),
               ),
               FilledButton(
                 onPressed: () => Navigator.pop(dialogContext, true),
-                child: const Text('Continue anyway'),
+                child: const Text('Continue Anyway'),
               ),
             ],
           ),
@@ -1121,6 +1137,9 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
       }
 
       final result = await _plantService.registerPlantWithQr(
+        scientificName: _hasSavedScientificName
+            ? null
+            : _emptyToNull(_scientificNameController.text),
         locationType: _plantingCampusChoice == PlantingCampusDropdown.outside
             ? 'outside'
             : 'inside',
@@ -1269,7 +1288,7 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
                 );
               },
               icon: const Icon(Icons.add_rounded),
-              label: const Text('Register another'),
+              label: const Text('Register Another'),
             ),
             FilledButton.icon(
               onPressed: () {
@@ -1286,7 +1305,7 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
                 );
               },
               icon: const Icon(Icons.visibility_outlined),
-              label: const Text('View plant'),
+              label: const Text('View Plant'),
             ),
           ],
         );
@@ -1335,7 +1354,7 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
 
     if (!_capabilities.canRegisterPlants) {
       body = const AppErrorState(
-        title: 'Registration unavailable',
+        title: 'Registration Unavailable',
         message:
             'College Admin and Inspection Team accounts can register plants for their assigned college.',
       );
@@ -1408,7 +1427,7 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
   Widget _errorCard() {
     return _card(
       child: AppErrorState(
-        title: 'Unable to prepare registration',
+        title: 'Unable To Prepare Registration',
         message: userFacingError(
           _loadError ?? '',
           fallback:
@@ -1434,7 +1453,7 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
             child: CircularProgressIndicator(strokeWidth: 2),
           )
         : const Icon(Icons.save_outlined),
-    label: Text(_draftBusy ? 'Saving draft…' : 'Save draft'),
+    label: Text(_draftBusy ? 'Saving draft…' : 'Save Draft'),
   );
 
   Widget _registrationHeader() => _card(
@@ -1598,8 +1617,8 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
             icon: const Icon(Icons.arrow_forward_rounded),
             label: Text(
               const [
-                'Continue to location',
-                'Continue to photo',
+                'Continue To Location',
+                'Continue To Photo',
                 'Review plant',
               ][_mobileStep],
               maxLines: 2,
@@ -1655,7 +1674,7 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Plant photo',
+          'Plant Photo',
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
             color: AppColors.darkGreen,
             fontWeight: FontWeight.w700,
@@ -1725,36 +1744,36 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
           ),
           SizedBox(height: compact ? AppSpacing.md : AppSpacing.xl),
           _reviewGroup('Plant', {
-            'Managing campus': _campus ?? 'Not selected',
-            'Managing college': _college ?? 'Not selected',
-            'Common name': _commonName ?? 'Not selected',
-            'Scientific name': _scientificNameController.text.trim().isEmpty
-                ? 'Not available'
+            'Managing Campus': _campus ?? 'Not Selected',
+            'Managing College': _college ?? 'Not Selected',
+            'Common Name': _commonName ?? 'Not Selected',
+            'Scientific Name': _scientificNameController.text.trim().isEmpty
+                ? 'Not Available'
                 : _scientificNameController.text.trim(),
             'Variety': _varietyController.text.trim().isEmpty
-                ? 'Not provided'
+                ? 'Not Provided'
                 : _varietyController.text.trim(),
-            'Growth stage': _growthStage ?? 'Not selected',
+            'Growth Stage': _growthStage ?? 'Not Selected',
             'Health': _friendlyHealth(_healthStatus),
-            'Date planted': _datePlanted == null
-                ? 'Not provided'
+            'Date Planted': _datePlanted == null
+                ? 'Not Provided'
                 : _displayDate(_datePlanted!),
           }, compact: compact),
           Divider(height: compact ? AppSpacing.lg : AppSpacing.xl),
           _reviewGroup('Location', {
-            'Planting location': _plantingCampusChoice == null
-                ? 'Not selected'
+            'Planting Location': _plantingCampusChoice == null
+                ? 'Not Selected'
                 : _plantingCampusChoice == PlantingCampusDropdown.outside
-                ? 'Outside campus'
+                ? 'Outside Campus'
                 : _campuses
                       .firstWhere(
                         (c) => '${c['campus_id']}' == _plantingCampusChoice,
                       )['campus_name']
                       .toString(),
-            'Town': _town ?? 'Not selected',
-            'Barangay': _barangay ?? 'Not selected',
+            'Town': _town ?? 'Not Selected',
+            'Barangay': _barangay ?? 'Not Selected',
             'ZIP code': _zipCodeController.text.trim().isEmpty
-                ? 'Not available'
+                ? 'Not Available'
                 : _zipCodeController.text.trim(),
           }, compact: compact),
           Divider(height: compact ? AppSpacing.lg : AppSpacing.xl),
@@ -1932,14 +1951,14 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
           else
             _twoFields(
               AppSearchableDropdown(
-                label: 'Managing campus',
+                label: 'Managing Campus',
                 value: _campus,
                 items: _campusNames,
                 enabled: !_registrationScopeLocked,
                 onChanged: _selectCampus,
               ),
               AppSearchableDropdown(
-                label: 'Managing college',
+                label: 'Managing College',
                 value: _college,
                 items: _filteredCollegeNames,
                 enabled: _selectedCampusId != null && !_registrationScopeLocked,
@@ -2008,7 +2027,21 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
 
               controller: _scientificNameController,
 
-              readOnly: true,
+              readOnly:
+                  _selectedClassificationId == null || _hasSavedScientificName,
+              enabled: !_saving,
+              maxLength: 200,
+              suffixIcon: _selectedClassificationId == null
+                  ? null
+                  : Icon(
+                      _hasSavedScientificName
+                          ? Icons.lock_outline
+                          : Icons.edit_outlined,
+                      size: 18,
+                    ),
+              hint: _hasSavedScientificName
+                  ? 'Filled automatically'
+                  : 'Type the scientific name if known',
             ),
           ),
 
@@ -2324,11 +2357,11 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
         return 'Healthy';
       case 'dying':
       case 'at risk':
-        return 'Needs attention';
+        return 'Needs Attention';
       case 'dead':
         return 'Dead';
       default:
-        return value ?? 'Not selected';
+        return value ?? 'Not Selected';
     }
   }
 

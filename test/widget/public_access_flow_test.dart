@@ -27,10 +27,10 @@ void main() {
       find.text('Know every tree.\nCare for every campus.'),
       findsOneWidget,
     );
-    expect(find.text('Log in'), findsOneWidget);
+    expect(find.text('Log In'), findsOneWidget);
     expect(tester.takeException(), isNull);
 
-    await tester.tap(find.text('Log in'));
+    await tester.tap(find.text('Log In'));
     await tester.pumpAndSettle();
 
     expect(find.text('How would you like to continue?'), findsOneWidget);
@@ -89,7 +89,7 @@ void main() {
       find.text('Know every tree.\nCare for every campus.'),
       findsOneWidget,
     );
-    expect(find.text('Log in'), findsOneWidget);
+    expect(find.text('Log In'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }

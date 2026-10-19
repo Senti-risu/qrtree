@@ -68,7 +68,7 @@ class AppShell extends StatelessWidget {
     this.showQrButton = true,
     this.bottomAction,
 
-    this.desktopPadding = const EdgeInsets.all(AppSpacing.xl),
+    this.desktopPadding = const EdgeInsets.fromLTRB(40, 32, 40, 24),
 
     this.mobilePadding = const EdgeInsets.fromLTRB(
       AppSpacing.lg,
@@ -119,25 +119,26 @@ class AppShell extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppColors.background,
 
-      body: Column(
+      body: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          AppTopNavbar(userName: _displayUserName, userRole: _displayUserRole),
+          AppSidebar(
+            showBrand: true,
+            activeRoute: activeRoute,
+            userId: userId,
+            username: username,
+            role: role,
+            campusId: campusId,
+            collegeId: collegeId,
+          ),
           Expanded(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+            child: Column(
               children: [
-                AppSidebar(
-                  activeRoute: activeRoute,
-
-                  userId: userId,
-
-                  username: username,
-
-                  role: role,
-
-                  campusId: campusId,
-
-                  collegeId: collegeId,
+                AppTopNavbar(
+                  showBrand: false,
+                  pageTitle: mobileTitle,
+                  userName: _displayUserName,
+                  userRole: _displayUserRole,
                 ),
 
                 Expanded(
@@ -262,7 +263,7 @@ class AppShell extends StatelessWidget {
       floatingActionButton:
           _canScanQr && showMobileNavigation && !keyboardVisible
           ? FloatingActionButton(
-              tooltip: 'Scan QR code',
+              tooltip: 'Scan QR Code',
 
               onPressed:
                   onQrPressed ??
@@ -286,7 +287,7 @@ class AppShell extends StatelessWidget {
               child: const Icon(
                 Icons.qr_code_scanner_rounded,
                 size: 30,
-                semanticLabel: 'Scan QR code',
+                semanticLabel: 'Scan QR Code',
               ),
             )
           : null,

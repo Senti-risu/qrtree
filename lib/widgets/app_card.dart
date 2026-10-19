@@ -27,7 +27,7 @@ class AppCard extends StatelessWidget {
     this.margin,
     this.alignment,
     this.color = AppColors.surface,
-    this.borderRadius = AppRadii.large,
+    this.borderRadius = const BorderRadius.all(Radius.circular(13)),
     this.border = AppBorders.subtle,
     this.boxShadow = AppShadows.card,
     this.clipBehavior = Clip.none,

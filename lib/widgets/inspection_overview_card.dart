@@ -52,7 +52,7 @@ class InspectionOverviewCard extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           const Text(
-            'Inspection overview',
+            'Inspection Overview',
             style: TextStyle(
               fontSize: AppTypography.sectionTitle,
               fontWeight: FontWeight.w800,

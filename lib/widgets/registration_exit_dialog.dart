@@ -35,7 +35,7 @@ class RegistrationExitDialog extends StatelessWidget {
         FilledButton.icon(
           onPressed: () => Navigator.pop(context, 'save'),
           icon: const Icon(Icons.save_outlined, size: 20),
-          label: const Text('Save draft'),
+          label: const Text('Save Draft'),
           style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(48)),
         ),
         const SizedBox(height: 8),

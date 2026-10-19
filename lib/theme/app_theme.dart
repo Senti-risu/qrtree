@@ -8,28 +8,29 @@ import 'app_page_transitions.dart';
 class AppTheme {
   AppTheme._();
 
-  static const String fontFamily = 'EcoTagRoboto';
+  static const String fontFamily = 'EcoTagDMSans';
+  static const String headingFontFamily = 'EcoTagManrope';
   static const EdgeInsets controlPadding = EdgeInsets.symmetric(
     horizontal: AppSpacing.lg,
     vertical: AppSpacing.md,
   );
   static const RoundedRectangleBorder controlShape = RoundedRectangleBorder(
-    borderRadius: AppRadii.medium,
+    borderRadius: BorderRadius.all(Radius.circular(9)),
   );
   static const RoundedRectangleBorder cardShape = RoundedRectangleBorder(
     borderRadius: AppRadii.large,
     side: AppBorders.subtleSide,
   );
   static const OutlineInputBorder inputBorder = OutlineInputBorder(
-    borderRadius: AppRadii.medium,
+    borderRadius: BorderRadius.all(Radius.circular(8)),
     borderSide: AppBorders.subtleSide,
   );
   static const OutlineInputBorder focusedInputBorder = OutlineInputBorder(
-    borderRadius: AppRadii.medium,
+    borderRadius: BorderRadius.all(Radius.circular(8)),
     borderSide: AppBorders.focusedSide,
   );
   static const OutlineInputBorder errorInputBorder = OutlineInputBorder(
-    borderRadius: AppRadii.medium,
+    borderRadius: BorderRadius.all(Radius.circular(8)),
     borderSide: AppBorders.errorSide,
   );
   static const List<FontFeature> _compactFontFeatures = [
@@ -52,12 +53,14 @@ class AppTheme {
       displaySmall: _compactStyle(theme.displaySmall),
       headlineLarge: _compactStyle(theme.headlineLarge),
       headlineMedium: _compactStyle(theme.headlineMedium),
-      headlineSmall: _compactStyle(
-        theme.headlineSmall,
-      ).copyWith(fontSize: AppTypography.pageTitle),
-      titleLarge: _compactStyle(
-        theme.titleLarge,
-      ).copyWith(fontSize: AppTypography.sectionTitle),
+      headlineSmall: _compactStyle(theme.headlineSmall).copyWith(
+        fontFamily: headingFontFamily,
+        fontSize: AppTypography.pageTitle,
+      ),
+      titleLarge: _compactStyle(theme.titleLarge).copyWith(
+        fontFamily: headingFontFamily,
+        fontSize: AppTypography.sectionTitle,
+      ),
       titleMedium: _compactStyle(
         theme.titleMedium,
       ).copyWith(fontSize: AppTypography.itemTitle),
@@ -118,11 +121,13 @@ class AppTheme {
       ),
       textTheme: compactTextTheme.copyWith(
         headlineLarge: compactTextTheme.headlineLarge?.copyWith(
+          fontFamily: headingFontFamily,
           fontSize: 26,
           fontWeight: FontWeight.w800,
           color: AppColors.textPrimary,
         ),
         headlineMedium: compactTextTheme.headlineMedium?.copyWith(
+          fontFamily: headingFontFamily,
           fontSize: 22,
           fontWeight: FontWeight.w700,
           color: AppColors.textPrimary,
@@ -143,13 +148,14 @@ class AppTheme {
       ),
       primaryTextTheme: _compactTextTheme(base.primaryTextTheme),
       dataTableTheme: DataTableThemeData(
+        headingRowColor: const WidgetStatePropertyAll(AppColors.surfaceSubtle),
         headingRowHeight: 48,
         dataRowMinHeight: 56,
         dataRowMaxHeight: double.infinity,
         horizontalMargin: 16,
         columnSpacing: 24,
         headingTextStyle: compactTextTheme.labelMedium?.copyWith(
-          fontSize: AppTypography.caption,
+          fontSize: 11,
           fontWeight: FontWeight.w700,
           letterSpacing: 0.8,
           color: AppColors.textSecondary,
@@ -277,6 +283,17 @@ class AppTheme {
         suffixIconColor: AppColors.inactiveNav,
       ),
       dividerTheme: const DividerThemeData(color: AppColors.border),
+      chipTheme: ChipThemeData(
+        backgroundColor: AppColors.surface,
+        selectedColor: AppColors.primaryContainer,
+        side: AppBorders.subtleSide,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(7)),
+        labelStyle: compactTextTheme.bodySmall?.copyWith(
+          color: AppColors.textSecondary,
+          fontWeight: FontWeight.w600,
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+      ),
       dialogTheme: const DialogThemeData(
         backgroundColor: AppColors.surface,
         surfaceTintColor: Colors.transparent,

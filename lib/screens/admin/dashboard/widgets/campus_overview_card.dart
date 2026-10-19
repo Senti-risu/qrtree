@@ -33,7 +33,7 @@ class CampusOverviewCard extends StatelessWidget {
           ),
           const SizedBox(height: 3),
           const Text(
-            'Registered plants by campus',
+            'Registered Plants By Campus',
             style: TextStyle(
               fontSize: AppTypography.caption,
               color: AppColors.green,

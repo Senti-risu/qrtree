@@ -15,10 +15,12 @@ class PlantDetailsDraft {
     required this.locationChoice,
     required this.townId,
     required this.barangayId,
+    this.scientificName = '',
   });
   final int classificationId, townId, barangayId;
   final String variety, treePlanter, photoUrl, locationChoice;
   final DateTime? datePlanted;
+  final String scientificName;
 
   Map<String, dynamic> toParams(int plantId) => {
     'p_plant_id': plantId,
@@ -68,6 +70,12 @@ class PlantDetailsEditorService implements PlantDetailsEditorRepository {
 
   @override
   Future<void> save(int plantId, PlantDetailsDraft draft) async {
+    if (draft.scientificName.trim().isNotEmpty) {
+      await PlantService().saveMissingScientificName(
+        draft.classificationId,
+        draft.scientificName,
+      );
+    }
     await Supabase.instance.client.rpc(
       'update_plant_details',
       params: {

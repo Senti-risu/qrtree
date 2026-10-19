@@ -60,7 +60,7 @@ Future<AppMobileMoreAction?> showAppMobileMoreSheet(
       ),
     if (role == 'inspection_team')
       const _MoreGroup(
-        label: 'Plant management',
+        label: 'Plant Management',
         items: [
           _MoreItem(
             action: AppMobileMoreAction.registerPlant,
@@ -71,12 +71,12 @@ Future<AppMobileMoreAction?> showAppMobileMoreSheet(
       ),
     if (role == 'inspection_team' || role == 'college_admin')
       const _MoreGroup(
-        label: 'QR labels',
+        label: 'QR Codes',
         items: [
           _MoreItem(
             action: AppMobileMoreAction.qrReports,
             icon: Icons.report_problem_outlined,
-            title: 'QR problem reports',
+            title: 'QR Problem Reports',
           ),
         ],
       ),
@@ -110,7 +110,7 @@ Future<AppMobileMoreAction?> showAppMobileMoreSheet(
         _MoreItem(
           action: AppMobileMoreAction.help,
           icon: Icons.help_outline_rounded,
-          title: 'How to use EcoTag',
+          title: 'How To Use EcoTag',
         ),
       ],
     ),
@@ -120,7 +120,7 @@ Future<AppMobileMoreAction?> showAppMobileMoreSheet(
         _MoreItem(
           action: AppMobileMoreAction.logout,
           icon: Icons.logout_rounded,
-          title: 'Sign out',
+          title: 'Sign Out',
           destructive: true,
         ),
       ],
@@ -278,9 +278,9 @@ class _MobileProfileSheetState extends State<_MobileProfileSheet> {
   String _campusValue(AccountScopeNames names) {
     if (names.campusName != null) return names.campusName!;
     if (widget.role == 'super_admin' || widget.role == 'university_admin') {
-      return 'All campuses';
+      return 'All Campuses';
     }
-    return 'Not assigned';
+    return 'Not Assigned';
   }
 
   String _collegeValue(AccountScopeNames names) {
@@ -288,9 +288,9 @@ class _MobileProfileSheetState extends State<_MobileProfileSheet> {
     if (widget.role == 'super_admin' ||
         widget.role == 'university_admin' ||
         widget.role == 'campus_admin') {
-      return 'All colleges';
+      return 'All Colleges';
     }
-    return 'Not assigned';
+    return 'Not Assigned';
   }
 
   @override
@@ -374,7 +374,7 @@ class _MobileProfileSheetState extends State<_MobileProfileSheet> {
                             child: TextButton.icon(
                               onPressed: _retry,
                               icon: const Icon(Icons.refresh_rounded),
-                              label: const Text('Try again'),
+                              label: const Text('Try Again'),
                             ),
                           ),
                           const SizedBox(height: AppSpacing.xs),

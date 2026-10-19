@@ -4,6 +4,7 @@ import 'package:qr_flutter/qr_flutter.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_typography.dart';
 import 'app_card.dart';
+import 'media_preview.dart';
 
 /// The displayed QR payload is the existing label, never a newly generated code.
 class PlantEcoTagHeader extends StatelessWidget {
@@ -32,18 +33,24 @@ class PlantEcoTagHeader extends StatelessWidget {
                 }
               },
               icon: const Icon(Icons.copy_outlined, size: 16),
-              label: const Text('Copy code'),
+              label: const Text('Copy Code'),
             );
             return Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 if (value.isNotEmpty)
-                  QrImageView(
-                    data: value,
-                    version: QrVersions.auto,
-                    size: 72,
-                    backgroundColor: Colors.white,
-                    semanticsLabel: 'EcoTag QR code',
+                  InkWell(
+                    onTap: () => showQrDetails(context, code: value),
+                    child: Tooltip(
+                      message: 'View QR details',
+                      child: QrImageView(
+                        data: value,
+                        version: QrVersions.auto,
+                        size: 72,
+                        backgroundColor: Colors.white,
+                        semanticsLabel: 'EcoTag QR code',
+                      ),
+                    ),
                   )
                 else
                   const SizedBox(
@@ -61,7 +68,7 @@ class PlantEcoTagHeader extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
-                        'EcoTag code',
+                        'EcoTag Code',
                         style: TextStyle(
                           color: AppColors.darkGreen,
                           fontWeight: FontWeight.w700,

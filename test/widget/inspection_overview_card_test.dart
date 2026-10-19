@@ -49,7 +49,7 @@ void main() {
                           onPressed: () => overdue = true,
                         ),
                         InspectionOverviewMetric(
-                          label: 'Due today',
+                          label: 'Due Today',
                           count: 0,
                           icon: Icons.today,
                           onPressed: () => due = true,
@@ -88,7 +88,7 @@ void main() {
         final card = tester.getRect(find.byKey(const Key('overview')));
         final innerWidth = cardWidth - 34;
         final overdueFinder = find.widgetWithText(OutlinedButton, 'Overdue');
-        final dueFinder = find.widgetWithText(OutlinedButton, 'Due today');
+        final dueFinder = find.widgetWithText(OutlinedButton, 'Due Today');
         final overdueRect = tester.getRect(overdueFinder);
         final dueRect = tester.getRect(dueFinder);
         final reviewRect = tester.getRect(find.byKey(const Key('review')));
@@ -149,7 +149,7 @@ void main() {
                         onPressed: () {},
                       ),
                       InspectionOverviewMetric(
-                        label: 'Due today',
+                        label: 'Due Today',
                         count: 0,
                         icon: Icons.today,
                         onPressed: () {},

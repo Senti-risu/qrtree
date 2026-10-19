@@ -12,6 +12,7 @@ class AppSidebar extends StatelessWidget {
   final String role;
   final int? campusId;
   final int? collegeId;
+  final bool showBrand;
 
   const AppSidebar({
     super.key,
@@ -21,6 +22,7 @@ class AppSidebar extends StatelessWidget {
     required this.role,
     this.campusId,
     this.collegeId,
+    this.showBrand = false,
   });
 
   bool get _canRegisterPlant =>
@@ -121,13 +123,61 @@ class AppSidebar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 230,
+      width: 248,
       decoration: const BoxDecoration(
         color: AppColors.surface,
         border: Border(right: BorderSide(color: AppColors.navbarBorder)),
       ),
       child: ListView(
         children: [
+          if (showBrand)
+            const Padding(
+              padding: EdgeInsets.fromLTRB(28, 30, 16, 20),
+              child: Row(
+                children: [
+                  SizedBox(
+                    width: 39,
+                    height: 39,
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: AppColors.green,
+                        borderRadius: AppRadii.medium,
+                      ),
+                      child: Icon(
+                        Icons.eco,
+                        color: AppColors.onPrimary,
+                        size: 25,
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'EcoTag',
+                          style: TextStyle(
+                            fontFamily: 'EcoTagManrope',
+                            fontSize: 23,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.textPrimary,
+                            letterSpacing: -0.8,
+                          ),
+                        ),
+                        Text(
+                          'Campus Plant Profiling System',
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
           const SizedBox(height: AppSpacing.xl),
           const Padding(
             padding: EdgeInsets.only(
@@ -139,8 +189,8 @@ class AppSidebar extends StatelessWidget {
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.bold,
-                color: AppColors.green,
-                letterSpacing: 0.5,
+                color: AppColors.textSecondary,
+                letterSpacing: 1.7,
               ),
             ),
           ),
@@ -218,7 +268,7 @@ class _NavItem extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.md,
-        vertical: AppSpacing.xs,
+        vertical: 2,
       ),
       child: Material(
         color: active ? AppColors.primaryContainer : Colors.transparent,
@@ -246,10 +296,14 @@ class _NavItem extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 13.5,
                         fontWeight: active ? FontWeight.w700 : FontWeight.w500,
-                        color: active ? AppColors.green : AppColors.textPrimary,
+                        color: active ? AppColors.green : AppColors.inactiveNav,
                       ),
                     ),
                   ),
+                  if (active) ...[
+                    const SizedBox(width: 8),
+                    const Icon(Icons.circle, size: 5, color: AppColors.green),
+                  ],
                 ],
               ),
             ),

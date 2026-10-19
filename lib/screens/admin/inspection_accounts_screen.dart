@@ -75,7 +75,7 @@ class _InspectionAccountsScreenState extends State<InspectionAccountsScreen> {
   String get _statusFilterLabel => switch (_statusFilter) {
     'active' => 'Active',
     'inactive' => 'Inactive',
-    _ => 'All statuses',
+    _ => 'All Statuses',
   };
 
   void _resetFilters() {
@@ -181,7 +181,7 @@ class _InspectionAccountsScreenState extends State<InspectionAccountsScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'Filter inspection accounts',
+                                  'Filter Inspection Accounts',
                                   style: TextStyle(
                                     fontSize: AppTypography.sectionTitle,
                                     fontWeight: FontWeight.w800,
@@ -189,7 +189,7 @@ class _InspectionAccountsScreenState extends State<InspectionAccountsScreen> {
                                   ),
                                 ),
                                 Text(
-                                  'Choose an account status',
+                                  'Choose An Account Status',
                                   style: TextStyle(
                                     fontSize: 12,
                                     color: AppColors.textSecondary,
@@ -199,7 +199,7 @@ class _InspectionAccountsScreenState extends State<InspectionAccountsScreen> {
                             ),
                           ),
                           IconButton(
-                            tooltip: 'Close filters',
+                            tooltip: 'Close Filters',
                             onPressed: () => Navigator.pop(sheetContext),
                             icon: const Icon(Icons.close_rounded),
                           ),
@@ -247,7 +247,7 @@ class _InspectionAccountsScreenState extends State<InspectionAccountsScreen> {
                                 minimumSize: const Size.fromHeight(50),
                                 backgroundColor: AppColors.green,
                               ),
-                              child: const Text('Apply filter'),
+                              child: const Text('Apply Filter'),
                             ),
                           ),
                         ],
@@ -490,7 +490,7 @@ class _InspectionAccountsScreenState extends State<InspectionAccountsScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Archived inspection accounts',
+                              'Archived Inspection Accounts',
                               style: TextStyle(
                                 fontSize: AppTypography.sectionTitle,
                                 fontWeight: FontWeight.w800,
@@ -517,7 +517,7 @@ class _InspectionAccountsScreenState extends State<InspectionAccountsScreen> {
                 const Divider(height: 1),
                 Expanded(
                   child: archived.isEmpty
-                      ? const Center(child: Text('No archived accounts'))
+                      ? const Center(child: Text('No Archived Accounts'))
                       : ListView.separated(
                           padding: const EdgeInsets.all(16),
                           itemCount: archived.length,
@@ -690,7 +690,7 @@ class _InspectionAccountsScreenState extends State<InspectionAccountsScreen> {
             final table = !AppBreakpoints.isPhone(constraints.maxWidth);
             if (!_loading && _error == null && _accounts.isEmpty) {
               return AppEmptyState(
-                title: 'No Inspection Team accounts yet',
+                title: 'No Inspection Team Accounts Yet',
                 message: 'Create an account to get started.',
                 icon: Icons.people_outline,
                 action: FilledButton.icon(
@@ -702,11 +702,11 @@ class _InspectionAccountsScreenState extends State<InspectionAccountsScreen> {
             }
             if (!_loading && _error == null && _visibleAccounts.isEmpty) {
               return AppEmptyState(
-                title: 'No accounts match your filters',
+                title: 'No Accounts Match Your Filters',
                 message: 'Try another search or reset your filters.',
                 action: TextButton(
                   onPressed: _resetFilters,
-                  child: const Text('Reset filters'),
+                  child: const Text('Reset Filters'),
                 ),
               );
             }
@@ -799,7 +799,7 @@ class _InspectionAccountsScreenState extends State<InspectionAccountsScreen> {
           suffixIcon: _searchController.text.isEmpty
               ? null
               : IconButton(
-                  tooltip: 'Clear search',
+                  tooltip: 'Clear Search',
                   onPressed: () {
                     _searchController.clear();
                     setState(() {});
@@ -962,7 +962,7 @@ class _InspectionAccountsScreenState extends State<InspectionAccountsScreen> {
                     border: Border.all(color: AppColors.border),
                   ),
                   child: const Text(
-                    '1 active',
+                    '1 Active',
                     style: TextStyle(
                       color: AppColors.darkGreen,
                       fontSize: 12,
@@ -1013,7 +1013,7 @@ class _InspectionAccountsScreenState extends State<InspectionAccountsScreen> {
           ),
           const SizedBox(height: 10),
           const Text(
-            'No accounts match your filters',
+            'No Accounts Match Your Filters',
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 5),
@@ -1026,7 +1026,7 @@ class _InspectionAccountsScreenState extends State<InspectionAccountsScreen> {
           OutlinedButton.icon(
             onPressed: _resetFilters,
             icon: const Icon(Icons.filter_alt_off_outlined),
-            label: const Text('Reset filters'),
+            label: const Text('Reset Filters'),
           ),
         ],
       ),
@@ -1220,8 +1220,8 @@ class _CreateInspectionAccountDialogState
                 obscureText: _obscurePassword,
                 decoration: InputDecoration(
                   labelText: _editing
-                      ? 'New password (optional)'
-                      : 'Temporary password',
+                      ? 'New Password (optional)'
+                      : 'Temporary Password',
                   prefixIcon: const Icon(Icons.lock_outline),
                   border: const OutlineInputBorder(),
                   suffixIcon: IconButton(

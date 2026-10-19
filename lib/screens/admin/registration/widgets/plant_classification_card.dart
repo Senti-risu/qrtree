@@ -132,7 +132,7 @@ class PlantClassificationCard extends StatelessWidget {
           ResponsiveFieldPair(
             first: RegistrationDateField(value: datePlanted, onTap: onDateTap),
             second: RegistrationTextField(
-              label: 'Tree planter (optional)',
+              label: 'Tree Planter (optional)',
               controller: planterController,
             ),
           ),

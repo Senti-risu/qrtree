@@ -18,12 +18,12 @@ void main() {
     });
     expect(profile.campusName, 'CSU Lasam');
     expect(profile.townName, 'Tuguegarao');
-    expect(profile.plantingLocationLabel, 'Outside campus');
+    expect(profile.plantingLocationLabel, 'Outside Campus');
     expect(PlantingCampusDropdown.campusId('outside'), isNull);
   });
 
   test('older records do not infer a physical location from ownership', () {
-    expect(PlantLocationService.label({'campus_id': 1}), 'Not recorded yet');
+    expect(PlantLocationService.label({'campus_id': 1}), 'Not Recorded Yet');
     expect(
       PlantLocationService.label({
         'planting_location_type': 'inside',
@@ -74,7 +74,7 @@ void main() {
       await tester.pump();
       await tester.tap(find.byType(DropdownButtonFormField<String>));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Outside campus').last);
+      await tester.tap(find.text('Outside Campus').last);
       await tester.pumpAndSettle();
       expect(choice, 'outside');
       expect(form.currentState!.validate(), isTrue);

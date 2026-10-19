@@ -64,7 +64,7 @@ void main() {
           ),
         );
         await tester.pumpAndSettle();
-        final submit = find.text(guest ? 'Continue as guest' : 'Sign in');
+        final submit = find.text(guest ? 'Continue As Guest' : 'Sign In');
         await tester.ensureVisible(submit);
         await tester.tap(submit);
         await tester.pumpAndSettle();
@@ -91,7 +91,7 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Change access type'));
+      await tester.tap(find.text('Change Access Type'));
       await tester.pumpAndSettle();
       expect(find.byType(AccessChoiceScreen), findsOneWidget);
     });
@@ -102,13 +102,13 @@ void main() {
   ) async {
     await tester.pumpWidget(app(const LoginScreen()));
     await tester.enterText(find.byType(TextField).last, 'Example password');
-    await tester.tap(find.byTooltip('Show password'));
+    await tester.tap(find.byTooltip('Show Password'));
     await tester.pump();
     expect(
       tester.widget<TextField>(find.byType(TextField).last).obscureText,
       isFalse,
     );
-    await tester.tap(find.byTooltip('Hide password'));
+    await tester.tap(find.byTooltip('Hide Password'));
     await tester.pump();
     final field = tester.widget<TextField>(find.byType(TextField).last);
     expect(field.obscureText, isTrue);
@@ -153,7 +153,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    final submit = find.text('Continue as guest');
+    final submit = find.text('Continue As Guest');
     await tester.ensureVisible(submit);
     await tester.tap(submit);
     await tester.pumpAndSettle();
@@ -196,7 +196,7 @@ void main() {
           expect(find.byType(Image), findsOneWidget);
           expect(tester.takeException(), isNull);
           final action = find.text(
-            page is LoginScreen ? 'Sign in' : 'Continue as guest',
+            page is LoginScreen ? 'Sign In' : 'Continue As Guest',
           );
           await tester.ensureVisible(action);
           expect(action.hitTestable(), findsOneWidget);
@@ -206,9 +206,9 @@ void main() {
   }
 
   for (final entry in {
-    'Staff sign in': '/staff-login',
-    'Continue as guest': '/guest-entry',
-    'Back to EcoTag home': '/',
+    'Staff Sign In': '/staff-login',
+    'Continue As Guest': '/guest-entry',
+    'Back To EcoTag Home': '/',
   }.entries) {
     testWidgets('access action routes to ${entry.value}', (tester) async {
       await tester.pumpWidget(
@@ -244,7 +244,7 @@ void main() {
           await tester.tap(find.text('Open exit dialog'));
           await tester.pumpAndSettle();
           final save = tester.getRect(
-            find.widgetWithText(FilledButton, 'Save draft'),
+            find.widgetWithText(FilledButton, 'Save Draft'),
           );
           final discard = tester.getRect(
             find.widgetWithText(OutlinedButton, 'Discard'),
@@ -265,7 +265,7 @@ void main() {
     }
   }
 
-  for (final action in ['Save draft', 'Discard', 'Stay']) {
+  for (final action in ['Save Draft', 'Discard', 'Stay']) {
     testWidgets('exit dialog returns the correct $action decision', (
       tester,
     ) async {
@@ -277,7 +277,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(
         result,
-        {'Save draft': 'save', 'Discard': 'discard', 'Stay': 'stay'}[action],
+        {'Save Draft': 'save', 'Discard': 'discard', 'Stay': 'stay'}[action],
       );
     });
   }
@@ -294,7 +294,7 @@ void main() {
           findsNothing,
         );
         expect(find.textContaining('This device remembers'), findsNothing);
-        final signIn = find.widgetWithText(FilledButton, 'Sign in');
+        final signIn = find.widgetWithText(FilledButton, 'Sign In');
         await tester.ensureVisible(signIn);
         await tester.tap(signIn);
         await tester.pumpAndSettle();
@@ -310,8 +310,8 @@ void main() {
     (tester) async {
       await tester.pumpWidget(app(const AccessChoiceScreen()));
       await tester.pumpAndSettle();
-      expect(find.text('Staff sign in'), findsOneWidget);
-      expect(find.text('Continue as guest'), findsOneWidget);
+      expect(find.text('Staff Sign In'), findsOneWidget);
+      expect(find.text('Continue As Guest'), findsOneWidget);
       expect(find.textContaining('visitor statistics'), findsNothing);
       expect(find.textContaining('verified securely'), findsNothing);
       expect(find.textContaining('Use your assigned'), findsNothing);

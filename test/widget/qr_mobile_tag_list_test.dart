@@ -26,7 +26,7 @@ void main() {
                   height: 210,
                   child: Text('Generate QR'),
                 ),
-                header: const SizedBox(height: 180, child: Text('QR tags')),
+                header: const SizedBox(height: 180, child: Text('QR Tags')),
                 itemCount: 18,
                 itemBuilder: (_, index) => ListTile(
                   title: Text('ECOTAG-202610-${index + 1}'),
@@ -61,7 +61,7 @@ void main() {
         home: Scaffold(
           body: QrMobileTagList(
             toolbar: const Text('Generate QR'),
-            header: const Text('QR tags'),
+            header: const Text('QR Tags'),
             itemCount: 20,
             itemBuilder: (_, index) =>
                 SizedBox(height: 100, child: Text('$index')),
@@ -75,7 +75,7 @@ void main() {
       ),
     );
     await tester.scrollUntilVisible(
-      find.text('Load more QR tags'),
+      find.text('Load More QR Tags'),
       300,
       scrollable: find.byType(Scrollable).first,
     );

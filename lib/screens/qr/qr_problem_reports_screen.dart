@@ -5,15 +5,20 @@ import '../../utils/user_facing_error.dart';
 import '../../widgets/app_error_state.dart';
 
 class QrProblemReportsScreen extends StatefulWidget {
-  const QrProblemReportsScreen({super.key, required this.canReview});
+  const QrProblemReportsScreen({
+    super.key,
+    required this.canReview,
+    this.service,
+  });
   final bool canReview;
+  final QrProblemService? service;
 
   @override
   State<QrProblemReportsScreen> createState() => _QrProblemReportsScreenState();
 }
 
 class _QrProblemReportsScreenState extends State<QrProblemReportsScreen> {
-  final _service = QrProblemService();
+  late final _service = widget.service ?? QrProblemService();
   List<Map<String, dynamic>> _reports = [];
   bool _loading = true;
   String? _error;
@@ -62,8 +67,8 @@ class _QrProblemReportsScreenState extends State<QrProblemReportsScreen> {
             children: [
               Text(
                 confirm
-                    ? 'The label will be marked damaged and scanning will be blocked. Replace the label from QR Management.'
-                    : 'Explain why this report does not need a label change.',
+                    ? 'The QR will be marked damaged and scanning will be blocked. Reprint the QR from QR Management and confirm it is ready.'
+                    : 'Explain why this report does not need a QR change.',
               ),
               const SizedBox(height: 16),
               TextFormField(
@@ -71,7 +76,7 @@ class _QrProblemReportsScreenState extends State<QrProblemReportsScreen> {
                 maxLength: 1000,
                 minLines: 2,
                 maxLines: 5,
-                decoration: const InputDecoration(labelText: 'Review note'),
+                decoration: const InputDecoration(labelText: 'Review Note'),
                 validator: (value) => (value?.trim().length ?? 0) < 3
                     ? 'Enter a review note.'
                     : null,
@@ -90,7 +95,7 @@ class _QrProblemReportsScreenState extends State<QrProblemReportsScreen> {
                 Navigator.pop(context, note.text.trim());
               }
             },
-            child: Text(confirm ? 'Confirm and mark damaged' : 'Dismiss'),
+            child: Text(confirm ? 'Confirm And Mark Damaged' : 'Dismiss'),
           ),
         ],
       ),
@@ -126,13 +131,13 @@ class _QrProblemReportsScreenState extends State<QrProblemReportsScreen> {
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(
-      title: Text(widget.canReview ? 'QR problem reports' : 'My QR reports'),
+      title: Text(widget.canReview ? 'QR Report History' : 'My QR Reports'),
     ),
     body: _loading
         ? const Center(child: CircularProgressIndicator())
         : _error != null
         ? AppErrorState(
-            title: 'Unable to load QR reports',
+            title: 'Unable To Load QR Reports',
             message: userFacingError(_error!),
             technicalDetails: _error,
             onRetry: _load,
@@ -147,7 +152,7 @@ class _QrProblemReportsScreenState extends State<QrProblemReportsScreen> {
                   const Padding(
                     padding: EdgeInsets.all(24),
                     child: Text(
-                      'No QR problem reports yet. Open a plant from Plants to report a damaged, faded, missing, or incorrect label.',
+                      'No QR problem reports yet. Open a plant from Plants to report a damaged, faded, missing, or incorrect QR.',
                     ),
                   ),
                 for (final report in _reports)
@@ -161,14 +166,14 @@ class _QrProblemReportsScreenState extends State<QrProblemReportsScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                '${report['common_name'] ?? 'Plant'} · ${report['status']}',
+                                '${report['common_name'] ?? 'Plant'} · ${report['problem'] == 'damaged' && report['status'] == 'confirmed' ? 'Damage Reported' : report['status']}',
                                 style: Theme.of(context).textTheme.titleMedium,
                               ),
                               const SizedBox(height: 8),
                               SelectableText('${report['qr_code_string']}'),
                               Text(
                                 QrProblemService.problems[report['problem']] ??
-                                    'QR problem',
+                                    'QR Problem',
                               ),
                               const SizedBox(height: 8),
                               Text('${report['description']}'),
@@ -176,9 +181,27 @@ class _QrProblemReportsScreenState extends State<QrProblemReportsScreen> {
                               Text(
                                 'Reported by ${report['reported_by']} · ${_reportedAt(report['created_at'])}',
                               ),
-                              if (report['review_note'] != null)
+                              if (report['problem'] == 'damaged' &&
+                                  report['status'] == 'confirmed')
+                                const Padding(
+                                  padding: EdgeInsets.only(top: 8),
+                                  child: Text(
+                                    'Marked damaged when reported. No approval required. Reprint from QR Management.',
+                                  ),
+                                ),
+                              if (report['problem'] == 'damaged' &&
+                                  report['status'] == 'pending')
+                                const Padding(
+                                  padding: EdgeInsets.only(top: 8),
+                                  child: Text(
+                                    'Automatic damage reporting needs the latest database update. Contact your administrator.',
+                                  ),
+                                ),
+                              if (report['review_note'] != null &&
+                                  report['problem'] != 'damaged')
                                 Text('Review: ${report['review_note']}'),
                               if (widget.canReview &&
+                                  report['problem'] != 'damaged' &&
                                   report['status'] == 'pending')
                                 Padding(
                                   padding: const EdgeInsets.only(top: 12),
@@ -188,7 +211,7 @@ class _QrProblemReportsScreenState extends State<QrProblemReportsScreen> {
                                     children: [
                                       FilledButton(
                                         onPressed: () => _review(report, true),
-                                        child: const Text('Confirm problem'),
+                                        child: const Text('Confirm Problem'),
                                       ),
                                       OutlinedButton(
                                         onPressed: () => _review(report, false),

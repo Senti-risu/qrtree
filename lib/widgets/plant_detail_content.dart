@@ -4,6 +4,7 @@ import '../theme/app_colors.dart';
 import '../theme/app_layout.dart';
 import 'app_card.dart';
 import 'equal_height_cards.dart';
+import 'media_preview.dart';
 
 class PlantDetailHero extends StatelessWidget {
   const PlantDetailHero({
@@ -35,11 +36,14 @@ class PlantDetailHero extends StatelessWidget {
                   size: 64,
                   color: AppColors.green,
                 )
-              : Image.network(
-                  imageUrl,
-                  fit: BoxFit.contain,
-                  errorBuilder: (_, _, _) =>
-                      const Icon(Icons.broken_image_outlined, size: 48),
+              : ViewablePhoto(
+                  url: imageUrl,
+                  child: Image.network(
+                    imageUrl,
+                    fit: BoxFit.contain,
+                    errorBuilder: (_, _, _) =>
+                        const Icon(Icons.broken_image_outlined, size: 48),
+                  ),
                 ),
         ),
       );
@@ -242,7 +246,7 @@ class PlantDetailActions extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         const Text(
-          'Plant actions',
+          'Plant Actions',
           style: TextStyle(
             fontSize: AppTypography.sectionTitle,
             fontWeight: FontWeight.w700,

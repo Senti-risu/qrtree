@@ -27,7 +27,7 @@ void main() {
           ),
         );
         expect(find.text(QrNumberingInfo.explanation), findsNothing);
-        await tester.tap(find.text('QR code format'));
+        await tester.tap(find.text('QR Code Format'));
         await tester.pumpAndSettle();
         expect(find.text(QrNumberingInfo.explanation), findsOneWidget);
         await tester.ensureVisible(find.text('Close'));
@@ -87,11 +87,11 @@ void main() {
       expect(find.text('My Profile'), findsOneWidget);
       expect(find.text('View your account and access details'), findsNothing);
       await tester.scrollUntilVisible(
-        find.text('Sign out'),
+        find.text('Sign Out'),
         200,
         scrollable: find.byType(Scrollable).last,
       );
-      await tester.tap(find.text('Sign out'));
+      await tester.tap(find.text('Sign Out'));
       await tester.pumpAndSettle();
       expect(result, AppMobileMoreAction.logout);
       expect(tester.takeException(), isNull);

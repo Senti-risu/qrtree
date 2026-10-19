@@ -86,7 +86,7 @@ class QrMobileTagList extends StatelessWidget {
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
                         : const Icon(Icons.expand_more_rounded),
-                    label: Text(loadingMore ? 'Loading…' : 'Load more QR tags'),
+                    label: Text(loadingMore ? 'Loading…' : 'Load More QR Tags'),
                   ),
                 ),
               ),

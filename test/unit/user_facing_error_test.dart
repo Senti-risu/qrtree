@@ -3,6 +3,12 @@ import 'package:flutter_application_1/utils/user_facing_error.dart';
 
 void main() {
   group('userFacingError', () {
+    test('report reassignment asks for a refresh before export', () {
+      expect(
+        userFacingError(StateError('Report scope changed')),
+        contains('Refresh Reports'),
+      );
+    });
     test('explains a pending database migration without technical details', () {
       final message = userFacingError(
         Exception(

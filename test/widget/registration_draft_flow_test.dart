@@ -124,7 +124,7 @@ void main() {
     'required plant and location fields block the next step until selected',
     (tester) async {
       await open(tester, MemoryDrafts());
-      await tester.tap(find.text('Continue to location'));
+      await tester.tap(find.text('Continue To Location'));
       await tester.pumpAndSettle();
       expect(find.text('Step 1 of 4 · Plant'), findsOneWidget);
       final type = tester.widget<AppSearchableDropdown>(
@@ -137,7 +137,7 @@ void main() {
       await choose(tester, 'Common Name', 'Mango');
       await choose(tester, 'Growth Stage', 'Seedling');
       await choose(tester, 'Health Status', 'Healthy');
-      await tester.tap(find.text('Continue to location'));
+      await tester.tap(find.text('Continue To Location'));
       await tester.pumpAndSettle();
       expect(find.text('Step 1 of 4 · Plant'), findsOneWidget);
       expect(find.text('Please select the date planted.'), findsOneWidget);
@@ -147,7 +147,7 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('Cancel'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Continue to location'));
+      await tester.tap(find.text('Continue To Location'));
       await tester.pumpAndSettle();
       expect(find.text('Step 1 of 4 · Plant'), findsOneWidget);
       await tester.ensureVisible(date);
@@ -155,10 +155,10 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('OK'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Continue to location'));
+      await tester.tap(find.text('Continue To Location'));
       await tester.pumpAndSettle();
       expect(find.text('Step 2 of 4 · Location'), findsOneWidget);
-      await tester.tap(find.text('Continue to photo'));
+      await tester.tap(find.text('Continue To Photo'));
       await tester.pumpAndSettle();
       expect(find.text('Step 2 of 4 · Location'), findsOneWidget);
       expect(
@@ -172,11 +172,11 @@ void main() {
           .onChanged!('outside');
       await tester.pumpAndSettle();
       await choose(tester, 'Town', 'Lasam');
-      await tester.tap(find.text('Continue to photo'));
+      await tester.tap(find.text('Continue To Photo'));
       await tester.pumpAndSettle();
       expect(find.text('Step 2 of 4 · Location'), findsOneWidget);
       await choose(tester, 'Barangay', 'Centro');
-      await tester.tap(find.text('Continue to photo'));
+      await tester.tap(find.text('Continue To Photo'));
       await tester.pumpAndSettle();
       expect(find.text('Step 3 of 4 · Photo'), findsOneWidget);
       expect(tester.takeException(), isNull);
@@ -242,7 +242,7 @@ void main() {
       await tester.tap(
         find.descendant(
           of: find.byType(AlertDialog),
-          matching: find.text('Save draft'),
+          matching: find.text('Save Draft'),
         ),
       );
       await tester.pumpAndSettle();
@@ -264,7 +264,7 @@ void main() {
     await tester.tap(
       find.descendant(
         of: find.byType(AlertDialog),
-        matching: find.text('Save draft'),
+        matching: find.text('Save Draft'),
       ),
     );
     await tester.pumpAndSettle();

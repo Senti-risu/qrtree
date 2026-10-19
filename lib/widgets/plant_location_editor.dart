@@ -80,7 +80,7 @@ class _PlantLocationEditorState extends State<PlantLocationEditor> {
     canPop: !_saving,
     child: AlertDialog(
       scrollable: true,
-      title: const Text('Planting location'),
+      title: const Text('Planting Location'),
       content: SizedBox(
         width: 420,
         child: _loading
@@ -108,7 +108,7 @@ class _PlantLocationEditorState extends State<PlantLocationEditor> {
                         initialValue: _town,
                         isExpanded: true,
                         decoration: const InputDecoration(
-                          labelText: 'Planting town',
+                          labelText: 'Planting Town',
                         ),
                         items: _towns
                             .map(
@@ -135,7 +135,7 @@ class _PlantLocationEditorState extends State<PlantLocationEditor> {
                         initialValue: _barangay,
                         isExpanded: true,
                         decoration: const InputDecoration(
-                          labelText: 'Planting barangay',
+                          labelText: 'Planting Barangay',
                         ),
                         items: _barangays
                             .where((b) => b['town_id'] == _town)
@@ -169,7 +169,7 @@ class _PlantLocationEditorState extends State<PlantLocationEditor> {
                     if (_campuses.isEmpty)
                       TextButton(
                         onPressed: _load,
-                        child: const Text('Try again'),
+                        child: const Text('Try Again'),
                       ),
                   ],
                 ),

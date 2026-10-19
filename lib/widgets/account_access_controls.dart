@@ -17,7 +17,7 @@ class AccountStatusButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Tooltip(
-    message: active ? 'Deactivate account' : 'Activate account',
+    message: active ? 'Deactivate Account' : 'Activate Account',
     child: OutlinedButton.icon(
       onPressed: busy ? null : onPressed,
       style: OutlinedButton.styleFrom(

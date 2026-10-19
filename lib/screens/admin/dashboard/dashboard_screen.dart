@@ -18,10 +18,7 @@ import 'widgets/dashboard_stat_card.dart';
 import 'widgets/dashboard_priority_layout.dart';
 import 'widgets/dashboard_page_header.dart';
 import 'widgets/campus_overview_card.dart';
-import 'widgets/quick_action_button.dart';
 import 'widgets/recent_plants_table.dart';
-
-import '../registration/register_plant_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   final int userId;
@@ -114,25 +111,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
   // ============================================================
   // PERMISSIONS
   // ============================================================
-
-  bool get _canRegisterPlant {
-    return _role == 'college_admin' || _role == 'inspection_team';
-  }
-
-  bool get _canViewPlantList {
-    return _role == 'super_admin' ||
-        _role == 'university_admin' ||
-        _role == 'campus_admin' ||
-        _role == 'college_admin' ||
-        _role == 'inspection_team';
-  }
-
-  bool get _canGenerateReport {
-    return _role == 'super_admin' ||
-        _role == 'university_admin' ||
-        _role == 'campus_admin' ||
-        _role == 'college_admin';
-  }
 
   // ============================================================
   // INIT
@@ -333,6 +311,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
         variety,
         date_planted,
         created_at,
+        tree_planter,
+        last_inspected_on,
+        qr_tag:qr_tag!plant_qr_tag_id_fkey(qr_code_string),
 
         plant_classification (
           common_name,
@@ -481,7 +462,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ),
                   ),
                   icon: const Icon(Icons.offline_pin_outlined),
-                  label: const Text('Offline inspections and pending uploads'),
+                  label: const Text('Offline Inspections And Pending Uploads'),
                 ),
               ),
             _buildDashboardContent(),
@@ -504,10 +485,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
         return 'University-wide plant overview';
 
       case 'campus_admin':
-        return 'Campus plant overview';
+        return 'Campus Plant Overview';
 
       case 'college_admin':
-        return 'College plant overview';
+        return 'College Plant Overview';
 
       default:
         return 'Plant monitoring overview';
@@ -691,14 +672,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
           onPressed: () => _openInspectionQueue('overdue'),
         ),
         InspectionOverviewMetric(
-          label: 'Due today',
+          label: 'Due Today',
           count: _dueTodayCount,
           icon: Icons.today,
           onPressed: () => _openInspectionQueue('due_today'),
         ),
         if (_unscheduledCount > 0)
           InspectionOverviewMetric(
-            label: 'No schedule',
+            label: 'No Schedule',
             count: _unscheduledCount,
             icon: Icons.event_busy_outlined,
             onPressed: _openPlantList,
@@ -759,94 +740,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
             label: Text(
               _totalPlants == 0
                   ? 'Register first plant'
-                  : 'Register another plant',
+                  : 'Register Another Plant',
             ),
           ),
       ],
     );
   }
 
-  Widget _buildRecentPlantShortlist() => AppCard(
-    width: double.infinity,
-    padding: const EdgeInsets.all(AppSpacing.lg),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
-          child: Row(
-            children: [
-              const Expanded(
-                child: Text(
-                  'Recent plants',
-                  style: TextStyle(
-                    fontSize: AppTypography.sectionTitle,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.darkGreen,
-                  ),
-                ),
-              ),
-              TextButton(
-                onPressed: _openPlantList,
-                child: const Text('View all'),
-              ),
-            ],
-          ),
-        ),
-        for (final plant in _recentPlants.take(3))
-          ListTile(
-            dense: true,
-            visualDensity: VisualDensity.compact,
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.sm,
-            ),
-            leading: const CircleAvatar(
-              radius: 18,
-              backgroundColor: AppColors.primaryContainer,
-              child: Icon(Icons.eco_outlined, size: 20, color: AppColors.green),
-            ),
-            title: Text(
-              (plant['plant_classification'] as Map?)?['common_name']
-                      ?.toString() ??
-                  'Plant',
-            ),
-            subtitle: Text(
-              'Plant #${plant['plant_id']} · ${_recentHealthLabel(plant)}',
-              style: const TextStyle(
-                fontSize: 12,
-                color: AppColors.textSecondary,
-              ),
-            ),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () async {
-              await Navigator.pushNamed(
-                context,
-                '/plant-details',
-                arguments: {
-                  ..._navigationArguments,
-                  'plant_id': plant['plant_id'],
-                },
-              );
-              if (mounted) _loadDashboardData();
-            },
-          ),
-      ],
-    ),
-  );
-
-  String _recentHealthLabel(Map<String, dynamic> plant) {
-    final health = (plant['health_status'] as Map?)?['status_name']
-        ?.toString()
-        .toLowerCase();
-    return switch (health) {
-      'alive' || 'healthy' => 'Healthy',
-      'dying' || 'at risk' => 'Needs attention',
-      'dead' => 'Dead',
-      _ => 'Health not recorded',
-    };
-  }
-
-  void _openNeedsAttention() => _openFilteredPlants('Needs attention');
+  void _openNeedsAttention() => _openFilteredPlants('Needs Attention');
 
   Future<void> _openFilteredPlants(String filter) async {
     await Navigator.pushNamed(
@@ -870,7 +771,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Widget _buildErrorState() {
     return AppErrorState(
-      title: 'Unable to load dashboard',
+      title: 'Unable To Load Dashboard',
       message: userFacingError(
         _errorMessage ?? '',
         fallback: 'Your dashboard could not be loaded. Please try again.',
@@ -935,7 +836,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ),
 
       DashboardStatCard(
-        title: 'Needs attention',
+        title: 'Needs Attention',
         compact: !AppBreakpoints.isDesktop(contentWidth),
         onTap: _openNeedsAttention,
 
@@ -987,213 +888,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
   // ANALYTICS
   // ============================================================
 
-  Widget _buildResponsiveAnalytics(double contentWidth) {
-    final recentPlants =
-        (_role == 'college_admin' || _role == 'inspection_team')
-        ? (_recentPlants.isEmpty ? null : _buildRecentPlantShortlist())
-        : _buildResponsiveRecentPlants(contentWidth);
-    final actions = _role == 'university_admin'
-        ? CampusOverviewCard(counts: _campusPlantCounts)
-        : _buildQuickActionsCard();
-    if (recentPlants == null) return actions;
-    if (contentWidth >= 720 &&
-        MediaQuery.textScalerOf(context).scale(1) < 1.6) {
-      return EqualHeightCards(
-        gap: AppSpacing.lg,
-        children: [actions, recentPlants],
-      );
-    }
-
-    return Column(
-      children: [
-        actions,
-
+  Widget _buildResponsiveAnalytics(double contentWidth) => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      if (_role == 'university_admin') ...[
+        CampusOverviewCard(counts: _campusPlantCounts),
         const SizedBox(height: AppSpacing.lg),
-
-        recentPlants,
       ],
-    );
-  }
-
-  // ============================================================
-  // QUICK ACTIONS
-  // ============================================================
-
-  Widget _buildQuickActionsCard() {
-    final actions = <Widget>[];
-
-    if (_canRegisterPlant) {
-      actions.add(
-        QuickActionButton(
-          icon: Icons.add_circle_outline_rounded,
-
-          title: 'Register New Plant',
-
-          subtitle: 'Add a new plant to EcoTag',
-
-          bgColor: AppColors.primaryContainer,
-
-          iconColor: AppColors.green,
-
-          onTap: () async {
-            if (_currentCampusId == null || _currentCollegeId == null) {
-              _showMessage(
-                'Your account has no assigned campus or college.',
-                error: true,
-              );
-
-              return;
-            }
-
-            final result = await Navigator.push(
-              context,
-
-              MaterialPageRoute(
-                builder: (context) => RegisterPlantScreen(
-                  userId: widget.userId,
-
-                  username: _userName,
-
-                  role: _role,
-
-                  campusId: _currentCampusId!,
-
-                  collegeId: _currentCollegeId!,
-                ),
-              ),
-            );
-
-            if (result == true) {
-              _loadDashboardData();
-            }
-          },
-        ),
-      );
-    }
-
-    if (_canViewPlantList) {
-      actions.add(
-        QuickActionButton(
-          icon: Icons.park_rounded,
-
-          title: 'View Plant List',
-
-          subtitle: 'Browse registered plants',
-
-          bgColor: AppColors.secondaryContainer,
-
-          iconColor: AppColors.secondary,
-
-          onTap: () {
-            Navigator.pushNamed(
-              context,
-              '/plant-list',
-              arguments: {
-                'user_id': widget.userId,
-
-                'username': _userName,
-
-                'role': _role,
-
-                'campus_id': _currentCampusId,
-
-                'college_id': _currentCollegeId,
-              },
-            );
-          },
-        ),
-      );
-    }
-
-    if (_canGenerateReport) {
-      actions.add(
-        QuickActionButton(
-          icon: Icons.assessment_outlined,
-
-          title: 'Create Report',
-
-          subtitle: 'Generate plant monitoring reports',
-
-          bgColor: AppColors.infoContainer,
-
-          iconColor: AppColors.info,
-
-          onTap: () {
-            Navigator.pushNamed(
-              context,
-              '/reports',
-              arguments: {
-                'user_id': widget.userId,
-
-                'username': _userName,
-
-                'role': _role,
-
-                'campus_id': _currentCampusId,
-
-                'college_id': _currentCollegeId,
-              },
-            );
-          },
-        ),
-      );
-    }
-
-    return AppCard(
-      padding: const EdgeInsets.all(AppSpacing.lg),
-
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-
-        children: [
-          const Text(
-            'Quick Actions',
-
-            style: TextStyle(
-              fontSize: AppTypography.sectionTitle,
-              fontWeight: FontWeight.w700,
-              color: AppColors.darkGreen,
-            ),
-          ),
-
-          const SizedBox(height: 2),
-
-          const Text(
-            'Common plant management tasks',
-
-            style: TextStyle(
-              fontSize: AppTypography.caption,
-              color: AppColors.green,
-            ),
-          ),
-
-          const SizedBox(height: AppSpacing.md),
-
-          if (actions.isEmpty)
-            const Text(
-              'No available actions.',
-              style: TextStyle(color: Colors.grey),
-            )
-          else
-            ..._addSpacing(actions),
-        ],
-      ),
-    );
-  }
-
-  List<Widget> _addSpacing(List<Widget> widgets) {
-    final result = <Widget>[];
-
-    for (int i = 0; i < widgets.length; i++) {
-      result.add(widgets[i]);
-
-      if (i < widgets.length - 1) {
-        result.add(const SizedBox(height: 9));
-      }
-    }
-
-    return result;
-  }
+      _buildResponsiveRecentPlants(contentWidth),
+    ],
+  );
 
   // ============================================================
   // HEALTH CHART
@@ -1220,7 +924,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           const SizedBox(height: 2),
 
           const Text(
-            'Distribution of plant health status',
+            'Distribution Of Plant Health Status',
 
             style: TextStyle(
               fontSize: AppTypography.caption,
@@ -1294,7 +998,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
                 _buildLegend(
                   AppColors.chartAtRisk,
-                  'Needs attention',
+                  'Needs Attention',
                   _dyingCount,
                 ),
 
@@ -1360,11 +1064,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
   // ============================================================
 
   Widget _buildResponsiveRecentPlants(double contentWidth) {
-    return AppCard(
-      child: RecentPlantsTable(
-        plants: _recentPlants,
-        onViewAll: _openPlantList,
-      ),
+    return RecentPlantsTable(
+      plants: _recentPlants,
+      onViewAll: _openPlantList,
+      onViewPlant: (plant) async {
+        await Navigator.pushNamed(
+          context,
+          '/plant-details',
+          arguments: {..._navigationArguments, 'plant_id': plant['plant_id']},
+        );
+        if (mounted) _loadDashboardData();
+      },
     );
   }
 
@@ -1430,19 +1140,5 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
 
     return (_deadCount / _totalPlants) * 100;
-  }
-
-  void _showMessage(String message, {bool error = false}) {
-    if (!mounted) return;
-
-    ScaffoldMessenger.of(context).hideCurrentSnackBar();
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-
-        backgroundColor: error ? Colors.red : AppColors.green,
-      ),
-    );
   }
 }

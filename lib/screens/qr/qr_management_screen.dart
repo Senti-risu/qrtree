@@ -1,4 +1,7 @@
 import 'dart:async';
+import '../../widgets/media_preview.dart';
+import '../../widgets/plant_details_presentation.dart';
+import '../plants/plant_detail_screen.dart';
 
 import 'package:flutter/material.dart';
 import 'widgets/qr_numbering_info.dart';
@@ -7,6 +10,8 @@ import '../../widgets/compact_filter_panel.dart';
 import '../../theme/app_typography.dart';
 import '../../models/app_role.dart';
 import '../../services/qr_print_service.dart';
+import '../../services/qr_batch_selection.dart';
+import '../../widgets/qr_batch_print_dialog.dart';
 import '../../services/qr_service.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_layout.dart';
@@ -26,6 +31,8 @@ class QrManagementScreen extends StatefulWidget {
   final String role;
   final int? campusId;
   final int? collegeId;
+  final QrService? qrService;
+  final QrPrintService? printService;
 
   const QrManagementScreen({
     super.key,
@@ -34,6 +41,8 @@ class QrManagementScreen extends StatefulWidget {
     required this.role,
     this.campusId,
     this.collegeId,
+    this.qrService,
+    this.printService,
   });
 
   @override
@@ -42,8 +51,9 @@ class QrManagementScreen extends StatefulWidget {
 
 class _QrManagementScreenState extends State<QrManagementScreen> {
   static const int _pageSize = 100;
-  final QrService _qrService = QrService();
-  final QrPrintService _printService = QrPrintService();
+  late final QrService _qrService = widget.qrService ?? QrService();
+  late final QrPrintService _printService =
+      widget.printService ?? QrPrintService();
   final TextEditingController _searchController = TextEditingController();
 
   List<Map<String, dynamic>> _tags = [];
@@ -51,6 +61,7 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
   bool _loadingMore = false;
   bool _hasMore = false;
   bool _generating = false;
+  bool _printingBatch = false;
   final Set<int> _updatingTags = <int>{};
   String _filter = 'all';
   int _loadRequestId = 0;
@@ -90,7 +101,7 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
     'damaged': 'Damaged',
     'replaced': 'Replaced',
     'retired': 'Retired',
-    'all': 'All statuses',
+    'all': 'All Statuses',
   };
 
   Future<void> _loadTags({bool more = false}) async {
@@ -157,14 +168,14 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
       showDragHandle: true,
       builder: (sheetContext) => StatefulBuilder(
         builder: (context, setSheetState) => AppFilterSheet(
-          title: 'Filter QR tags',
-          applyLabel: 'Apply filters',
+          title: 'Filter QR Tags',
+          applyLabel: 'Apply Filters',
           onReset: () => setSheetState(() => draftFilter = 'all'),
           onApply: () => Navigator.pop(sheetContext, draftFilter),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Tag status'),
+              const Text('Tag Status'),
               const SizedBox(height: AppSpacing.sm),
               Wrap(
                 spacing: AppSpacing.sm,
@@ -218,15 +229,94 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
     }
   }
 
-  Future<void> _printAvailable() async {
-    final available = _tags
-        .where((tag) => QrService.statusOf(tag) == 'available')
-        .toList();
-    if (available.isEmpty) {
-      _message('No available QR tags are currently shown.');
-      return;
+  bool get _canPrintBatch =>
+      !_printingBatch &&
+      !_loading &&
+      _updatingTags.isEmpty &&
+      {'all', 'available', 'assigned', 'damaged'}.contains(_filter);
+
+  Future<void> _printBatch() async {
+    if (!_canPrintBatch) return;
+    final filter = _filter;
+    final search = _searchController.text.trim();
+    setState(() => _printingBatch = true);
+    try {
+      final tags = await loadPrintableQrBatch(
+        loadPage: _qrService.getTags,
+        filter: filter,
+        search: search,
+      );
+      if (!mounted) return;
+      if (tags.isEmpty) {
+        _message('No printable QR tags match this search and status.');
+        return;
+      }
+      final selected = await showDialog<List<Map<String, dynamic>>>(
+        context: context,
+        builder: (_) => QrBatchPrintDialog(
+          tags: tags,
+          status: filter == 'all' ? 'available' : filter,
+        ),
+      );
+      if (!mounted || selected == null || selected.isEmpty) return;
+      final printed = await _printService.printBatch(selected);
+      if (!mounted || !printed || filter != 'damaged') return;
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          scrollable: true,
+          title: const Text('Are all replacement QRs ready?'),
+          content: Text(
+            'Confirm only if all ${selected.length} selected labels printed correctly '
+            'and are attached to their plants. This clears their damaged status '
+            'without changing the QR codes. Otherwise, keep them damaged.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('Keep Damaged'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: const Text('Confirm All Ready'),
+            ),
+          ],
+        ),
+      );
+      if (!mounted || confirmed != true) return;
+      var restored = 0;
+      for (final tag in selected) {
+        final id = _tagId(tag);
+        if (id == null) continue;
+        try {
+          await _qrService.confirmReprinted(qrTagId: id);
+          restored++;
+        } catch (_) {
+          // Keep failed tags damaged and report partial completion accurately.
+        }
+      }
+      if (!mounted) return;
+      final remaining = selected.length - restored;
+      _message(
+        remaining == 0
+            ? '$restored QR tags restored. Damaged status cleared.'
+            : '$restored QR tags restored; $remaining could not be confirmed. Refresh and try those again.',
+        error: remaining > 0,
+      );
+      await _loadTags();
+    } catch (error) {
+      if (mounted) {
+        _message(
+          userFacingError(
+            error,
+            fallback: 'Could not print the QR batch. Please try again.',
+          ),
+          error: true,
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _printingBatch = false);
     }
-    await _printService.printBatch(available);
   }
 
   Future<String?> _askReason({
@@ -302,17 +392,17 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
     final tagId = _tagId(tag);
     if (tagId == null) return;
     final reason = await _askReason(
-      title: 'Mark label as damaged?',
+      title: 'Mark QR as damaged?',
       message:
-          'The plant will keep its current record, but this label should no longer be scanned. You can replace it next.',
-      actionLabel: 'Mark damaged',
+          'The plant will keep its current record and QR code. You can reprint the same QR code if you need a new printed QR.',
+      actionLabel: 'Mark Damaged',
       danger: true,
     );
     if (reason == null || !mounted) return;
     await _runTagAction(
       tagId,
       action: () => _qrService.markDamaged(qrTagId: tagId, reason: reason),
-      success: 'QR label marked as damaged.',
+      success: 'QR marked as damaged.',
     );
   }
 
@@ -320,166 +410,18 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
     final tagId = _tagId(tag);
     if (tagId == null) return;
     final reason = await _askReason(
-      title: 'Retire this unused label?',
+      title: 'Retire this unused QR?',
       message:
-          'A retired label cannot be assigned to a plant. Its history will remain available for administrators.',
-      actionLabel: 'Retire label',
+          'A retired QR cannot be assigned to a plant. Its history will remain available for administrators.',
+      actionLabel: 'Retire QR',
       danger: true,
     );
     if (reason == null || !mounted) return;
     await _runTagAction(
       tagId,
       action: () => _qrService.retireTag(qrTagId: tagId, reason: reason),
-      success: 'QR label retired.',
+      success: 'QR retired.',
     );
-  }
-
-  Future<void> _replaceTag(Map<String, dynamic> tag) async {
-    final oldTagId = _tagId(tag);
-    if (oldTagId == null) return;
-    final reason = await _askReason(
-      title: 'Replace damaged label',
-      message:
-          'Choose an available label for the same plant. The old label will remain in history as replaced.',
-      actionLabel: 'Choose replacement',
-    );
-    if (reason == null || !mounted) return;
-
-    setState(() => _updatingTags.add(oldTagId));
-    try {
-      var available = await _qrService.getTags(status: 'available');
-      if (!mounted) return;
-      if (available.isEmpty) {
-        final generate = await showDialog<bool>(
-          context: context,
-          builder: (dialogContext) => AlertDialog(
-            title: const Text('No available labels'),
-            content: const Text(
-              'Generate one new QR label now and use it as the replacement?',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(dialogContext, false),
-                child: const Text('Cancel'),
-              ),
-              FilledButton.icon(
-                style: FilledButton.styleFrom(backgroundColor: AppColors.green),
-                onPressed: () => Navigator.pop(dialogContext, true),
-                icon: const Icon(Icons.qr_code_2_rounded),
-                label: const Text('Generate label'),
-              ),
-            ],
-          ),
-        );
-        if (generate != true || !mounted) return;
-        available = [await _qrService.createQrTag()];
-      }
-      if (!mounted) return;
-      final replacement = await _chooseReplacement(available);
-      if (replacement == null || !mounted) return;
-      final replacementId = _tagId(replacement);
-      if (replacementId == null) return;
-
-      await _qrService.replaceTag(
-        oldQrTagId: oldTagId,
-        replacementQrTagId: replacementId,
-        reason: reason,
-      );
-      if (!mounted) return;
-      await _loadTags();
-      if (!mounted) return;
-      final printNow = await showDialog<bool>(
-        context: context,
-        builder: (dialogContext) => AlertDialog(
-          title: const Text('Label replaced'),
-          content: Text(
-            'The plant now uses ${replacement['qr_code_string']}. Print the new label now?',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext, false),
-              child: const Text('Later'),
-            ),
-            FilledButton.icon(
-              style: FilledButton.styleFrom(backgroundColor: AppColors.green),
-              onPressed: () => Navigator.pop(dialogContext, true),
-              icon: const Icon(Icons.print_outlined),
-              label: const Text('Print label'),
-            ),
-          ],
-        ),
-      );
-      if (printNow == true && mounted) {
-        await _printService.printSingleTag(
-          qrCode: replacement['qr_code_string']?.toString() ?? '',
-        );
-      }
-    } catch (error) {
-      if (mounted) {
-        _message(
-          userFacingError(
-            error,
-            fallback: 'The damaged label could not be replaced. Try again.',
-          ),
-          error: true,
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _updatingTags.remove(oldTagId));
-    }
-  }
-
-  Future<Map<String, dynamic>?> _chooseReplacement(
-    List<Map<String, dynamic>> available,
-  ) async {
-    var selectedId = _tagId(available.first);
-    final chosenId = await showDialog<int>(
-      context: context,
-      builder: (dialogContext) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          scrollable: true,
-          title: const Text('Choose available label'),
-          content: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 450),
-            child: DropdownButtonFormField<int>(
-              initialValue: selectedId,
-              isExpanded: true,
-              decoration: const InputDecoration(
-                labelText: 'Replacement QR label',
-                prefixIcon: Icon(Icons.qr_code_2_rounded),
-                border: OutlineInputBorder(),
-              ),
-              items: available.map((candidate) {
-                final id = _tagId(candidate)!;
-                return DropdownMenuItem(
-                  value: id,
-                  child: Text(
-                    candidate['qr_code_string']?.toString() ?? 'QR #$id',
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                );
-              }).toList(),
-              onChanged: (value) => setDialogState(() => selectedId = value),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              child: const Text('Cancel'),
-            ),
-            FilledButton(
-              style: FilledButton.styleFrom(backgroundColor: AppColors.green),
-              onPressed: selectedId == null
-                  ? null
-                  : () => Navigator.pop(dialogContext, selectedId),
-              child: const Text('Use this label'),
-            ),
-          ],
-        ),
-      ),
-    );
-    if (chosenId == null) return null;
-    return available.firstWhere((candidate) => _tagId(candidate) == chosenId);
   }
 
   Future<void> _runTagAction(
@@ -498,7 +440,7 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
       _message(
         userFacingError(
           error,
-          fallback: 'The QR label could not be updated. Please try again.',
+          fallback: 'The QR could not be updated. Please try again.',
         ),
         error: true,
       );
@@ -590,7 +532,7 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
                   autofocus: true,
                   keyboardType: TextInputType.number,
                   decoration: const InputDecoration(
-                    labelText: 'Number of QR Tags',
+                    labelText: 'Number Of QR Tags',
                     prefixIcon: Icon(Icons.qr_code_2_rounded),
                     border: OutlineInputBorder(),
                     helperText: 'Minimum 1, maximum 500',
@@ -664,9 +606,9 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
               label: const Text('Generate QR'),
             ),
             OutlinedButton.icon(
-              onPressed: _tags.isEmpty ? null : _printAvailable,
+              onPressed: _canPrintBatch ? _printBatch : null,
               icon: const Icon(Icons.print_outlined),
-              label: const Text('Print available'),
+              label: Text(_printingBatch ? 'Preparing...' : 'Print Batch'),
             ),
             OutlinedButton.icon(
               onPressed: () => Navigator.pushNamed(
@@ -733,9 +675,9 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
         label: const Text('Generate'),
       ),
       OutlinedButton.icon(
-        onPressed: _tags.isEmpty ? null : _printAvailable,
+        onPressed: _canPrintBatch ? _printBatch : null,
         icon: const Icon(Icons.print_outlined),
-        label: const Text('Print'),
+        label: Text(_printingBatch ? 'Preparing...' : 'Print'),
       ),
       OutlinedButton.icon(
         onPressed: () => Navigator.pushNamed(
@@ -803,7 +745,7 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
     }
     if (_visibleTags.isEmpty) {
       return AppEmptyState(
-        title: 'No QR tags found',
+        title: 'No QR Tags Found',
         message: _hasActiveFilters
             ? 'Try another search or reset your filters.'
             : 'Generate QR tags to get started.',
@@ -811,32 +753,35 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
         action: _hasActiveFilters
             ? TextButton(
                 onPressed: _resetFilters,
-                child: const Text('Reset filters'),
+                child: const Text('Reset Filters'),
               )
             : null,
       );
     }
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Expanded(child: AppTablePanel(child: _tagTable())),
-        if (_hasMore) ...[
-          const SizedBox(height: AppSpacing.lg),
-          Center(
-            child: OutlinedButton.icon(
-              onPressed: _loadingMore ? null : () => _loadTags(more: true),
-              icon: _loadingMore
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.expand_more_rounded),
-              label: Text(_loadingMore ? 'Loading…' : 'Load more QR tags'),
+    return AppTablePanel(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _tagTable(),
+          if (_hasMore) ...[
+            const SizedBox(height: AppSpacing.lg),
+            Center(
+              child: OutlinedButton.icon(
+                onPressed: _loadingMore ? null : () => _loadTags(more: true),
+                icon: _loadingMore
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.expand_more_rounded),
+                label: Text(_loadingMore ? 'Loading…' : 'Load More QR Tags'),
+              ),
             ),
-          ),
+          ],
         ],
-      ],
+      ),
     );
   }
 
@@ -849,7 +794,7 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
       suffixIcon: _searchController.text.isEmpty
           ? null
           : IconButton(
-              tooltip: 'Clear search',
+              tooltip: 'Clear Search',
               onPressed: () {
                 _searchDebounce?.cancel();
                 _searchController.clear();
@@ -931,7 +876,7 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
         const Icon(Icons.tune_rounded, size: 15, color: AppColors.green),
         const SizedBox(width: 5),
         Text(
-          _statusFilters[_filter] ?? 'All tags',
+          _statusFilters[_filter] ?? 'All Tags',
           style: const TextStyle(
             fontSize: 11,
             fontWeight: FontWeight.w700,
@@ -968,7 +913,7 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   const Text(
-                    'QR tags',
+                    'QR Tags',
                     style: TextStyle(
                       fontSize: AppTypography.sectionTitle,
                       fontWeight: FontWeight.w800,
@@ -992,12 +937,12 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
               TextButton.icon(
                 onPressed: _openProblemReports,
                 icon: const Icon(Icons.report_problem_outlined),
-                label: const Text('QR problem reports'),
+                label: const Text('QR Problem Reports'),
               )
             else
               IconButton(
                 onPressed: _openProblemReports,
-                tooltip: 'QR problem reports',
+                tooltip: 'QR Problem Reports',
                 color: AppColors.green,
                 constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
                 icon: const Icon(Icons.report_problem_outlined),
@@ -1046,7 +991,7 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
           TextButton.icon(
             onPressed: _openProblemReports,
             icon: const Icon(Icons.report_problem_outlined),
-            label: const Text('QR problem reports'),
+            label: const Text('QR Problem Reports'),
           ),
           if (_hasActiveFilters)
             TextButton.icon(
@@ -1064,9 +1009,9 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
   Widget _tagTable() => FullWidthDataTable(
     columns: const [
       DataColumn(label: Text('QR CODE'), columnWidth: FlexColumnWidth(4)),
-      DataColumn(label: Text('ID'), columnWidth: FlexColumnWidth(1.2)),
-      DataColumn(label: Text('STATUS'), columnWidth: FlexColumnWidth(1.6)),
-      DataColumn(label: Text('ACTIONS'), columnWidth: FlexColumnWidth(3.2)),
+      DataColumn(label: Text('ID'), columnWidth: FlexColumnWidth(.7)),
+      DataColumn(label: Text('STATUS'), columnWidth: FlexColumnWidth(1.3)),
+      DataColumn(label: Text('ACTIONS'), columnWidth: FlexColumnWidth(4)),
     ],
     rows: _visibleTags.map((tag) {
       final code = tag['qr_code_string']?.toString() ?? '';
@@ -1084,15 +1029,27 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
                 Expanded(
                   child: Text(
                     code,
-                    style: const TextStyle(fontWeight: FontWeight.w700),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.green,
+                    ),
                   ),
                 ),
               ],
             ),
+            onTap: () => _showTagDetails(tag),
           ),
-          DataCell(Text('${tag['qr_tag_id']}')),
-          DataCell(_statusChip(status)),
-          DataCell(_tagActions(tag, code)),
+          DataCell(
+            Text('${tag['qr_tag_id']}'),
+            onTap: () => _showTagDetails(tag),
+          ),
+          DataCell(_statusChip(status), onTap: () => _showTagDetails(tag)),
+          DataCell(
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              child: _tagActions(tag, code),
+            ),
+          ),
         ],
       );
     }).toList(),
@@ -1102,48 +1059,127 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
     final code = tag['qr_code_string']?.toString() ?? '';
     final status = QrService.statusOf(tag);
     final plantName = tag['common_name']?.toString().trim();
-    return Padding(
-      padding: const EdgeInsets.all(AppSpacing.sm),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const CircleAvatar(
-                backgroundColor: AppColors.primaryContainer,
-                child: Icon(Icons.qr_code_2_rounded, color: AppColors.green),
-              ),
-              const SizedBox(width: AppSpacing.md),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      code,
-                      style: const TextStyle(fontWeight: FontWeight.w600),
-                    ),
-                    const SizedBox(height: AppSpacing.xs),
-                    Wrap(
-                      spacing: AppSpacing.sm,
-                      runSpacing: AppSpacing.xs,
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      children: [
-                        _statusChip(status),
-                        Text('ID: ${tag['qr_tag_id']}'),
-                        if (plantName != null && plantName.isNotEmpty)
-                          Text(plantName),
-                      ],
-                    ),
-                  ],
+    return InkWell(
+      onTap: () => _showTagDetails(tag),
+      borderRadius: AppRadii.large,
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.sm),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const CircleAvatar(
+                  backgroundColor: AppColors.primaryContainer,
+                  child: Icon(Icons.qr_code_2_rounded, color: AppColors.green),
+                ),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        code,
+                        style: const TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                      const SizedBox(height: AppSpacing.xs),
+                      Wrap(
+                        spacing: AppSpacing.sm,
+                        runSpacing: AppSpacing.xs,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: [
+                          _statusChip(status),
+                          Text('ID: ${tag['qr_tag_id']}'),
+                          if (plantName != null && plantName.isNotEmpty)
+                            Text(plantName),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            _tagActions(tag, code),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _reprintTag(Map<String, dynamic> tag, String code) async {
+    final tagId = _tagId(tag);
+    if (tagId == null || _updatingTags.contains(tagId)) return;
+    setState(() => _updatingTags.add(tagId));
+    try {
+      final printed = await _printService.printSingleTag(qrCode: code);
+      if (!mounted || !printed || QrService.statusOf(tag) != 'damaged') return;
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('Is the new QR ready?'),
+          content: const Text(
+            'Confirm that the QR printed correctly and is attached to the plant. '
+            'This will clear the damaged status and keep the same QR code.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('Keep Damaged'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: const Text('Confirm QR Ready'),
+            ),
+          ],
+        ),
+      );
+      if (confirmed != true || !mounted) return;
+      await _qrService.confirmReprinted(qrTagId: tagId);
+      if (!mounted) return;
+      _message('QR restored. Damaged status cleared.');
+      await _loadTags();
+    } catch (error) {
+      if (mounted) {
+        _message(
+          userFacingError(
+            error,
+            fallback: 'Could not complete the QR reprint. Try again.',
+          ),
+          error: true,
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _updatingTags.remove(tagId));
+    }
+  }
+
+  void _showTagDetails(Map<String, dynamic> tag) {
+    final code = tag['qr_code_string']?.toString() ?? '';
+    showQrDetails(
+      context,
+      code: code,
+      details: {
+        'QR ID': '${tag['qr_tag_id']}',
+        'Status':
+            _statusFilters[QrService.statusOf(tag)] ?? QrService.statusOf(tag),
+        if (tag['common_name'] != null) 'Plant': '${tag['common_name']}',
+        if (tag['created_at'] != null) 'Created': '${tag['created_at']}',
+      },
+      onOpenPlant: tag['plant_id'] == null
+          ? null
+          : () => Navigator.push(
+              context,
+              plantDetailsRoute(
+                builder: (_) => PlantDetailScreen(
+                  plantId: (tag['plant_id'] as num).toInt(),
+                  userId: widget.userId,
+                  username: widget.username,
+                  role: widget.role,
                 ),
               ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          _tagActions(tag, code),
-        ],
-      ),
+            ),
     );
   }
 
@@ -1152,11 +1188,8 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
     return QrTagActions(
       status: QrService.statusOf(tag),
       busy: tagId != null && _updatingTags.contains(tagId),
-      onPrint: code.isEmpty
-          ? null
-          : () => _printService.printSingleTag(qrCode: code),
+      onPrint: code.isEmpty ? null : () => _reprintTag(tag, code),
       onMarkDamaged: () => _markDamaged(tag),
-      onReplace: () => _replaceTag(tag),
       onRetire: () => _retireTag(tag),
     );
   }

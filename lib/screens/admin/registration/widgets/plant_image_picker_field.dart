@@ -101,13 +101,13 @@ class _ImagePreview extends StatelessWidget {
           child: Row(
             children: [
               _ImageActionButton(
-                tooltip: 'Change image',
+                tooltip: 'Change Image',
                 icon: Icons.edit_outlined,
                 onPressed: onPick,
               ),
               const SizedBox(width: AppSpacing.sm),
               _ImageActionButton(
-                tooltip: 'Remove image',
+                tooltip: 'Remove Image',
                 icon: Icons.delete_outline,
                 iconColor: AppColors.danger,
                 onPressed: onRemove,
@@ -166,7 +166,7 @@ class _EmptyImageState extends StatelessWidget {
               ),
         const SizedBox(height: AppSpacing.md),
         Text(
-          isPicking ? 'Opening gallery...' : 'Choose photo',
+          isPicking ? 'Opening gallery...' : 'Choose Photo',
           style: const TextStyle(
             color: AppColors.primary,
             fontSize: AppTypography.label,
@@ -175,7 +175,7 @@ class _EmptyImageState extends StatelessWidget {
         ),
         const SizedBox(height: AppSpacing.xs),
         const Text(
-          'PNG, JPG or JPEG',
+          'PNG, JPG Or JPEG',
           style: TextStyle(
             color: AppColors.textSecondary,
             fontSize: AppTypography.caption,

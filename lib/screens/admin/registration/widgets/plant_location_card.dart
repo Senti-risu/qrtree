@@ -103,7 +103,7 @@ class PlantLocationCard extends StatelessWidget {
           SizedBox(
             width: 150,
             child: RegistrationTextField(
-              label: 'Zip code',
+              label: 'Zip Code',
               controller: zipCodeController,
               readOnly: true,
             ),

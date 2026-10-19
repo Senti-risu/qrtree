@@ -43,6 +43,7 @@ dependencies:
   fl_chart: ^1.2.0
   pdf: ^3.13.0
   printing: ^5.15.0
+  file_saver: ^0.7.0
 
 
 dev_dependencies:
@@ -72,6 +73,12 @@ flutter:
     - assets/images/ecotag-campus-trees.png
 
   fonts:
+    - family: EcoTagDMSans
+      fonts:
+        - asset: assets/fonts/DMSans-Variable.ttf
+    - family: EcoTagManrope
+      fonts:
+        - asset: assets/fonts/Manrope-Variable.ttf
     - family: EcoTagRoboto
       fonts:
         - asset: assets/fonts/Roboto-Regular.ttf

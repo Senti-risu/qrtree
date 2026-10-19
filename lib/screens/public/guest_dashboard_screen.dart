@@ -112,7 +112,7 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: AppColors.danger),
             onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('End visit'),
+            child: const Text('End Visit'),
           ),
         ],
       ),
@@ -149,14 +149,14 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
               child: OutlinedButton.icon(
                 onPressed: _openAdminAccess,
                 icon: const Icon(Icons.admin_panel_settings_outlined, size: 19),
-                label: const Text('Admin sign in'),
+                label: const Text('Admin Sign In'),
               ),
             ),
           if (!mobile) ...[
             const SizedBox(width: 6),
             IconButton(
               onPressed: _confirmLeaveGuestView,
-              tooltip: 'Exit guest view',
+              tooltip: 'Exit Guest View',
               icon: const Icon(Icons.logout_rounded, color: AppColors.green),
             ),
             const SizedBox(width: 8),
@@ -202,7 +202,7 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
     }
     if (_error != null) {
       return AppErrorState(
-        title: 'Unable to open the guest dashboard',
+        title: 'Unable To Open The Guest Dashboard',
         message: _error!,
         onRetry: _loadSummary,
       );
@@ -266,7 +266,7 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
                     ),
                     const SizedBox(height: 4),
                     const Text(
-                      'Guest · View only',
+                      'Guest · View Only',
                       style: TextStyle(color: AppColors.textSecondary),
                     ),
                   ],
@@ -278,7 +278,7 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      'Your guest access',
+                      'Your Guest Access',
                       style: TextStyle(
                         color: AppColors.darkGreen,
                         fontSize: 18,
@@ -288,13 +288,13 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
                     const SizedBox(height: 14),
                     const _GuestAccessRow(
                       icon: Icons.qr_code_scanner_rounded,
-                      title: 'Scan and view',
+                      title: 'Scan And View',
                       body:
-                          'Scan an assigned EcoTag label to see its public plant profile.',
+                          'Scan an assigned EcoTag QR to see its public plant profile.',
                     ),
                     const _GuestAccessRow(
                       icon: Icons.visibility_outlined,
-                      title: 'Read-only access',
+                      title: 'Read-Only Access',
                       body:
                           'Guests cannot register, edit, inspect, archive, or manage plants.',
                     ),
@@ -312,7 +312,7 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
               OutlinedButton.icon(
                 onPressed: _openAdminAccess,
                 icon: const Icon(Icons.admin_panel_settings_outlined),
-                label: const Text('Admin or Inspection Team sign in'),
+                label: const Text('Admin Or Inspection Team Sign In'),
                 style: OutlinedButton.styleFrom(
                   minimumSize: const Size.fromHeight(52),
                 ),
@@ -321,7 +321,7 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
               FilledButton.icon(
                 onPressed: _confirmLeaveGuestView,
                 icon: const Icon(Icons.logout_rounded),
-                label: const Text('End guest visit'),
+                label: const Text('End Guest Visit'),
                 style: FilledButton.styleFrom(
                   minimumSize: const Size.fromHeight(52),
                   backgroundColor: AppColors.danger,
@@ -374,7 +374,7 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
                     const SizedBox(height: 16),
                     if (mobile) ...[
                       const Text(
-                        'To view a plant, scan the EcoTag label attached to it.',
+                        'To view a plant, scan the EcoTag QR attached to it.',
                         style: TextStyle(
                           color: AppColors.textSecondary,
                           height: 1.4,
@@ -384,7 +384,7 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
                       FilledButton.icon(
                         onPressed: _openScanner,
                         icon: const Icon(Icons.qr_code_scanner_rounded),
-                        label: const Text('Scan a plant label'),
+                        label: const Text('Scan A Plant QR'),
                         style: FilledButton.styleFrom(
                           minimumSize: const Size.fromHeight(50),
                         ),
@@ -393,7 +393,7 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
                       OutlinedButton.icon(
                         onPressed: _openAdminAccess,
                         icon: const Icon(Icons.admin_panel_settings_outlined),
-                        label: const Text('Admin or Inspection Team sign in'),
+                        label: const Text('Admin Or Inspection Team Sign In'),
                       ),
                   ],
                 );
@@ -460,7 +460,7 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
       _PublicStat(
         title: 'Recorded Dead',
         value: summary.deadPlants,
-        description: 'Historical monitoring status',
+        description: 'Historical Monitoring Status',
         icon: Icons.local_florist_outlined,
         color: AppColors.danger,
         background: AppColors.dangerContainer,
@@ -501,7 +501,7 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
         children: [
           const _SectionHeading(
             icon: Icons.monitor_heart_outlined,
-            title: 'Plant health overview',
+            title: 'Plant Health Overview',
           ),
           const SizedBox(height: 14),
           Text(

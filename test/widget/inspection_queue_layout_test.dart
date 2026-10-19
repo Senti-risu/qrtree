@@ -69,7 +69,12 @@ void main() {
         expect(combined.contains(filters.bottomRight), isTrue);
         expect(tester.takeException(), isNull);
         final action = find.text('View upcoming');
-        await tester.ensureVisible(action);
+        await tester.scrollUntilVisible(
+          action,
+          200,
+          scrollable: find.byType(Scrollable).first,
+        );
+        await tester.pumpAndSettle();
         await tester.tap(action);
         expect(next, isTrue);
         expect(tester.takeException(), isNull);
@@ -116,7 +121,7 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
     await (FontLoader(
       AppTheme.fontFamily,
-    )..addFont(rootBundle.load('assets/fonts/Roboto-Regular.ttf'))).load();
+    )..addFont(rootBundle.load('assets/fonts/DMSans-Variable.ttf'))).load();
     await (FontLoader(
       'MaterialIcons',
     )..addFont(rootBundle.load('fonts/MaterialIcons-Regular.otf'))).load();

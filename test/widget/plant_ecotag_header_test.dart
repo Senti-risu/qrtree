@@ -64,7 +64,7 @@ void main() {
             tester.getRect(find.byKey(const Key('existing-photo'))).top,
           ),
         );
-        await tester.tap(find.text('Copy code'));
+        await tester.tap(find.text('Copy Code'));
         await tester.pumpAndSettle();
         expect(copied, code);
         expect(find.text('EcoTag code copied.'), findsOneWidget);

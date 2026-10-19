@@ -81,7 +81,7 @@ void main() {
         ),
       );
       for (final title in [
-        'Inspection overview',
+        'Inspection Overview',
         'Recent Plants',
         'CSU Campuses',
         'Detailed Plant Report',

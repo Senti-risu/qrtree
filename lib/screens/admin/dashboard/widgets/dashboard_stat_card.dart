@@ -50,8 +50,8 @@ class DashboardStatCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Container(
-                      width: compact ? 30 : 42,
-                      height: compact ? 30 : 42,
+                      width: compact ? 30 : 34,
+                      height: compact ? 30 : 34,
                       decoration: BoxDecoration(
                         color: iconBgColor,
                         borderRadius: AppRadii.medium,
@@ -59,7 +59,7 @@ class DashboardStatCard extends StatelessWidget {
                       child: Icon(
                         icon,
                         color: iconColor,
-                        size: compact ? 19 : 23,
+                        size: compact ? 17 : 19,
                       ),
                     ),
                     const SizedBox(width: AppSpacing.sm),
@@ -88,7 +88,7 @@ class DashboardStatCard extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
                           fontSize: AppTypography.label,
-                          color: AppColors.darkGreen,
+                          color: AppColors.textPrimary,
                           fontWeight: FontWeight.w700,
                         ),
                       ),

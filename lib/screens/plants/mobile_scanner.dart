@@ -86,7 +86,7 @@ class _ScanScreenState extends State<ScanScreen> with WidgetsBindingObserver {
             right: 0,
             child: Center(
               child: Text(
-                'Align the QR code inside the box',
+                'Align The QR Code Inside The Box',
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 16,

@@ -81,10 +81,10 @@ class GuestPlantProfile {
   final String? plantingCampusName;
 
   String get plantingLocationLabel => plantingLocationType == 'outside'
-      ? 'Outside campus'
+      ? 'Outside Campus'
       : plantingLocationType == 'inside'
       ? plantingCampusName ?? 'Campus not available'
-      : 'Not recorded yet';
+      : 'Not Recorded Yet';
   final String? townName;
   final String? barangayName;
   final String? growthStage;
@@ -97,13 +97,13 @@ class GuestPlantProfile {
     }
     return GuestPlantProfile(
       plantId: plantId,
-      qrCode: _text(json['qr_code'], fallback: 'Not provided'),
+      qrCode: _text(json['qr_code'], fallback: 'Not Provided'),
       commonName: _text(json['common_name'], fallback: 'Unnamed plant'),
       scientificName: _text(
         json['scientific_name'],
         fallback: 'Scientific name not provided',
       ),
-      plantType: _text(json['plant_type'], fallback: 'Not provided'),
+      plantType: _text(json['plant_type'], fallback: 'Not Provided'),
       variety: _optionalText(json['variety']),
       photoUrl: _optionalText(json['photo_url']),
       datePlanted: _optionalText(json['date_planted']),

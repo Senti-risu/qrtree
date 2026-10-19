@@ -48,7 +48,7 @@ class _MonitoringOutcomesCardState extends State<MonitoringOutcomesCard> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const Text(
-            'Monitoring outcomes',
+            'Monitoring Outcomes',
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const Text(
@@ -81,7 +81,7 @@ class _MonitoringOutcomesCardState extends State<MonitoringOutcomesCard> {
                   Text('As of ${data['generated_on']} (Philippine time)'),
                   const SizedBox(height: 12),
                   const Text(
-                    'Survival by planting month',
+                    'Survival By Planting Month',
                     style: TextStyle(fontWeight: FontWeight.bold),
                   ),
                   const Text(
@@ -89,7 +89,7 @@ class _MonitoringOutcomesCardState extends State<MonitoringOutcomesCard> {
                   ),
                   _table(
                     [
-                      'Planting month',
+                      'Planting Month',
                       'Registered',
                       'Alive',
                       'Unknown',
@@ -115,7 +115,7 @@ class _MonitoringOutcomesCardState extends State<MonitoringOutcomesCard> {
                     'Coverage = active non-Dead plants inspected in the last 30 calendar days ÷ active non-Dead plants. This measures coverage, not on-time schedule compliance.',
                   ),
                   _table(
-                    ['College', 'Eligible plants', 'Inspected', 'Coverage'],
+                    ['College', 'Eligible Plants', 'Inspected', 'Coverage'],
                     [
                       for (final c in data['colleges'] as List)
                         [
@@ -128,7 +128,7 @@ class _MonitoringOutcomesCardState extends State<MonitoringOutcomesCard> {
                   ),
                   const SizedBox(height: 16),
                   const Text(
-                    'Health observations over time',
+                    'Health Observations Over Time',
                     style: TextStyle(fontWeight: FontWeight.bold),
                   ),
                   const Text(

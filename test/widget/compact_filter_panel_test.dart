@@ -69,7 +69,7 @@ void main() {
                               [
                                     'All',
                                     'Healthy',
-                                    'Needs attention',
+                                    'Needs Attention',
                                     'Dead',
                                     'Unknown',
                                   ]
@@ -99,8 +99,8 @@ void main() {
                 lessThan(tester.getBottomLeft(find.byType(TextField)).dy),
               );
             }
-            await tester.tap(find.text('Needs attention'));
-            expect(status, 'Needs attention');
+            await tester.tap(find.text('Needs Attention'));
+            expect(status, 'Needs Attention');
             await tester.tap(find.text('Reset'));
             expect(reset, isTrue);
             if (report) {

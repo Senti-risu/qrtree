@@ -3,6 +3,7 @@ import '../../theme/app_typography.dart';
 
 import '../../theme/app_colors.dart';
 import 'creatable_lookup_input.dart';
+import '../../utils/word_capitalization.dart';
 
 class AppSearchableDropdown extends StatelessWidget {
   final String label;
@@ -38,7 +39,7 @@ class AppSearchableDropdown extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          isRequired ? '$label *' : label,
+          isRequired ? '${capitalizeWords(label)} *' : capitalizeWords(label),
           style: const TextStyle(
             color: AppColors.darkGreen,
             fontSize: AppTypography.label,

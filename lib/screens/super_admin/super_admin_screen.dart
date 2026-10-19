@@ -195,7 +195,7 @@ class _ErrorCard extends StatelessWidget {
           const Icon(Icons.error_outline, color: Colors.red, size: 44),
           const SizedBox(height: 10),
           const Text(
-            'Unable to load account overview',
+            'Unable To Load Account Overview',
             style: TextStyle(fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 6),

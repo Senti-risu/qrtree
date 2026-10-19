@@ -5,11 +5,7 @@ import 'package:flutter_application_1/widgets/full_width_data_table.dart';
 import 'package:flutter_application_1/widgets/qr_tag_actions.dart';
 
 void main() {
-  const allowed = {
-    'available': 'Retire label',
-    'assigned': 'Mark damaged',
-    'damaged': 'Replace label',
-  };
+  const allowed = {'available': 'Retire QR', 'assigned': 'Mark Damaged'};
   for (final status in [
     'available',
     'assigned',
@@ -30,15 +26,16 @@ void main() {
             body: QrTagActions(
               status: status,
               onPrint: () => prints++,
-              onRetire: () => changes.add('Retire label'),
-              onMarkDamaged: () => changes.add('Mark damaged'),
-              onReplace: () => changes.add('Replace label'),
+              onRetire: () => changes.add('Retire QR'),
+              onMarkDamaged: () => changes.add('Mark Damaged'),
             ),
           ),
         ),
       );
       expect(find.byType(PopupMenuButton<String>), findsNothing);
-      await tester.tap(find.text('Print'));
+      await tester.tap(
+        find.text(status == 'damaged' ? 'Reprint QR' : 'Print QR'),
+      );
       expect(prints, 1);
       for (final label in allowed.values) {
         expect(
@@ -50,7 +47,11 @@ void main() {
         await tester.tap(find.text(allowed[status]!));
         expect(changes, [allowed[status]]);
       } else {
-        expect(find.byIcon(Icons.lock_outline_rounded), findsOneWidget);
+        expect(
+          find.byIcon(Icons.lock_outline_rounded),
+          status == 'damaged' ? findsNothing : findsOneWidget,
+        );
+        expect(find.text('Replace label'), findsNothing);
         expect(changes, isEmpty);
       }
     });
@@ -71,12 +72,13 @@ void main() {
               onPrint: () => presses++,
               onRetire: () => presses++,
               onMarkDamaged: () => presses++,
-              onReplace: () => presses++,
             ),
           ),
         ),
       );
-      await tester.tap(find.text('Print'));
+      await tester.tap(
+        find.text(status == 'damaged' ? 'Reprint QR' : 'Print QR'),
+      );
       await tester.tap(find.text(allowed[status]!));
       expect(presses, 0);
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
@@ -92,13 +94,12 @@ void main() {
             onPrint: null,
             onRetire: () {},
             onMarkDamaged: () {},
-            onReplace: () {},
           ),
         ),
       ),
     );
     final print = tester.widget<OutlinedButton>(
-      find.widgetWithText(OutlinedButton, 'Print'),
+      find.widgetWithText(OutlinedButton, 'Print QR'),
     );
     expect(print.onPressed, isNull);
   });
@@ -117,7 +118,6 @@ void main() {
           onPrint: () {},
           onRetire: () {},
           onMarkDamaged: () {},
-          onReplace: () {},
         );
         await tester.pumpWidget(
           MaterialApp(

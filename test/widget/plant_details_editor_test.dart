@@ -7,7 +7,12 @@ import 'package:flutter_application_1/theme/app_theme.dart';
 import 'package:flutter_application_1/widgets/plant_details_editor.dart';
 
 class FakeEditorRepository implements PlantDetailsEditorRepository {
-  FakeEditorRepository({this.health = 'alive', this.archived = false});
+  FakeEditorRepository({
+    this.health = 'alive',
+    this.archived = false,
+    this.scientificName = 'Theobroma cacao',
+  });
+  final String scientificName;
   final String health;
   final bool archived;
   bool failSave = false;
@@ -35,7 +40,7 @@ class FakeEditorRepository implements PlantDetailsEditorRepository {
         'classification_id': 1,
         'plant_type': 'tree',
         'common_name': 'Cacao',
-        'scientific_name': 'Theobroma cacao',
+        'scientific_name': scientificName,
       },
       {
         'classification_id': 2,
@@ -118,6 +123,29 @@ Finder input(String label) => find.byWidgetPredicate(
 );
 
 void main() {
+  testWidgets('missing scientific name can be entered and saved', (
+    tester,
+  ) async {
+    final repo = FakeEditorRepository(scientificName: '');
+    await openEditor(tester, repo);
+    final field = input('Scientific Name');
+    await tester.ensureVisible(field);
+    expect(tester.widget<TextField>(field).readOnly, isFalse);
+    await tester.enterText(field, 'Theobroma cacao');
+    await tester.tap(find.text('Save Changes'));
+    await tester.pumpAndSettle();
+    expect(repo.saved?.scientificName, 'Theobroma cacao');
+  });
+
+  testWidgets('saved scientific name fills automatically and stays read only', (
+    tester,
+  ) async {
+    await openEditor(tester, FakeEditorRepository());
+    final field = input('Scientific Name');
+    expect(tester.widget<TextField>(field).controller?.text, 'Theobroma cacao');
+    expect(tester.widget<TextField>(field).readOnly, isTrue);
+  });
+
   for (final width in [320.0, 600.0, 1080.0]) {
     for (final scale in [1.0, 2.0]) {
       testWidgets('editor fits $width / $scale and saves more than location', (
@@ -132,11 +160,11 @@ void main() {
           scale: scale,
           result: (v) => result = v,
         );
-        expect(find.text('Update plant details'), findsOneWidget);
+        expect(find.text('Update Plant Details'), findsOneWidget);
         expect(find.text('Native'), findsOneWidget);
-        await tester.ensureVisible(input('Variety (optional)'));
-        await tester.enterText(input('Variety (optional)'), 'Improved variety');
-        await tester.tap(find.text('Save changes'));
+        await tester.ensureVisible(input('Variety (Optional)'));
+        await tester.enterText(input('Variety (Optional)'), 'Improved variety');
+        await tester.tap(find.text('Save Changes'));
         await tester.pumpAndSettle();
         expect(repo.saved?.variety, 'Improved variety');
         expect(repo.saved?.treePlanter, 'Russel');
@@ -151,14 +179,14 @@ void main() {
   testWidgets('failed save preserves entries and allows retry', (tester) async {
     final repo = FakeEditorRepository()..failSave = true;
     await openEditor(tester, repo);
-    await tester.ensureVisible(input('Variety (optional)'));
-    await tester.enterText(input('Variety (optional)'), 'Retained value');
-    await tester.tap(find.text('Save changes'));
+    await tester.ensureVisible(input('Variety (Optional)'));
+    await tester.enterText(input('Variety (Optional)'), 'Retained value');
+    await tester.tap(find.text('Save Changes'));
     await tester.pumpAndSettle();
     expect(find.byType(PlantDetailsEditor), findsOneWidget);
     expect(find.text('Retained value'), findsOneWidget);
     repo.failSave = false;
-    await tester.tap(find.text('Save changes'));
+    await tester.tap(find.text('Save Changes'));
     await tester.pumpAndSettle();
     expect(repo.saves, 2);
     expect(repo.saved?.variety, 'Retained value');
@@ -171,7 +199,7 @@ void main() {
       final common = find.byWidgetPredicate(
         (widget) =>
             widget is DropdownButtonFormField<int> &&
-            widget.key == const ValueKey('Common name-1'),
+            widget.key == const ValueKey('Common Name-1'),
       );
       await tester.ensureVisible(common);
       await tester.tap(common);
@@ -179,7 +207,7 @@ void main() {
       await tester.tap(find.text('Mango').last);
       await tester.pumpAndSettle();
       expect(find.text('Mangifera indica'), findsOneWidget);
-      await tester.tap(find.text('Save changes'));
+      await tester.tap(find.text('Save Changes'));
       await tester.pumpAndSettle();
       expect(repo.saved?.classificationId, 2);
     },
@@ -189,23 +217,23 @@ void main() {
   ) async {
     final repo = FakeEditorRepository();
     await openEditor(tester, repo, width: 600);
-    final town = find.byKey(const ValueKey('Planting town-1'));
+    final town = find.byKey(const ValueKey('Planting Town-1'));
     await tester.ensureVisible(town);
     await tester.tap(town);
     await tester.pumpAndSettle();
     await tester.tap(find.text('Tuguegarao').last);
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Save changes'));
+    await tester.tap(find.text('Save Changes'));
     await tester.pumpAndSettle();
     expect(repo.saves, 0);
     expect(find.text('Select planting barangay.'), findsOneWidget);
-    final barangay = find.byKey(const ValueKey('Planting barangay-null'));
+    final barangay = find.byKey(const ValueKey('Planting Barangay-null'));
     await tester.ensureVisible(barangay);
     await tester.tap(barangay);
     await tester.pumpAndSettle();
     await tester.tap(find.text('Centro 1').last);
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Save changes'));
+    await tester.tap(find.text('Save Changes'));
     await tester.pumpAndSettle();
     expect(repo.saved?.townId, 2);
     expect(repo.saved?.barangayId, 2);
@@ -214,12 +242,12 @@ void main() {
     tester,
   ) async {
     await openEditor(tester, FakeEditorRepository());
-    await tester.ensureVisible(input('Variety (optional)'));
-    await tester.enterText(input('Variety (optional)'), 'Keep me');
+    await tester.ensureVisible(input('Variety (Optional)'));
+    await tester.enterText(input('Variety (Optional)'), 'Keep me');
     await tester.tap(find.text('Cancel'));
     await tester.pumpAndSettle();
     expect(find.text('Discard changes?'), findsOneWidget);
-    await tester.tap(find.text('Keep editing'));
+    await tester.tap(find.text('Keep Editing'));
     await tester.pumpAndSettle();
     expect(find.text('Keep me'), findsOneWidget);
     await tester.tap(find.text('Cancel'));
@@ -239,7 +267,7 @@ void main() {
         expect(
           tester
               .widget<FilledButton>(
-                find.widgetWithText(FilledButton, 'Save changes'),
+                find.widgetWithText(FilledButton, 'Save Changes'),
               )
               .onPressed,
           isNull,

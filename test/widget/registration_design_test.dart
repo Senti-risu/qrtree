@@ -35,10 +35,7 @@ void main() {
             final saveRect = tester.getRect(save);
             expect(headerRect.contains(saveRect.topLeft), isTrue);
             expect(headerRect.contains(saveRect.bottomRight), isTrue);
-            expect(
-              find.text('Drafts stay on this device'),
-              findsNothing,
-            );
+            expect(find.text('Drafts stay on this device'), findsNothing);
             for (final note in [
               'Fields marked * are required. Select an option from each list.',
               'Optional. Add a clear photo to help your team identify this plant.',
@@ -58,7 +55,7 @@ void main() {
     await fixture.open(tester, fixture.MemoryDrafts(), width: 1600);
     final plant = tester.getRect(find.text('Plant Classification'));
     final location = tester.getRect(find.text('Location'));
-    final photo = tester.getRect(find.text('Plant photo'));
+    final photo = tester.getRect(find.text('Plant Photo'));
     expect(plant.top, closeTo(location.top, 1));
     expect(photo.left, closeTo(location.left, 1));
     expect(photo.top, greaterThan(location.top));

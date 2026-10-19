@@ -19,7 +19,7 @@ Future<bool> confirmDeadPlant(BuildContext context) async =>
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Keep editing'),
+            child: const Text('Keep Editing'),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
@@ -51,7 +51,7 @@ class DeadPlantLockNotice extends StatelessWidget {
             SizedBox(width: 8),
             Expanded(
               child: Text(
-                'Dead plant — record locked',
+                'Dead Plant — Record Locked',
                 style: TextStyle(fontWeight: FontWeight.w700),
               ),
             ),
@@ -124,7 +124,7 @@ class _ReopenDeadPlantDialogState extends State<ReopenDeadPlantDialog> {
     canPop: !_saving,
     child: AlertDialog(
       scrollable: true,
-      title: const Text('Reopen dead plant record'),
+      title: const Text('Reopen Dead Plant Record'),
       content: SizedBox(
         width: 420,
         child: Form(
@@ -141,7 +141,7 @@ class _ReopenDeadPlantDialogState extends State<ReopenDeadPlantDialog> {
               DropdownButtonFormField<int>(
                 isExpanded: true,
                 decoration: const InputDecoration(
-                  labelText: 'Correct health status',
+                  labelText: 'Correct Health Status',
                 ),
                 items: widget.statuses
                     .where(

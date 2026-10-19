@@ -167,7 +167,7 @@ class _InspectionHistoryScreenState extends State<InspectionHistoryScreen> {
       showDragHandle: true,
       builder: (sheetContext) => StatefulBuilder(
         builder: (context, setSheetState) => AppFilterSheet(
-          title: 'Filter inspections',
+          title: 'Filter Inspections',
           applyLabel:
               'Apply · ${_matchingInspections(draftHealth, draftGrowth).length} results',
           onReset: () => setSheetState(() {
@@ -180,16 +180,16 @@ class _InspectionHistoryScreenState extends State<InspectionHistoryScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _sheetFilterChoices(
-                label: 'Health status',
-                allLabel: 'All health',
+                label: 'Health Status',
+                allLabel: 'All Health',
                 value: draftHealth,
                 options: healthOptions,
                 onChanged: (value) => setSheetState(() => draftHealth = value),
               ),
               const SizedBox(height: AppSpacing.lg),
               _sheetFilterChoices(
-                label: 'Growth stage',
-                allLabel: 'All stages',
+                label: 'Growth Stage',
+                allLabel: 'All Stages',
                 value: draftGrowth,
                 options: growthOptions,
                 onChanged: (value) => setSheetState(() => draftGrowth = value),
@@ -406,7 +406,7 @@ class _InspectionHistoryScreenState extends State<InspectionHistoryScreen> {
     if (_queueError != null) {
       return AppCard(
         child: AppErrorState(
-          title: 'Unable to load the inspection queue',
+          title: 'Unable To Load The Inspection Queue',
           message: userFacingError(
             _queueError!,
             fallback:
@@ -522,13 +522,13 @@ class _InspectionHistoryScreenState extends State<InspectionHistoryScreen> {
                   children: [
                     _scheduleDate(
                       icon: Icons.event_rounded,
-                      label: 'Next due',
-                      value: due == null ? 'Not scheduled' : _date(due),
+                      label: 'Next Due',
+                      value: due == null ? 'Not Scheduled' : _date(due),
                     ),
                     _scheduleDate(
                       icon: Icons.fact_check_outlined,
-                      label: 'Last inspected',
-                      value: last == null ? 'Not inspected' : _date(last),
+                      label: 'Last Inspected',
+                      value: last == null ? 'Not Inspected' : _date(last),
                     ),
                   ],
                 ),
@@ -545,7 +545,7 @@ class _InspectionHistoryScreenState extends State<InspectionHistoryScreen> {
                       ? null
                       : () => _openQueuePlant(plantId),
                   icon: const Icon(Icons.visibility_outlined, size: 18),
-                  label: const Text('View plant'),
+                  label: const Text('View Plant'),
                 ),
                 if (widget.role == 'inspection_team' &&
                     !PlantRecordLock.isDead(item))
@@ -650,7 +650,7 @@ class _InspectionHistoryScreenState extends State<InspectionHistoryScreen> {
         AppColors.dangerContainer,
       ),
       'due_today' => (
-        'Due today',
+        'Due Today',
         Icons.today_rounded,
         AppColors.warning,
         AppColors.warningContainer,
@@ -668,7 +668,7 @@ class _InspectionHistoryScreenState extends State<InspectionHistoryScreen> {
         AppColors.infoContainer,
       ),
       _ => (
-        'Not scheduled',
+        'Not Scheduled',
         Icons.event_busy_outlined,
         AppColors.textSecondary,
         AppColors.surfaceDisabled,
@@ -792,7 +792,7 @@ class _InspectionHistoryScreenState extends State<InspectionHistoryScreen> {
     if (_error != null) {
       return AppCard(
         child: AppErrorState(
-          title: 'Unable to load inspection history',
+          title: 'Unable To Load Inspection History',
           message: userFacingError(
             _error!,
             fallback:
@@ -817,7 +817,7 @@ class _InspectionHistoryScreenState extends State<InspectionHistoryScreen> {
               ),
               SizedBox(height: AppSpacing.md),
               Text(
-                'No inspections recorded yet',
+                'No Inspections Recorded Yet',
                 style: TextStyle(
                   fontSize: AppTypography.sectionTitle,
                   fontWeight: FontWeight.w700,
@@ -915,7 +915,7 @@ class _InspectionHistoryScreenState extends State<InspectionHistoryScreen> {
                 const SizedBox(width: 10),
                 _filterDropdown(
                   label: 'Health',
-                  allLabel: 'All health statuses',
+                  allLabel: 'All Health Statuses',
                   value: _healthFilter,
                   options: healthOptions,
                   onChanged: (value) => setState(() => _healthFilter = value),
@@ -923,7 +923,7 @@ class _InspectionHistoryScreenState extends State<InspectionHistoryScreen> {
                 const SizedBox(width: 10),
                 _filterDropdown(
                   label: 'Growth',
-                  allLabel: 'All growth stages',
+                  allLabel: 'All Growth Stages',
                   value: _growthFilter,
                   options: growthOptions,
                   onChanged: (value) => setState(() => _growthFilter = value),
@@ -960,7 +960,7 @@ class _InspectionHistoryScreenState extends State<InspectionHistoryScreen> {
       suffixIcon: _searchController.text.isEmpty
           ? null
           : IconButton(
-              tooltip: 'Clear search',
+              tooltip: 'Clear Search',
               onPressed: () {
                 _searchController.clear();
                 setState(() {});
@@ -1164,7 +1164,7 @@ class _InspectionHistoryScreenState extends State<InspectionHistoryScreen> {
             ),
             const SizedBox(height: 10),
             const Text(
-              'No inspections match your filters',
+              'No Inspections Match Your Filters',
               style: TextStyle(
                 fontSize: AppTypography.sectionTitle,
                 fontWeight: FontWeight.w700,
@@ -1180,7 +1180,7 @@ class _InspectionHistoryScreenState extends State<InspectionHistoryScreen> {
             OutlinedButton.icon(
               onPressed: _resetFilters,
               icon: const Icon(Icons.filter_alt_off_outlined),
-              label: const Text('Reset filters'),
+              label: const Text('Reset Filters'),
             ),
           ],
         ),

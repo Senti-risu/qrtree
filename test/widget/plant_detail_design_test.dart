@@ -22,7 +22,7 @@ Widget content(VoidCallback onInspect) => Column(
       first: const PlantDetailFields(
         key: Key('status'),
         title: 'Status',
-        rows: {'Health status': 'Healthy', 'Growth stage': 'Mature'},
+        rows: {'Health Status': 'Healthy', 'Growth Stage': 'Mature'},
       ),
       second: PlantDetailFields(
         key: const Key('schedule'),
@@ -37,26 +37,26 @@ Widget content(VoidCallback onInspect) => Column(
           child: Chip(label: Text('Upcoming')),
         ),
         rows: const {
-          'Last inspected': 'Not inspected',
-          'Next inspection': 'Oct 22, 2026',
-          'Schedule repeats': 'Every 7 days',
+          'Last Inspected': 'Not Inspected',
+          'Next Inspection': 'Oct 22, 2026',
+          'Schedule Repeats': 'Every 7 Days',
         },
       ),
     ),
     const PlantDetailSectionPair(
       first: PlantDetailFields(
         key: Key('managed'),
-        title: 'Managed by',
+        title: 'Managed By',
         rows: {
-          'Managing campus': 'CSU Lasam',
-          'Managing college': 'College of Information and Computing Sciences',
+          'Managing Campus': 'CSU Lasam',
+          'Managing College': 'College of Information and Computing Sciences',
         },
       ),
       second: PlantDetailFields(
         key: Key('location'),
-        title: 'Planting location',
+        title: 'Planting Location',
         rows: {
-          'Campus / outside': 'Outside campus',
+          'Campus / outside': 'Outside Campus',
           'Barangay': 'Centro 2',
           'Town': 'Lasam',
         },
@@ -77,7 +77,7 @@ Widget content(VoidCallback onInspect) => Column(
         OutlinedButton.icon(
           onPressed: () {},
           icon: const Icon(Icons.warning_amber),
-          label: const Text('Report QR problem'),
+          label: const Text('Report QR Problem'),
         ),
         OutlinedButton.icon(
           onPressed: () {},

@@ -75,14 +75,14 @@ class PlantSummaryCard extends StatelessWidget {
               _detail(
                 context,
                 Icons.location_on_outlined,
-                'Planted at',
+                'Planted At',
                 plantedAt,
               ),
-              _detail(context, Icons.school_outlined, 'Managed by', managedBy),
+              _detail(context, Icons.school_outlined, 'Managed By', managedBy),
               _detail(
                 context,
                 Icons.fact_check_outlined,
-                'Last inspected',
+                'Last Inspected',
                 lastInspected,
               ),
             ],

@@ -62,9 +62,14 @@ void main() {
       theme.textTheme.labelSmall,
     ];
 
-    for (final style in styles) {
+    for (final (index, style) in styles.indexed) {
       expect(style, isNotNull);
-      expect(style!.fontFamily, AppTheme.fontFamily);
+      expect(
+        style!.fontFamily,
+        index >= 3 && index <= 6
+            ? AppTheme.headingFontFamily
+            : AppTheme.fontFamily,
+      );
       expect(style.letterSpacing, 0);
       expect(style.wordSpacing, 0);
       expect(
@@ -130,9 +135,9 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Reports'), findsOneWidget);
-    await tester.scrollUntilVisible(find.text('Sign out'), 120);
+    await tester.scrollUntilVisible(find.text('Sign Out'), 120);
     await tester.pumpAndSettle();
-    expect(find.text('Sign out'), findsOneWidget);
+    expect(find.text('Sign Out'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
@@ -238,7 +243,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('My Profile'), findsOneWidget);
-    expect(find.text('Sign out'), findsOneWidget);
+    expect(find.text('Sign Out'), findsOneWidget);
     expect(find.text('Register Plant'), findsNothing);
     expect(find.text('QR Management'), findsNothing);
     expect(find.text('User Management'), findsNothing);
@@ -319,7 +324,7 @@ void main() {
       );
 
       expect(
-        find.byTooltip('Scan QR code'),
+        find.byTooltip('Scan QR Code'),
         findsOneWidget,
         reason: account.role,
       );

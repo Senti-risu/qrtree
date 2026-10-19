@@ -36,7 +36,7 @@ void main() {
                           title: [
                             'Total Plants',
                             'Healthy Plants',
-                            'Needs attention',
+                            'Needs Attention',
                             'Dead Plants',
                           ][i],
                           value: '$i',

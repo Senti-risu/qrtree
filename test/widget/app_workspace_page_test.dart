@@ -10,6 +10,9 @@ import 'package:flutter_application_1/widgets/app_page_header.dart';
 import 'package:flutter_application_1/widgets/app_workspace_page.dart';
 import 'package:flutter_application_1/widgets/compact_filter_panel.dart';
 import 'package:flutter_application_1/widgets/full_width_data_table.dart';
+import 'package:flutter_application_1/widgets/app_shell.dart';
+import 'package:flutter_application_1/widgets/app_sidebar.dart';
+import 'package:flutter_application_1/widgets/app_top_navbar.dart';
 
 const pages = {
   'Dashboard': <String>[],
@@ -22,6 +25,70 @@ const pages = {
 };
 
 void main() {
+  testWidgets(
+    'main content scrolls through header and results with navigation fixed',
+    (tester) async {
+      tester.view.physicalSize = const Size(1440, 900);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.light,
+          home: AppShell(
+            activeRoute: '/qr-management',
+            mobileTitle: 'QR Management',
+            userId: 1,
+            username: 'Admin',
+            role: 'college_admin',
+            child: AppWorkspacePage(
+              header: const SizedBox(
+                key: Key('scrolling-heading'),
+                height: 140,
+                child: Text('QR Management'),
+              ),
+              tools: const SizedBox(
+                height: 120,
+                child: Text('Search And Filters'),
+              ),
+              body: ListView.builder(
+                key: const Key('main-results'),
+                itemCount: 40,
+                itemExtent: 70,
+                itemBuilder: (_, index) => Text('QR Item $index'),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('scrolling-heading')), findsOneWidget);
+      final navbarRect = tester.getRect(find.byType(AppTopNavbar));
+      final sidebarRect = tester.getRect(find.byType(AppSidebar));
+      await tester.drag(
+        find.byKey(const Key('main-results')),
+        const Offset(0, -500),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const Key('scrolling-heading')).hitTestable(),
+        findsNothing,
+      );
+      await tester.scrollUntilVisible(
+        find.text('QR Item 39'),
+        500,
+        scrollable: find.descendant(
+          of: find.byKey(const Key('main-results')),
+          matching: find.byType(Scrollable),
+        ),
+      );
+      expect(find.text('QR Item 39').hitTestable(), findsOneWidget);
+      expect(tester.getRect(find.byType(AppTopNavbar)), navbarRect);
+      expect(tester.getRect(find.byType(AppSidebar)), sidebarRect);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
   testWidgets('render shared QR and account workspace previews', (
     tester,
   ) async {
@@ -31,7 +98,10 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
     await (FontLoader(
       AppTheme.fontFamily,
-    )..addFont(rootBundle.load('assets/fonts/Roboto-Regular.ttf'))).load();
+    )..addFont(rootBundle.load('assets/fonts/DMSans-Variable.ttf'))).load();
+    await (FontLoader(
+      AppTheme.headingFontFamily,
+    )..addFont(rootBundle.load('assets/fonts/Manrope-Variable.ttf'))).load();
     await (FontLoader(
       'MaterialIcons',
     )..addFont(rootBundle.load('fonts/MaterialIcons-Regular.otf'))).load();
@@ -75,7 +145,7 @@ void main() {
                       controls: [
                         OutlinedButton(
                           onPressed: () {},
-                          child: Text(qr ? 'All statuses' : 'Filters'),
+                          child: Text(qr ? 'All Statuses' : 'Filters'),
                         ),
                       ],
                       choices: const [],

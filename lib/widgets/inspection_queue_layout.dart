@@ -28,8 +28,8 @@ class InspectionQueueFilters extends StatelessWidget {
   final String selected;
   final ValueChanged<String> onSelected;
   static const filters = {
-    'action': 'Needs action',
-    'due_today': 'Due today',
+    'action': 'Needs Action',
+    'due_today': 'Due Today',
     'overdue': 'Overdue',
     'upcoming': 'Upcoming',
     'completed': 'Completed',
@@ -56,7 +56,7 @@ class InspectionQueueFilters extends StatelessWidget {
             SizedBox(width: 8),
             Expanded(
               child: Text(
-                'Inspection queue',
+                'Inspection Queue',
                 style: TextStyle(
                   fontSize: AppTypography.sectionTitle,
                   fontWeight: FontWeight.w700,

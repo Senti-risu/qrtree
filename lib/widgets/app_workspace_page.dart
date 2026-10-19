@@ -6,7 +6,7 @@ import 'app_card.dart';
 import 'app_surface_group.dart';
 
 /// Standard header -> tools -> results layout for staff workspace pages.
-/// Results keep their own scrolling; short windows can scroll the tools away.
+/// Header, filters and results share coordinated scrolling at every window size.
 class AppWorkspacePage extends StatelessWidget {
   const AppWorkspacePage({
     super.key,
@@ -32,26 +32,16 @@ class AppWorkspacePage extends StatelessWidget {
           if (tools != null) ...[tools!, const SizedBox(height: AppSpacing.lg)],
         ],
       ];
-      final short =
-          constraints.maxHeight < 440 ||
-          MediaQuery.textScalerOf(context).scale(1) >= 1.4;
-      if (short) {
-        return SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              ...sections,
-              SizedBox(height: 400, child: body),
-            ],
+      return NestedScrollView(
+        headerSliverBuilder: (context, innerBoxIsScrolled) => [
+          SliverToBoxAdapter(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: sections,
+            ),
           ),
-        );
-      }
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          ...sections,
-          Expanded(child: body),
         ],
+        body: body,
       );
     },
   );
@@ -69,17 +59,43 @@ class AppWorkspaceHeader extends StatelessWidget {
   Widget build(BuildContext context) => AppCard(
     key: const ValueKey('workspace-heading-filters'),
     width: double.infinity,
+    padding: EdgeInsets.zero,
+    clipBehavior: Clip.antiAlias,
     boxShadow: const [],
     child: AppSurfaceGroup(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          header,
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 20),
-            child: Divider(height: 1),
+          Padding(
+            padding: EdgeInsets.fromLTRB(
+              AppBreakpoints.isPhone(MediaQuery.sizeOf(context).width)
+                  ? 16
+                  : 24,
+              24,
+              AppBreakpoints.isPhone(MediaQuery.sizeOf(context).width)
+                  ? 16
+                  : 24,
+              20,
+            ),
+            child: header,
           ),
-          tools,
+          const Divider(height: 1),
+          ColoredBox(
+            color: const Color(0xFFFCFDFB),
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(
+                AppBreakpoints.isPhone(MediaQuery.sizeOf(context).width)
+                    ? 16
+                    : 24,
+                20,
+                AppBreakpoints.isPhone(MediaQuery.sizeOf(context).width)
+                    ? 16
+                    : 24,
+                24,
+              ),
+              child: tools,
+            ),
+          ),
         ],
       ),
     ),

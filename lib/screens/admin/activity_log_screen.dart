@@ -122,14 +122,14 @@ class _ActivityLogScreenState extends State<ActivityLogScreen> {
           label: 'Action',
           value: _action,
           options: const {
-            'all': 'All actions',
+            'all': 'All Actions',
             'plant.dead_record_reopened': 'Reopened dead records',
             'create': 'Created',
             'update': 'Updated',
             'archive': 'Archived',
             'restore': 'Restored',
             'inspect': 'Inspections',
-            'replace': 'QR replacements',
+            'replace': 'QR Replacements',
             'login': 'Sign-ins',
             'logout': 'Sign-outs',
           },
@@ -139,13 +139,13 @@ class _ActivityLogScreenState extends State<ActivityLogScreen> {
           },
         );
         final entity = _dropdown(
-          label: 'Record type',
+          label: 'Record Type',
           value: _entity,
           options: const {
-            'all': 'All records',
+            'all': 'All Records',
             'user': 'Accounts',
             'plant': 'Plants',
-            'qr_tag': 'QR tags',
+            'qr_tag': 'QR Tags',
           },
           onChanged: (value) {
             setState(() => _entity = value);
@@ -159,7 +159,7 @@ class _ActivityLogScreenState extends State<ActivityLogScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const Text(
-                'Filter activity',
+                'Filter Activity',
                 style: TextStyle(
                   fontSize: AppTypography.sectionTitle,
                   fontWeight: FontWeight.w700,
@@ -179,7 +179,7 @@ class _ActivityLogScreenState extends State<ActivityLogScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Filter activity',
+                    'Filter Activity',
                     style: TextStyle(
                       fontSize: AppTypography.sectionTitle,
                       fontWeight: FontWeight.w700,
@@ -241,7 +241,7 @@ class _ActivityLogScreenState extends State<ActivityLogScreen> {
     if (_error != null) {
       return AppCard(
         child: AppErrorState(
-          title: 'Unable to load activity',
+          title: 'Unable To Load Activity',
           message: userFacingError(
             _error!,
             fallback:
@@ -254,7 +254,7 @@ class _ActivityLogScreenState extends State<ActivityLogScreen> {
     }
     if (_events.isEmpty) {
       return const AppEmptyState(
-        title: 'No activity found',
+        title: 'No Activity Found',
         message: 'New account and plant changes will appear here.',
         icon: Icons.history_toggle_off_rounded,
       );
@@ -275,7 +275,7 @@ class _ActivityLogScreenState extends State<ActivityLogScreen> {
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
                 : const Icon(Icons.expand_more_rounded),
-            label: Text(_loadingMore ? 'Loading…' : 'Load more'),
+            label: Text(_loadingMore ? 'Loading…' : 'Load More'),
           ),
         );
       },
@@ -379,8 +379,8 @@ class _ActivityLogScreenState extends State<ActivityLogScreen> {
   };
 
   String _entityLabel(String value) => switch (value) {
-    'qr_tag' => 'QR tag',
-    'qr_tag_batch' => 'QR tags',
+    'qr_tag' => 'QR Tag',
+    'qr_tag_batch' => 'QR Tags',
     'user' || 'account' => 'account',
     'inspection' => 'inspection',
     'session' => 'session',

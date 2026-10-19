@@ -33,7 +33,9 @@ class FullWidthDataTable extends StatelessWidget {
             columnSpacing: 24,
             dataRowMinHeight: 56,
             dataRowMaxHeight: double.infinity,
-            headingRowColor: const WidgetStatePropertyAll(AppColors.background),
+            headingRowColor: const WidgetStatePropertyAll(
+              AppColors.surfaceSubtle,
+            ),
             columns: columns,
             rows: rows,
           ),

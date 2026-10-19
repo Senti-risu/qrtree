@@ -6,9 +6,9 @@ void main() {
     const cases = {
       'Alive': 'Healthy',
       ' healthy ': 'Healthy',
-      'Dying': 'Needs attention',
-      'At Risk': 'Needs attention',
-      'Needs attention': 'Needs attention',
+      'Dying': 'Needs Attention',
+      'At Risk': 'Needs Attention',
+      'Needs Attention': 'Needs Attention',
       'Dead': 'Dead',
       'deceased': 'Dead',
       '': 'Unknown',

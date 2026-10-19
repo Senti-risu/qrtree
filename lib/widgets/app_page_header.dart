@@ -35,7 +35,8 @@ class AppPageHeader extends StatelessWidget {
                 title,
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.w800,
-                  color: AppColors.darkGreen,
+                  color: AppColors.textPrimary,
+                  letterSpacing: -0.7,
                 ),
               ),
               const SizedBox(height: AppSpacing.xs),

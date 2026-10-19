@@ -99,7 +99,7 @@ class _SessionBootstrapScreenState extends State<SessionBootstrapScreen> {
                   children: [
                     CircularProgressIndicator(),
                     SizedBox(height: 16),
-                    Text('Checking your sign-in…'),
+                    Text('Checking Your Sign-In…'),
                   ],
                 ),
               )
@@ -107,13 +107,13 @@ class _SessionBootstrapScreenState extends State<SessionBootstrapScreen> {
                 child: Column(
                   children: [
                     AppErrorState(
-                      title: 'Unable to check saved sign-in',
+                      title: 'Unable To Check Saved Sign-In',
                       message: _error!,
                       onRetry: _restore,
                     ),
                     TextButton(
                       onPressed: _forget,
-                      child: const Text('Forget saved sign-in and log in'),
+                      child: const Text('Forget Saved Sign-In And Log In'),
                     ),
                   ],
                 ),

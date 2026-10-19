@@ -18,7 +18,7 @@ Future<void> showQrProblemDialog(BuildContext context, int plantId) async {
         canPop: !saving,
         child: AlertDialog(
           scrollable: true,
-          title: const Text('Report QR problem'),
+          title: const Text('Report QR Problem'),
           content: SizedBox(
             width: 420,
             child: Form(
@@ -27,14 +27,16 @@ Future<void> showQrProblemDialog(BuildContext context, int plantId) async {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Describe what happened to this plant’s QR label. Your College Admin will review the report.',
+                  Text(
+                    problem == 'damaged'
+                        ? 'This QR will be marked damaged immediately. Your College Admin can reprint it without approving this report.'
+                        : 'Describe what happened to this plant’s QR. Your College Admin will review this issue.',
                   ),
                   const SizedBox(height: 16),
                   DropdownButtonFormField<String>(
                     initialValue: problem,
                     isExpanded: true,
-                    decoration: const InputDecoration(labelText: 'QR problem'),
+                    decoration: const InputDecoration(labelText: 'QR Problem'),
                     items: QrProblemService.problems.entries
                         .map(
                           (entry) => DropdownMenuItem(
@@ -57,7 +59,7 @@ Future<void> showQrProblemDialog(BuildContext context, int plantId) async {
                     decoration: const InputDecoration(
                       labelText: 'What happened?',
                       hintText:
-                          'Example: The label is faded and cannot be scanned.',
+                          'Example: The QR is faded and cannot be scanned.',
                     ),
                     validator: (value) => (value?.trim().length ?? 0) < 3
                         ? 'Please describe the problem.'
@@ -98,9 +100,11 @@ Future<void> showQrProblemDialog(BuildContext context, int plantId) async {
                         Navigator.pop(dialogContext);
                         if (messenger.mounted) {
                           messenger.showSnackBar(
-                            const SnackBar(
+                            SnackBar(
                               content: Text(
-                                'QR problem reported to your College Admin.',
+                                problem == 'damaged'
+                                    ? 'QR marked damaged. It is ready for reprinting in QR Management.'
+                                    : 'QR problem reported to your College Admin.',
                               ),
                             ),
                           );

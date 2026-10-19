@@ -135,7 +135,7 @@ class _InspectionFormScreenState extends State<InspectionFormScreen> {
               const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                 child: Text(
-                  'Add a current plant photo',
+                  'Add A Current Plant Photo',
                   style: TextStyle(
                     fontSize: AppTypography.sectionTitle,
                     fontWeight: FontWeight.w800,
@@ -144,14 +144,14 @@ class _InspectionFormScreenState extends State<InspectionFormScreen> {
               ),
               ListTile(
                 leading: const Icon(Icons.photo_camera_outlined),
-                title: const Text('Take a photo'),
-                subtitle: const Text('Use the device camera'),
+                title: const Text('Take A Photo'),
+                subtitle: const Text('Use The Device Camera'),
                 onTap: () => Navigator.pop(context, ImageSource.camera),
               ),
               ListTile(
                 leading: const Icon(Icons.photo_library_outlined),
-                title: const Text('Choose from gallery'),
-                subtitle: const Text('Select an existing photo'),
+                title: const Text('Choose From Gallery'),
+                subtitle: const Text('Select An Existing Photo'),
                 onTap: () => Navigator.pop(context, ImageSource.gallery),
               ),
             ],
@@ -298,7 +298,7 @@ class _InspectionFormScreenState extends State<InspectionFormScreen> {
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context, false),
-                child: const Text('Keep editing'),
+                child: const Text('Keep Editing'),
               ),
               FilledButton(
                 onPressed: () => Navigator.pop(context, true),
@@ -341,7 +341,7 @@ class _InspectionFormScreenState extends State<InspectionFormScreen> {
           actions: [
             TextButton(
               onPressed: _saving || _loading ? null : _saveDraft,
-              child: const Text('Save draft'),
+              child: const Text('Save Draft'),
             ),
           ],
           backgroundColor: AppColors.background,
@@ -361,7 +361,7 @@ class _InspectionFormScreenState extends State<InspectionFormScreen> {
               )
             : _loadError != null
             ? AppErrorState(
-                title: 'Unable to prepare the inspection',
+                title: 'Unable To Prepare The Inspection',
                 message: userFacingError(
                   _loadError!,
                   fallback:
@@ -379,7 +379,7 @@ class _InspectionFormScreenState extends State<InspectionFormScreen> {
                   const SizedBox(height: 10),
                   _photoField(),
                   const SizedBox(height: 22),
-                  _sectionHeading(number: '2', title: 'Confirm the condition'),
+                  _sectionHeading(number: '2', title: 'Confirm The Condition'),
                   const SizedBox(height: 10),
                   _healthChoices(),
                   if (_selectionError != null) ...[
@@ -396,7 +396,7 @@ class _InspectionFormScreenState extends State<InspectionFormScreen> {
                   const SizedBox(height: 14),
                   _growthDropdown(),
                   const SizedBox(height: 22),
-                  _sectionHeading(number: '3', title: 'Add observations'),
+                  _sectionHeading(number: '3', title: 'Add Observations'),
                   const SizedBox(height: 10),
                   TextField(
                     controller: _observation,
@@ -559,7 +559,7 @@ class _InspectionFormScreenState extends State<InspectionFormScreen> {
                 ),
                 SizedBox(height: 8),
                 Text(
-                  'Take or choose a photo',
+                  'Take Or Choose A Photo',
                   style: TextStyle(fontWeight: FontWeight.w700),
                 ),
                 SizedBox(height: 3),
@@ -596,7 +596,7 @@ class _InspectionFormScreenState extends State<InspectionFormScreen> {
                   top: 8,
                   right: 8,
                   child: IconButton.filledTonal(
-                    tooltip: 'Remove photo',
+                    tooltip: 'Remove Photo',
                     onPressed: () => setState(() => _photo = null),
                     icon: const Icon(Icons.close_rounded),
                   ),
@@ -642,7 +642,7 @@ class _InspectionFormScreenState extends State<InspectionFormScreen> {
         ? _growthId
         : null,
     decoration: InputDecoration(
-      labelText: 'Growth stage',
+      labelText: 'Growth Stage',
       filled: true,
       fillColor: Colors.white,
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
@@ -665,9 +665,9 @@ class _InspectionFormScreenState extends State<InspectionFormScreen> {
     String labelKey,
   ) {
     for (final row in rows) {
-      if (row[idKey] == id) return row[labelKey]?.toString() ?? 'Not recorded';
+      if (row[idKey] == id) return row[labelKey]?.toString() ?? 'Not Recorded';
     }
-    return 'Not recorded';
+    return 'Not Recorded';
   }
 
   String _friendlyHealth(String value) {
@@ -677,17 +677,17 @@ class _InspectionFormScreenState extends State<InspectionFormScreen> {
         return 'Healthy';
       case 'dying':
       case 'at risk':
-        return 'Needs attention';
+        return 'Needs Attention';
       case 'dead':
         return 'Dead';
       default:
-        return 'Not recorded';
+        return 'Not Recorded';
     }
   }
 
   IconData _healthIcon(String label) => label == 'Healthy'
       ? Icons.eco_outlined
-      : label == 'Needs attention'
+      : label == 'Needs Attention'
       ? Icons.warning_amber_rounded
       : label == 'Dead'
       ? Icons.cancel_outlined

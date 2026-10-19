@@ -137,7 +137,7 @@ class _PlantListScreenState extends State<PlantListScreen> {
         _map(plant['health_status'])['status_name']?.toString().toLowerCase() ??
         '';
     if (value == 'alive' || value == 'healthy') return 'Healthy';
-    if (value == 'dying' || value == 'at risk') return 'Needs attention';
+    if (value == 'dying' || value == 'at risk') return 'Needs Attention';
     if (value == 'dead') return 'Dead';
     return 'Unknown';
   }
@@ -241,7 +241,7 @@ class _PlantListScreenState extends State<PlantListScreen> {
                           arguments: _arguments,
                         ),
                         icon: const Icon(Icons.add_rounded),
-                        label: const Text('Register a plant'),
+                        label: const Text('Register A Plant'),
                       ),
                     ),
                   ),
@@ -390,7 +390,7 @@ class _PlantListScreenState extends State<PlantListScreen> {
       suffixIcon: _searchController.text.isEmpty
           ? null
           : IconButton(
-              tooltip: 'Clear search',
+              tooltip: 'Clear Search',
               onPressed: () {
                 _searchController.clear();
                 setState(() {});
@@ -443,7 +443,7 @@ class _PlantListScreenState extends State<PlantListScreen> {
             visualDensity: VisualDensity.compact,
             padding: const EdgeInsets.symmetric(horizontal: 8),
           ),
-          child: const Text('Clear all'),
+          child: const Text('Clear All'),
         ),
     ],
   );
@@ -451,7 +451,7 @@ class _PlantListScreenState extends State<PlantListScreen> {
   static const _healthOptions = [
     'All',
     'Healthy',
-    'Needs attention',
+    'Needs Attention',
     'Dead',
     'Unknown',
   ];
@@ -529,7 +529,7 @@ class _PlantListScreenState extends State<PlantListScreen> {
       ? plants.length
       : plants.where((plant) => _health(plant) == value).length;
 
-  Color _healthColor(String value) => value == 'Needs attention'
+  Color _healthColor(String value) => value == 'Needs Attention'
       ? AppColors.warningAccent
       : value == 'Dead'
       ? AppColors.danger
@@ -541,7 +541,7 @@ class _PlantListScreenState extends State<PlantListScreen> {
       ? Icons.apps_rounded
       : value == 'Healthy'
       ? Icons.eco_rounded
-      : value == 'Needs attention'
+      : value == 'Needs Attention'
       ? Icons.warning_amber_rounded
       : value == 'Dead'
       ? Icons.cancel_outlined
@@ -624,7 +624,7 @@ class _PlantListScreenState extends State<PlantListScreen> {
       showDragHandle: true,
       builder: (sheetContext) => StatefulBuilder(
         builder: (context, updateSheet) => AppFilterSheet(
-          title: 'Filter plants',
+          title: 'Filter Plants',
           applyLabel: 'Apply · ${_healthCount(pendingHealth, plants)} plants',
           onReset: () => updateSheet(() => pendingHealth = 'All'),
           onApply: () {
@@ -634,7 +634,7 @@ class _PlantListScreenState extends State<PlantListScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Health status'),
+              const Text('Health Status'),
               const SizedBox(height: AppSpacing.sm),
               Wrap(
                 spacing: AppSpacing.sm,
@@ -667,7 +667,7 @@ class _PlantListScreenState extends State<PlantListScreen> {
     if (_error != null) {
       return AppCard(
         child: AppErrorState(
-          title: 'Unable to load plants',
+          title: 'Unable To Load Plants',
           message: userFacingError(
             _error!,
             fallback:
@@ -694,7 +694,7 @@ class _PlantListScreenState extends State<PlantListScreen> {
             ? OutlinedButton.icon(
                 onPressed: _clearFilters,
                 icon: const Icon(Icons.filter_alt_off_rounded),
-                label: const Text('Clear filters'),
+                label: const Text('Clear Filters'),
               )
             : null,
       );
@@ -728,7 +728,7 @@ class _PlantListScreenState extends State<PlantListScreen> {
     final barangay = _map(plant['barangay'])['barangay_name']?.toString();
     final physicalLocation = [
       if (locationType == 'inside' && plantingCampus != null) plantingCampus,
-      if (locationType == 'outside') 'Outside campus',
+      if (locationType == 'outside') 'Outside Campus',
       ?barangay,
       ?town,
     ].join(', ');
@@ -741,14 +741,14 @@ class _PlantListScreenState extends State<PlantListScreen> {
           ? 'Location not recorded'
           : physicalLocation,
       managedBy: college == null && campus == null
-          ? 'Not recorded'
+          ? 'Not Recorded'
           : [college, campus].whereType<String>().join(' · '),
       lastInspected: _lastInspected(plant),
       photo: _plantAvatar(plant, 52),
       status: _statusChip(_health(plant)),
       trailing: plant['archived_at'] != null && _capabilities.canRestorePlants
           ? IconButton.outlined(
-              tooltip: 'Restore plant',
+              tooltip: 'Restore Plant',
               onPressed: () => _restorePlant(plant),
               icon: const Icon(Icons.unarchive_outlined),
             )
@@ -781,6 +781,7 @@ class _PlantListScreenState extends State<PlantListScreen> {
           child: SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: DataTable(
+              showCheckboxColumn: false,
               headingRowColor: const WidgetStatePropertyAll(
                 AppColors.background,
               ),
@@ -799,6 +800,7 @@ class _PlantListScreenState extends State<PlantListScreen> {
               rows: plants.map((plant) {
                 final classification = _map(plant['plant_classification']);
                 return DataRow(
+                  onSelectChanged: (_) => _openPlant(plant),
                   cells: [
                     DataCell(
                       Row(
@@ -866,7 +868,7 @@ class _PlantListScreenState extends State<PlantListScreen> {
 
   String _tagId(Map<String, dynamic> plant) {
     final raw = _map(plant['qr_tag'])['qr_code_string']?.toString();
-    return raw == null || raw.trim().isEmpty ? 'Not assigned' : raw;
+    return raw == null || raw.trim().isEmpty ? 'Not Assigned' : raw;
   }
 
   String _date(dynamic value) {
@@ -892,7 +894,7 @@ class _PlantListScreenState extends State<PlantListScreen> {
 
   String _lastInspected(Map<String, dynamic> plant) {
     final inspections = plant['plant_inspection'];
-    if (inspections is! List || inspections.isEmpty) return 'Not inspected';
+    if (inspections is! List || inspections.isEmpty) return 'Not Inspected';
     final dates =
         inspections
             .map((row) {
@@ -907,7 +909,7 @@ class _PlantListScreenState extends State<PlantListScreen> {
             .toList()
           ..sort((a, b) => b.compareTo(a));
     return dates.isEmpty
-        ? 'Not inspected'
+        ? 'Not Inspected'
         : _date(dates.first.toIso8601String());
   }
 
@@ -999,14 +1001,14 @@ class _PlantListScreenState extends State<PlantListScreen> {
   Widget _statusChip(String label) {
     final foreground = label == 'Healthy'
         ? AppColors.green
-        : label == 'Needs attention'
+        : label == 'Needs Attention'
         ? AppColors.warning
         : label == 'Dead'
         ? AppColors.danger
         : AppColors.textSecondary;
     final background = label == 'Healthy'
         ? AppColors.primaryContainer
-        : label == 'Needs attention'
+        : label == 'Needs Attention'
         ? AppColors.warningContainer
         : label == 'Dead'
         ? AppColors.dangerContainer

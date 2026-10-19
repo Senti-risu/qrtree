@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../widgets/media_preview.dart';
 
 import '../../services/guest_service.dart';
 import '../../theme/app_colors.dart';
@@ -23,7 +24,7 @@ class GuestPlantDetailScreen extends StatelessWidget {
       title: const Text('Plant Details'),
       leading: PlantDetailsPresentation.floatsFor(MediaQuery.sizeOf(context))
           ? IconButton(
-              tooltip: 'Close plant details',
+              tooltip: 'Close Plant Details',
               onPressed: () => Navigator.maybePop(context),
               icon: const Icon(Icons.close_rounded),
             )
@@ -149,27 +150,27 @@ class GuestPlantDetailScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 14),
                       _DetailSection(
-                        title: 'Plant information',
+                        title: 'Plant Information',
                         icon: Icons.eco_outlined,
                         rows: {
-                          'Plant type': plant.plantType,
+                          'Plant Type': plant.plantType,
                           'Variety': _value(plant.variety),
-                          'Date planted': _formatDate(plant.datePlanted),
+                          'Date Planted': _formatDate(plant.datePlanted),
                           'Tree planter': _value(plant.treePlanter),
                         },
                       ),
                       const SizedBox(height: 14),
                       _DetailSection(
-                        title: 'Managed by',
+                        title: 'Managed By',
                         icon: Icons.location_on_outlined,
                         rows: {
-                          'Managing campus': _value(plant.campusName),
-                          'Managing college': _value(plant.collegeName),
+                          'Managing Campus': _value(plant.campusName),
+                          'Managing College': _value(plant.collegeName),
                         },
                       ),
                       const SizedBox(height: 14),
                       _DetailSection(
-                        title: 'Planting location',
+                        title: 'Planting Location',
                         icon: Icons.location_on_outlined,
                         rows: {
                           'Campus / outside': plant.plantingLocationLabel,
@@ -188,7 +189,7 @@ class GuestPlantDetailScreen extends StatelessWidget {
     ),
   );
 
-  static String _value(String? value, [String fallback = 'Not provided']) {
+  static String _value(String? value, [String fallback = 'Not Provided']) {
     final normalized = value?.trim() ?? '';
     return normalized.isEmpty ? fallback : normalized;
   }
@@ -223,10 +224,13 @@ class _PlantPhoto extends StatelessWidget {
   Widget build(BuildContext context) {
     final normalized = url?.trim() ?? '';
     if (normalized.isEmpty) return const _PlantPhotoPlaceholder();
-    return Image.network(
-      normalized,
-      fit: BoxFit.contain,
-      errorBuilder: (_, _, _) => const _PlantPhotoPlaceholder(),
+    return ViewablePhoto(
+      url: normalized,
+      child: Image.network(
+        normalized,
+        fit: BoxFit.contain,
+        errorBuilder: (_, _, _) => const _PlantPhotoPlaceholder(),
+      ),
     );
   }
 }

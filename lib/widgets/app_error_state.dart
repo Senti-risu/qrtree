@@ -17,7 +17,7 @@ class AppErrorState extends StatelessWidget {
     required this.message,
     this.technicalDetails,
     this.onRetry,
-    this.retryLabel = 'Try again',
+    this.retryLabel = 'Try Again',
     this.minHeight = 260,
   });
 
@@ -81,7 +81,7 @@ class AppErrorState extends StatelessWidget {
                       tilePadding: EdgeInsets.zero,
                       childrenPadding: const EdgeInsets.only(bottom: 8),
                       title: const Text(
-                        'Technical details',
+                        'Technical Details',
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 13,

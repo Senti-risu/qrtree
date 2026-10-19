@@ -118,7 +118,7 @@ void main() {
                           'College of Information Technology · CSU Lasam',
                       lastInspected: 'Oct 15, 2026',
                       photo: const Icon(Icons.eco, size: 52),
-                      status: const Chip(label: Text('Needs attention')),
+                      status: const Chip(label: Text('Needs Attention')),
                       onTap: () {},
                     ),
                   ],
@@ -129,9 +129,9 @@ void main() {
         ),
       );
       expect(find.text('Step 3 of 4 · Photo'), findsOneWidget);
-      expect(find.textContaining('Planted at:'), findsOneWidget);
-      expect(find.textContaining('Managed by:'), findsOneWidget);
-      expect(find.textContaining('Last inspected:'), findsOneWidget);
+      expect(find.textContaining('Planted At:'), findsOneWidget);
+      expect(find.textContaining('Managed By:'), findsOneWidget);
+      expect(find.textContaining('Last Inspected:'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
   }
@@ -157,7 +157,7 @@ void main() {
                   context: context,
                   isScrollControlled: true,
                   builder: (_) => AppFilterSheet(
-                    title: 'Filter plants',
+                    title: 'Filter Plants',
                     applyLabel: 'Apply · 18 plants',
                     onReset: () {},
                     onApply: () => applied = true,
@@ -199,13 +199,13 @@ void main() {
           scanner: false,
           action: FilledButton(
             onPressed: () {},
-            child: const Text('Continue to photo'),
+            child: const Text('Continue To Photo'),
           ),
         ),
       ),
     );
     expect(
-      tester.getBottomLeft(find.text('Continue to photo')).dy,
+      tester.getBottomLeft(find.text('Continue To Photo')).dy,
       lessThan(544),
     );
     expect(find.byType(AppMobileNavbar), findsNothing);
@@ -239,7 +239,7 @@ void main() {
                   children: [
                     FilledButton(
                       onPressed: () {},
-                      child: const Text('Continue to location'),
+                      child: const Text('Continue To Location'),
                     ),
                     OutlinedButton(onPressed: () {}, child: const Text('Back')),
                   ],
@@ -248,7 +248,7 @@ void main() {
             ),
           ),
         );
-        expect(find.text('Continue to location').hitTestable(), findsOneWidget);
+        expect(find.text('Continue To Location').hitTestable(), findsOneWidget);
         expect(
           tester.getBottomLeft(find.text('Back')).dy,
           lessThan(size.height - 180),
@@ -326,7 +326,7 @@ void main() {
         theme: AppTheme.light,
         home: const Scaffold(
           body: DashboardPageHeader(
-            description: 'College plant overview',
+            description: 'College Plant Overview',
             userRole: 'College Admin',
           ),
         ),
@@ -389,7 +389,7 @@ void main() {
                   FilledButton.icon(
                     onPressed: () {},
                     icon: const Icon(Icons.add),
-                    label: const Text('Register a plant'),
+                    label: const Text('Register A Plant'),
                   ),
                   const SizedBox(height: 16),
                   PlantSummaryCard(

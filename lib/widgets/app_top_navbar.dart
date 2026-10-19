@@ -12,6 +12,8 @@ class AppTopNavbar extends StatelessWidget {
   final VoidCallback? onNotificationTap;
   final VoidCallback? onProfileTap;
   final VoidCallback? onLogoutTap;
+  final bool showBrand;
+  final String? pageTitle;
 
   const AppTopNavbar({
     super.key,
@@ -20,6 +22,8 @@ class AppTopNavbar extends StatelessWidget {
     this.onNotificationTap,
     this.onProfileTap,
     this.onLogoutTap,
+    this.showBrand = true,
+    this.pageTitle,
   });
 
   String _initialsOf(String name) {
@@ -45,8 +49,8 @@ class AppTopNavbar extends StatelessWidget {
     final hasIdentity = resolvedName.isNotEmpty || resolvedRole.isNotEmpty;
 
     return Container(
-      height: (MediaQuery.textScalerOf(context).scale(40) + 16).clamp(
-        64.0,
+      height: (MediaQuery.textScalerOf(context).scale(40) + 24).clamp(
+        83.0,
         160.0,
       ),
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
@@ -56,35 +60,63 @@ class AppTopNavbar extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: AppColors.green,
-              borderRadius: AppRadii.medium,
+          if (!showBrand) ...[
+            const Icon(
+              Icons.home_outlined,
+              size: 16,
+              color: AppColors.inactiveNav,
             ),
-            child: const Icon(Icons.eco, color: AppColors.onPrimary, size: 21),
-          ),
-          const SizedBox(width: AppSpacing.sm),
-          const Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'EcoTag',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                  color: AppColors.darkGreen,
+            const SizedBox(width: 12),
+            const Text('/', style: TextStyle(color: AppColors.textDisabled)),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                pageTitle ?? 'EcoTag',
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: AppColors.textSecondary,
                 ),
               ),
-              Text(
-                'Campus Plant Profiling System',
-                style: TextStyle(fontSize: 10, color: AppColors.textSecondary),
+            ),
+          ],
+          if (showBrand) ...[
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: AppColors.green,
+                borderRadius: AppRadii.medium,
               ),
-            ],
-          ),
-          const Spacer(),
+              child: const Icon(
+                Icons.eco,
+                color: AppColors.onPrimary,
+                size: 21,
+              ),
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            const Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'EcoTag',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                    color: AppColors.darkGreen,
+                  ),
+                ),
+                Text(
+                  'Campus Plant Profiling System',
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ],
+          if (showBrand) const Spacer(),
           if (onNotificationTap != null) ...[
             IconButton(
               tooltip: 'Notifications',
@@ -121,7 +153,7 @@ class AppTopNavbar extends StatelessWidget {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                           content: Text(
-                            'This device could not remove '
+                            'This Device Could Not Remove '
                             'the saved sign-in. Please try logging out again.',
                           ),
                         ),

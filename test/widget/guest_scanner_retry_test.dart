@@ -122,7 +122,7 @@ void main() {
       camera.scan('ECOTAG-202610-000003');
       await tester.pump(const Duration(seconds: 3));
       expect(service.calls, 1);
-      await tester.tap(find.text('Try again'));
+      await tester.tap(find.text('Try Again'));
       await tester.pumpAndSettle();
       service.fails = false;
       camera.scan('ECOTAG-202610-000003');
@@ -178,14 +178,14 @@ void main() {
       await open(tester, service);
       camera.scan('ECOTAG-202610-000003');
       await tester.pumpAndSettle();
-      await tester.tap(find.widgetWithText(OutlinedButton, 'Enter code'));
+      await tester.tap(find.widgetWithText(OutlinedButton, 'Enter Code'));
       await tester.pumpAndSettle();
       camera.scan('ECOTAG-202610-000004');
       await tester.pump();
       expect(service.calls, 1);
       await tester.enterText(find.byType(TextField), 'ECOTAG-202610-000003');
       service.fails = false;
-      await tester.tap(find.text('View plant'));
+      await tester.tap(find.text('View Plant'));
       await tester.pumpAndSettle();
       expect(service.calls, 2);
       expect(find.byType(GuestPlantDetailScreen), findsOneWidget);

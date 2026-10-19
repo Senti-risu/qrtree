@@ -78,13 +78,13 @@ class _ManageAccountsScreenState extends State<ManageAccountsScreen> {
     'university_admin' => 'University Admin',
     'campus_admin' => 'Campus Admin',
     'college_admin' => 'College Admin',
-    _ => 'All roles',
+    _ => 'All Roles',
   };
 
   String get _statusFilterLabel => switch (_statusFilter) {
     'active' => 'Active',
     'inactive' => 'Inactive',
-    _ => 'All statuses',
+    _ => 'All Statuses',
   };
 
   void _resetFilters() {
@@ -179,7 +179,7 @@ class _ManageAccountsScreenState extends State<ManageAccountsScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'Filter accounts',
+                                  'Filter Accounts',
                                   style: TextStyle(
                                     fontSize: AppTypography.sectionTitle,
                                     fontWeight: FontWeight.w800,
@@ -187,7 +187,7 @@ class _ManageAccountsScreenState extends State<ManageAccountsScreen> {
                                   ),
                                 ),
                                 Text(
-                                  'Narrow results by role and status',
+                                  'Narrow Results By Role And Status',
                                   style: TextStyle(
                                     fontSize: 12,
                                     color: AppColors.textSecondary,
@@ -197,7 +197,7 @@ class _ManageAccountsScreenState extends State<ManageAccountsScreen> {
                             ),
                           ),
                           IconButton(
-                            tooltip: 'Close filters',
+                            tooltip: 'Close Filters',
                             onPressed: () => Navigator.pop(sheetContext),
                             icon: const Icon(Icons.close_rounded),
                           ),
@@ -218,7 +218,7 @@ class _ManageAccountsScreenState extends State<ManageAccountsScreen> {
                         runSpacing: 8,
                         children: [
                           option(
-                            label: 'All roles',
+                            label: 'All Roles',
                             selected: pendingRole == 'all',
                             onTap: () =>
                                 setSheetState(() => pendingRole = 'all'),
@@ -261,7 +261,7 @@ class _ManageAccountsScreenState extends State<ManageAccountsScreen> {
                         runSpacing: 8,
                         children: [
                           option(
-                            label: 'All statuses',
+                            label: 'All Statuses',
                             selected: pendingStatus == 'all',
                             onTap: () =>
                                 setSheetState(() => pendingStatus = 'all'),
@@ -307,7 +307,7 @@ class _ManageAccountsScreenState extends State<ManageAccountsScreen> {
                                 minimumSize: const Size.fromHeight(50),
                                 backgroundColor: AppColors.green,
                               ),
-                              child: const Text('Apply filters'),
+                              child: const Text('Apply Filters'),
                             ),
                           ),
                         ],
@@ -547,7 +547,7 @@ class _ManageAccountsScreenState extends State<ManageAccountsScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Archived accounts',
+                              'Archived Accounts',
                               style: TextStyle(
                                 fontSize: AppTypography.sectionTitle,
                                 fontWeight: FontWeight.w800,
@@ -584,7 +584,7 @@ class _ManageAccountsScreenState extends State<ManageAccountsScreen> {
                                 color: AppColors.textSecondary,
                               ),
                               SizedBox(height: 10),
-                              Text('No archived accounts'),
+                              Text('No Archived Accounts'),
                             ],
                           ),
                         )
@@ -757,7 +757,7 @@ class _ManageAccountsScreenState extends State<ManageAccountsScreen> {
             final table = !AppBreakpoints.isPhone(constraints.maxWidth);
             if (!_loading && _error == null && _accounts.isEmpty) {
               return AppEmptyState(
-                title: 'No administrator accounts yet',
+                title: 'No Administrator Accounts Yet',
                 message: 'Create an account to get started.',
                 icon: Icons.people_outline,
                 action: FilledButton.icon(
@@ -769,11 +769,11 @@ class _ManageAccountsScreenState extends State<ManageAccountsScreen> {
             }
             if (!_loading && _error == null && _visibleAccounts.isEmpty) {
               return AppEmptyState(
-                title: 'No accounts match your filters',
+                title: 'No Accounts Match Your Filters',
                 message: 'Try another search or reset your filters.',
                 action: TextButton(
                   onPressed: _resetFilters,
-                  child: const Text('Reset filters'),
+                  child: const Text('Reset Filters'),
                 ),
               );
             }
@@ -831,7 +831,7 @@ class _ManageAccountsScreenState extends State<ManageAccountsScreen> {
             suffixIcon: _searchController.text.isEmpty
                 ? null
                 : IconButton(
-                    tooltip: 'Clear search',
+                    tooltip: 'Clear Search',
                     onPressed: () {
                       _searchController.clear();
                       setState(() {});
@@ -1057,7 +1057,7 @@ class _ManageAccountsScreenState extends State<ManageAccountsScreen> {
       isExpanded: true,
       decoration: _dropdownDecoration(Icons.badge_outlined),
       items: const [
-        DropdownMenuItem(value: 'all', child: Text('All roles')),
+        DropdownMenuItem(value: 'all', child: Text('All Roles')),
         DropdownMenuItem(
           value: 'university_admin',
           child: Text('University Admin'),
@@ -1081,7 +1081,7 @@ class _ManageAccountsScreenState extends State<ManageAccountsScreen> {
       isExpanded: true,
       decoration: _dropdownDecoration(Icons.toggle_on_outlined),
       items: const [
-        DropdownMenuItem(value: 'all', child: Text('All statuses')),
+        DropdownMenuItem(value: 'all', child: Text('All Statuses')),
         DropdownMenuItem(value: 'active', child: Text('Active')),
         DropdownMenuItem(value: 'inactive', child: Text('Inactive')),
       ],
@@ -1137,7 +1137,7 @@ class _ManageAccountsScreenState extends State<ManageAccountsScreen> {
             const SizedBox(height: AppSpacing.sm),
             TextButton(
               onPressed: _resetFilters,
-              child: const Text('Reset filters'),
+              child: const Text('Reset Filters'),
             ),
           ],
         ),

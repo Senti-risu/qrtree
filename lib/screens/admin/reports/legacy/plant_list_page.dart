@@ -406,7 +406,7 @@ class _PlantListPageState extends State<PlantListPage> {
               children: [
                 filterButton('All', count: totalCount),
                 filterButton('Healthy', count: aliveCount),
-                filterButton('Needs attention', count: dyingCount),
+                filterButton('Needs Attention', count: dyingCount),
                 filterButton('Dead', count: deadCount),
               ],
             ),
@@ -475,7 +475,7 @@ class _PlantListPageState extends State<PlantListPage> {
                                     ),
 
                                     columns: const [
-                                      DataColumn(label: Text('Plant name')),
+                                      DataColumn(label: Text('Plant Name')),
                                       DataColumn(label: Text('Tag ID')),
                                       DataColumn(label: Text('Variety')),
                                       DataColumn(label: Text('Tree Planter')),
@@ -483,8 +483,8 @@ class _PlantListPageState extends State<PlantListPage> {
                                       DataColumn(label: Text('College')),
                                       DataColumn(label: Text('Stage')),
                                       DataColumn(label: Text('Health')),
-                                      DataColumn(label: Text('Date planted')),
-                                      DataColumn(label: Text('Last inspected')),
+                                      DataColumn(label: Text('Date Planted')),
+                                      DataColumn(label: Text('Last Inspected')),
                                     ],
 
                                     rows: filteredPlants.map((plant) {

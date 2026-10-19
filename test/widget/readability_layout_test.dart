@@ -14,7 +14,7 @@ import 'package:flutter_application_1/widgets/app_card.dart';
 const college = 'College of Information and Computing Sciences, CSU Lasam';
 const values = [
   ('Healthy', 120, AppColors.green),
-  ('Needs attention', 32, AppColors.warningAccent),
+  ('Needs Attention', 32, AppColors.warningAccent),
   ('Dead', 4, AppColors.danger),
   ('Unknown', 12, AppColors.textSecondary),
 ];
@@ -105,11 +105,11 @@ void main() {
           AppTypography.label,
         );
         expect(
-          tester.widget<Text>(find.text('PNG, JPG or JPEG')).style!.fontSize,
+          tester.widget<Text>(find.text('PNG, JPG Or JPEG')).style!.fontSize,
           AppTypography.caption,
         );
-        await tester.ensureVisible(find.text('Choose photo'));
-        await tester.tap(find.text('Choose photo'));
+        await tester.ensureVisible(find.text('Choose Photo'));
+        await tester.tap(find.text('Choose Photo'));
         expect(picked, isTrue);
         expect(tester.takeException(), isNull);
       });

@@ -39,15 +39,17 @@ class _CreatableLookupInputState extends State<CreatableLookupInput> {
   @override
   void initState() {
     super.initState();
-    _controller = TextEditingController(text: widget.value)
-      ..addListener(_changed);
+    _controller = TextEditingController(
+      text: capitalizeWords(widget.value ?? ''),
+    )..addListener(_changed);
   }
 
   void _changed() {
     if (!_syncing && mounted) {
       _editing = true;
       setState(() => _error = null);
-      if (widget.value != null && _controller.text != widget.value) {
+      if (widget.value != null &&
+          _controller.text != capitalizeWords(widget.value!)) {
         widget.onChanged(null);
       }
     }
@@ -62,7 +64,7 @@ class _CreatableLookupInputState extends State<CreatableLookupInput> {
       if (widget.value != null ||
           !_editing ||
           oldWidget.enabled != widget.enabled) {
-        _controller.text = widget.value ?? '';
+        _controller.text = capitalizeWords(widget.value ?? '');
         _editing = false;
       }
       _syncing = false;
@@ -92,7 +94,7 @@ class _CreatableLookupInputState extends State<CreatableLookupInput> {
       final saved = await widget.onCreate!(name);
       if (!mounted || saved == null) return;
       _syncing = true;
-      _controller.text = saved;
+      _controller.text = capitalizeWords(saved);
       _syncing = false;
       widget.onChanged(saved);
     } catch (error) {
@@ -148,7 +150,7 @@ class _CreatableLookupInputState extends State<CreatableLookupInput> {
                 .map(
                   (item) => DropdownMenuEntry<String>(
                     value: item,
-                    label: item,
+                    label: capitalizeWords(item),
                     enabled: !widget.disabledItems.contains(item),
                   ),
                 )

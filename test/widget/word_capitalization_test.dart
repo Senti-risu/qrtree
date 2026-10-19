@@ -22,6 +22,58 @@ class LowercaseLookupService extends fixture.LookupService {
 }
 
 void main() {
+  test('lookup names capitalize without changing IDs or scientific names', () {
+    final result = capitalizeLookupNames({
+      'classification_id': 7,
+      'common_name': 'indian mango',
+      'plant_type': 'tree',
+      'scientific_name': 'Mangifera indica',
+      'campus_name': 'CSU lasam',
+      'status': 'assigned',
+    });
+    expect(result['common_name'], 'Indian Mango');
+    expect(result['plant_type'], 'Tree');
+    expect(result['campus_name'], 'CSU Lasam');
+    expect(result['scientific_name'], 'Mangifera indica');
+    expect(result['classification_id'], 7);
+    expect(result['status'], 'assigned');
+  });
+
+  testWidgets(
+    'selected database text displays capitals and retains its value',
+    (tester) async {
+      String? selected = 'santa maria';
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: StatefulBuilder(
+              builder: (context, update) => AppSearchableDropdown(
+                label: 'Town',
+                value: selected,
+                items: const ['santa maria', 'san jose'],
+                onChanged: (value) => update(() => selected = value),
+              ),
+            ),
+          ),
+        ),
+      );
+      expect(
+        tester.widget<TextField>(find.byType(TextField)).controller!.text,
+        'Santa Maria',
+      );
+      expect(selected, 'santa maria');
+      await tester.tap(find.byType(TextField));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('San Jose').last);
+      await tester.pumpAndSettle();
+      expect(selected, 'san jose');
+      expect(
+        tester.widget<TextField>(find.byType(TextField)).controller!.text,
+        'San Jose',
+      );
+    },
+  );
+
   test(
     'capitalizes initials while preserving name casing, acronyms and spacing',
     () {

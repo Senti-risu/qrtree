@@ -32,7 +32,7 @@ class LockedPlantAssignment extends StatelessWidget {
             SizedBox(width: 6),
             Expanded(
               child: Text(
-                'Managed by your account',
+                'Managed By Your Account',
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w700,

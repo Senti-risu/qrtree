@@ -24,6 +24,7 @@ class PlantDetailsEditor extends StatefulWidget {
 class _PlantDetailsEditorState extends State<PlantDetailsEditor> {
   final _form = GlobalKey<FormState>();
   final _variety = TextEditingController(), _planter = TextEditingController();
+  String _scientificName = '';
   late final _service = widget.repository ?? PlantDetailsEditorService();
   List<Map<String, dynamic>> _classes = [],
       _campuses = [],
@@ -123,6 +124,11 @@ class _PlantDetailsEditorState extends State<PlantDetailsEditor> {
         widget.plantId,
         PlantDetailsDraft(
           classificationId: _classification!,
+          scientificName:
+              (_selected['scientific_name']?.toString().trim().isNotEmpty ??
+                  false)
+              ? ''
+              : _scientificName,
           variety: _variety.text,
           treePlanter: _planter.text,
           datePlanted: _date,
@@ -158,7 +164,7 @@ class _PlantDetailsEditorState extends State<PlantDetailsEditor> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, false),
-              child: const Text('Keep editing'),
+              child: const Text('Keep Editing'),
             ),
             FilledButton(
               onPressed: () => Navigator.pop(context, true),
@@ -181,12 +187,12 @@ class _PlantDetailsEditorState extends State<PlantDetailsEditor> {
           children: [
             ListTile(
               leading: const Icon(Icons.camera_alt_outlined),
-              title: const Text('Take a photo'),
+              title: const Text('Take A Photo'),
               onTap: () => Navigator.pop(context, ImageSource.camera),
             ),
             ListTile(
               leading: const Icon(Icons.photo_library_outlined),
-              title: const Text('Choose from gallery'),
+              title: const Text('Choose From Gallery'),
               onTap: () => Navigator.pop(context, ImageSource.gallery),
             ),
           ],
@@ -300,7 +306,7 @@ class _PlantDetailsEditorState extends State<PlantDetailsEditor> {
     child: AlertDialog(
       scrollable: true,
       insetPadding: const EdgeInsets.all(16),
-      title: const Text('Update plant details'),
+      title: const Text('Update Plant Details'),
       content: SizedBox(
         width: 520,
         child: _loading
@@ -310,7 +316,7 @@ class _PlantDetailsEditorState extends State<PlantDetailsEditor> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(_error ?? 'Plant not available.'),
-                  TextButton(onPressed: _load, child: const Text('Try again')),
+                  TextButton(onPressed: _load, child: const Text('Try Again')),
                 ],
               )
             : Form(
@@ -332,7 +338,7 @@ class _PlantDetailsEditorState extends State<PlantDetailsEditor> {
                       initialValue: _type,
                       isExpanded: true,
                       decoration: const InputDecoration(
-                        labelText: 'Plant type',
+                        labelText: 'Plant Type',
                       ),
                       items: _classes
                           .map((c) => c['plant_type'].toString())
@@ -349,6 +355,7 @@ class _PlantDetailsEditorState extends State<PlantDetailsEditor> {
                           : (v) => setState(() {
                               _type = v;
                               _classification = null;
+                              _scientificName = '';
                               _dirty = true;
                             }),
                       validator: (v) =>
@@ -356,22 +363,37 @@ class _PlantDetailsEditorState extends State<PlantDetailsEditor> {
                     ),
                     const SizedBox(height: 12),
                     _dropdown(
-                      label: 'Common name',
+                      label: 'Common Name',
                       value: _classification,
                       items: _classes
                           .where((c) => c['plant_type'].toString() == _type)
                           .toList(),
                       id: 'classification_id',
                       name: 'common_name',
-                      changed: (v) => _classification = v,
+                      changed: (v) {
+                        _classification = v;
+                        _scientificName = '';
+                      },
                     ),
                     TextFormField(
                       key: ValueKey('scientific-$_classification'),
                       initialValue:
                           _selected['scientific_name']?.toString() ?? '',
-                      readOnly: true,
+                      readOnly:
+                          _classification == null ||
+                          (_selected['scientific_name']
+                                  ?.toString()
+                                  .trim()
+                                  .isNotEmpty ??
+                              false),
+                      enabled: !_disabled,
+                      maxLength: 200,
+                      onChanged: (value) {
+                        _scientificName = value;
+                        _dirty = true;
+                      },
                       decoration: const InputDecoration(
-                        labelText: 'Scientific name',
+                        labelText: 'Scientific Name',
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -380,7 +402,7 @@ class _PlantDetailsEditorState extends State<PlantDetailsEditor> {
                       enabled: !_disabled,
                       maxLength: 200,
                       decoration: const InputDecoration(
-                        labelText: 'Variety (optional)',
+                        labelText: 'Variety (Optional)',
                       ),
                     ),
                     TextFormField(
@@ -388,7 +410,7 @@ class _PlantDetailsEditorState extends State<PlantDetailsEditor> {
                       enabled: !_disabled,
                       maxLength: 200,
                       decoration: const InputDecoration(
-                        labelText: 'Tree planter (optional)',
+                        labelText: 'Tree Planter (optional)',
                       ),
                     ),
                     TextFormField(
@@ -402,12 +424,12 @@ class _PlantDetailsEditorState extends State<PlantDetailsEditor> {
                             ).formatMediumDate(_date!),
                       onTap: _disabled ? null : _pickDate,
                       decoration: InputDecoration(
-                        labelText: 'Date planted (optional)',
+                        labelText: 'Date Planted (optional)',
                         prefixIcon: const Icon(Icons.event_outlined),
                         suffixIcon: _date == null
                             ? null
                             : IconButton(
-                                tooltip: 'Clear date planted',
+                                tooltip: 'Clear Date Planted',
                                 onPressed: _disabled
                                     ? null
                                     : () => setState(() {
@@ -418,7 +440,7 @@ class _PlantDetailsEditorState extends State<PlantDetailsEditor> {
                               ),
                       ),
                     ),
-                    _heading('Planting location'),
+                    _heading('Planting Location'),
                     PlantingCampusDropdown(
                       campuses: _campuses,
                       value: _choice,
@@ -431,7 +453,7 @@ class _PlantDetailsEditorState extends State<PlantDetailsEditor> {
                     ),
                     const SizedBox(height: 12),
                     _dropdown(
-                      label: 'Planting town',
+                      label: 'Planting Town',
                       value: _town,
                       items: _towns,
                       id: 'town_id',
@@ -442,7 +464,7 @@ class _PlantDetailsEditorState extends State<PlantDetailsEditor> {
                       },
                     ),
                     _dropdown(
-                      label: 'Planting barangay',
+                      label: 'Planting Barangay',
                       value: _barangay,
                       items: _barangays
                           .where((b) => b['town_id'] == _town)
@@ -451,7 +473,7 @@ class _PlantDetailsEditorState extends State<PlantDetailsEditor> {
                       name: 'barangay_name',
                       changed: (v) => _barangay = v,
                     ),
-                    _heading('Plant photo'),
+                    _heading('Plant Photo'),
                     if (_photo != null)
                       Image.memory(_photo!, height: 140, fit: BoxFit.contain)
                     else if (_photoUrl.isNotEmpty)
@@ -467,7 +489,7 @@ class _PlantDetailsEditorState extends State<PlantDetailsEditor> {
                       onPressed: _disabled ? null : _pickPhoto,
                       icon: const Icon(Icons.add_photo_alternate_outlined),
                       label: Text(
-                        _picking ? 'Opening photo…' : 'Choose or replace photo',
+                        _picking ? 'Opening photo…' : 'Choose Or Replace Photo',
                       ),
                     ),
                     if (_photo != null || _photoUrl.isNotEmpty)
@@ -479,7 +501,7 @@ class _PlantDetailsEditorState extends State<PlantDetailsEditor> {
                                 _photoUrl = '';
                                 _dirty = true;
                               }),
-                        child: const Text('Remove photo'),
+                        child: const Text('Remove Photo'),
                       ),
                     if (_error != null)
                       Padding(
@@ -502,7 +524,7 @@ class _PlantDetailsEditorState extends State<PlantDetailsEditor> {
         ),
         FilledButton(
           onPressed: _disabled || _plant.isEmpty ? null : _save,
-          child: Text(_saving ? 'Saving…' : 'Save changes'),
+          child: Text(_saving ? 'Saving…' : 'Save Changes'),
         ),
       ],
     ),

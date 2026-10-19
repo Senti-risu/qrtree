@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'app_session.dart';
+import '../utils/word_capitalization.dart';
 
 class UploadedPlantPhoto {
   const UploadedPlantPhoto({required this.path, required this.publicUrl});
@@ -102,7 +103,23 @@ class PlantService {
         .select('classification_id, plant_type, common_name, scientific_name')
         .order('common_name');
 
-    return List<Map<String, dynamic>>.from(data);
+    return List<Map<String, dynamic>>.from(
+      data,
+    ).map(capitalizeLookupNames).toList();
+  }
+
+  Future<String> saveMissingScientificName(
+    int classificationId,
+    String name,
+  ) async {
+    return (await _supabase.rpc(
+      'app_save_missing_scientific_name',
+      params: {
+        'p_session_token': AppSession.requiredToken,
+        'p_classification_id': classificationId,
+        'p_scientific_name': name.trim(),
+      },
+    )).toString();
   }
 
   // ============================================================
@@ -116,7 +133,9 @@ class PlantService {
         .select('campus_id, campus_name')
         .order('campus_name');
 
-    return List<Map<String, dynamic>>.from(data);
+    return List<Map<String, dynamic>>.from(
+      data,
+    ).map(capitalizeLookupNames).toList();
   }
 
   // ============================================================
@@ -130,7 +149,9 @@ class PlantService {
         .select('college_id, college_name, campus_id')
         .order('college_name');
 
-    return List<Map<String, dynamic>>.from(data);
+    return List<Map<String, dynamic>>.from(
+      data,
+    ).map(capitalizeLookupNames).toList();
   }
 
   // ============================================================
@@ -144,7 +165,9 @@ class PlantService {
         .select('town_id, town_name, zip_code')
         .order('town_name');
 
-    return List<Map<String, dynamic>>.from(data);
+    return List<Map<String, dynamic>>.from(
+      data,
+    ).map(capitalizeLookupNames).toList();
   }
 
   // ============================================================
@@ -158,7 +181,9 @@ class PlantService {
         .select('barangay_id, barangay_name, town_id')
         .order('barangay_name');
 
-    return List<Map<String, dynamic>>.from(data);
+    return List<Map<String, dynamic>>.from(
+      data,
+    ).map(capitalizeLookupNames).toList();
   }
 
   // ============================================================
@@ -171,7 +196,9 @@ class PlantService {
         .select('growth_status_id, growth_stage')
         .order('growth_status_id');
 
-    return List<Map<String, dynamic>>.from(data);
+    return List<Map<String, dynamic>>.from(
+      data,
+    ).map(capitalizeLookupNames).toList();
   }
 
   // ============================================================
@@ -184,7 +211,9 @@ class PlantService {
         .select('health_status_id, status_name, is_locked')
         .order('health_status_id');
 
-    return List<Map<String, dynamic>>.from(data);
+    return List<Map<String, dynamic>>.from(
+      data,
+    ).map(capitalizeLookupNames).toList();
   }
 
   // ============================================================
@@ -210,10 +239,23 @@ class PlantService {
     String? datePlanted,
     String? treePlanter,
     String? photoUrl,
+    String? scientificName,
   }) async {
+    final normalizedScientificName = scientificName?.trim();
+    if (normalizedScientificName != null &&
+        (normalizedScientificName.runes.length > 200 ||
+            RegExp(r'[\x00-\x1F\x7F]').hasMatch(normalizedScientificName))) {
+      throw const FormatException(
+        'Scientific name must contain at most 200 printable characters.',
+      );
+    }
+    final addScientificName = normalizedScientificName?.isNotEmpty ?? false;
     final result = await _supabase.rpc(
-      'register_plant_at_location',
+      addScientificName
+          ? 'register_plant_with_scientific_name'
+          : 'register_plant_at_location',
       params: {
+        if (addScientificName) 'p_scientific_name': normalizedScientificName,
         'p_location_type': locationType,
         'p_location_campus_id': locationCampusId,
         'p_classification_id': classificationId,

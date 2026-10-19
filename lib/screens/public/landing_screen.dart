@@ -160,7 +160,7 @@ class _LandingHeader extends StatelessWidget {
           OutlinedButton.icon(
             onPressed: onLogin,
             icon: const Icon(Icons.login_rounded, size: 19),
-            label: const Text('Log in'),
+            label: const Text('Log In'),
             style: OutlinedButton.styleFrom(
               foregroundColor: Colors.white,
               minimumSize: const Size.fromHeight(52),
@@ -220,7 +220,7 @@ class _LandingHeader extends StatelessWidget {
         OutlinedButton.icon(
           onPressed: onLogin,
           icon: const Icon(Icons.login_rounded, size: 19),
-          label: Text(compact ? 'Log in' : 'Log in to EcoTag'),
+          label: Text(compact ? 'Log In' : 'Log In To EcoTag'),
           style: OutlinedButton.styleFrom(
             foregroundColor: Colors.white,
             minimumSize: const Size(0, 48),
@@ -299,7 +299,7 @@ class _HeroContent extends StatelessWidget {
             FilledButton.icon(
               onPressed: onLogin,
               icon: const Icon(Icons.arrow_forward_rounded, size: 21),
-              label: Text(compact ? 'Continue' : 'Log in or continue as guest'),
+              label: Text(compact ? 'Continue' : 'Log In Or Continue As Guest'),
               style: FilledButton.styleFrom(
                 backgroundColor: Colors.white,
                 foregroundColor: AppColors.darkGreen,

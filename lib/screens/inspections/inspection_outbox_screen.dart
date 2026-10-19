@@ -121,7 +121,7 @@ class _InspectionOutboxScreenState extends State<InspectionOutboxScreen> {
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(
-      title: const Text('Offline inspections'),
+      title: const Text('Offline Inspections'),
       actions: [
         IconButton(
           onPressed: _busy ? null : _load,
@@ -142,12 +142,12 @@ class _InspectionOutboxScreenState extends State<InspectionOutboxScreen> {
         FilledButton.icon(
           onPressed: _busy ? null : _sync,
           icon: const Icon(Icons.cloud_upload_outlined),
-          label: const Text('Upload pending inspections'),
+          label: const Text('Upload Pending Inspections'),
         ),
         OutlinedButton.icon(
           onPressed: _busy ? null : _prepare,
           icon: const Icon(Icons.download_outlined),
-          label: const Text('Download assigned plants for offline work'),
+          label: const Text('Download Assigned Plants For Offline Work'),
         ),
         if (_drafts.isEmpty)
           const Padding(
@@ -159,7 +159,7 @@ class _InspectionOutboxScreenState extends State<InspectionOutboxScreen> {
             child: ListTile(
               title: Text('Plant #${draft['plantId']}'),
               subtitle: Text(
-                '${draft['ready'] == true ? 'Pending upload' : 'Draft • needs review'}\n${draft['observedAt']}',
+                '${draft['ready'] == true ? 'Pending Upload' : 'Draft • needs review'}\n${draft['observedAt']}',
               ),
               isThreeLine: true,
               onTap: _busy
@@ -185,7 +185,7 @@ class _InspectionOutboxScreenState extends State<InspectionOutboxScreen> {
                     },
               trailing: IconButton(
                 icon: const Icon(Icons.delete_outline),
-                tooltip: 'Delete draft',
+                tooltip: 'Delete Draft',
                 onPressed: _busy
                     ? null
                     : () async {
@@ -230,7 +230,7 @@ class _InspectionOutboxScreenState extends State<InspectionOutboxScreen> {
               'Plant #${plant['plant_id']} • ${(plant['plant_classification'] as Map?)?['common_name'] ?? 'Plant'}',
             ),
             subtitle: const Text(
-              'Start an inspection using the downloaded profile',
+              'Start An Inspection Using The Downloaded Profile',
             ),
             onTap: _busy
                 ? null

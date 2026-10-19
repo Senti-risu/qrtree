@@ -110,7 +110,7 @@ class _InspectionRemindersState extends State<InspectionReminders>
               children: [
                 TextButton(
                   onPressed: widget.onOpen,
-                  child: const Text('Review inspection queue'),
+                  child: const Text('Review Inspection Queue'),
                 ),
                 TextButton(
                   onPressed: () async {
@@ -121,7 +121,7 @@ class _InspectionRemindersState extends State<InspectionReminders>
                     }
                     if (mounted) setState(() => _dismissed = true);
                   },
-                  child: const Text('Dismiss for today'),
+                  child: const Text('Dismiss For Today'),
                 ),
               ],
             ),

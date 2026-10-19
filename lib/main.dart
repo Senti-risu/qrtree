@@ -474,7 +474,7 @@ class MyApp extends StatelessWidget {
                       );
                     },
                     icon: const Icon(Icons.login),
-                    label: const Text('Return to Login'),
+                    label: const Text('Return To Login'),
                   ),
                 ],
               ),

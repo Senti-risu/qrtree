@@ -180,7 +180,7 @@ class _CreateAdminAccountDialogState extends State<CreateAdminAccountDialog> {
                       controller: _password,
                       obscureText: _obscure,
                       decoration: InputDecoration(
-                        labelText: 'Temporary password',
+                        labelText: 'Temporary Password',
                         prefixIcon: const Icon(Icons.lock_outline),
                         border: const OutlineInputBorder(),
                         suffixIcon: IconButton(
@@ -530,7 +530,7 @@ class _EditAdminAccountDialogState extends State<EditAdminAccountDialog> {
                       controller: _password,
                       obscureText: _obscure,
                       decoration: InputDecoration(
-                        labelText: 'New password (optional)',
+                        labelText: 'New Password (optional)',
                         helperText: 'Leave blank to keep the current password.',
                         prefixIcon: const Icon(Icons.lock_reset_outlined),
                         border: const OutlineInputBorder(),

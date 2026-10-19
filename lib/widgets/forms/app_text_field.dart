@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import '../../theme/app_colors.dart';
 import '../../theme/app_layout.dart';
+import '../../utils/word_capitalization.dart';
 
 class AppTextField extends StatelessWidget {
   final String label;
@@ -50,7 +51,7 @@ class AppTextField extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          label,
+          capitalizeWords(label),
           style: theme.textTheme.labelLarge?.copyWith(
             color: enabled ? AppColors.darkGreen : AppColors.textDisabled,
             fontWeight: FontWeight.w600,

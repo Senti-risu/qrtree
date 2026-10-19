@@ -37,7 +37,7 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
   final MobileScannerController _controller = MobileScannerController();
   bool _handling = false;
   String _message =
-      'Place an EcoTag label inside the frame. You can also enter its code manually.';
+      'Place an EcoTag QR inside the frame. You can also enter its code manually.';
   _ScanMessageType _messageType = _ScanMessageType.neutral;
   String? _lastCode;
   DateTime? _lastScanAt;
@@ -67,7 +67,7 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
         HapticFeedback.vibrate();
         setState(() {
           _handling = false;
-          _message = 'This is not a recognized EcoTag. Try another label.';
+          _message = 'This is not a recognized EcoTag. Try another QR.';
           _messageType = _ScanMessageType.error;
         });
         return;
@@ -81,7 +81,7 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
           setState(() {
             _handling = false;
             _message =
-                'This label is available but has not been assigned to a plant. Ask a College Admin to register it.';
+                'This QR is available but has not been assigned to a plant. Ask a College Admin to register it.';
             _messageType = _ScanMessageType.neutral;
           });
           return;
@@ -113,7 +113,7 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
           setState(() {
             _handling = false;
             _message =
-                'This label is missing its record number. Contact an administrator.';
+                'This QR is missing its record number. Contact an administrator.';
             _messageType = _ScanMessageType.error;
           });
           return;
@@ -124,7 +124,7 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
           setState(() {
             _handling = false;
             _message =
-                'This label is assigned, but its plant record could not be found. Contact an administrator.';
+                'This QR is assigned, but its plant record could not be found. Contact an administrator.';
             _messageType = _ScanMessageType.error;
           });
           return;
@@ -146,7 +146,7 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
         await _controller.start();
         setState(() {
           _handling = false;
-          _message = 'Ready to scan another EcoTag label.';
+          _message = 'Ready to scan another EcoTag QR.';
           _messageType = _ScanMessageType.success;
           _lastCode = null;
         });
@@ -157,7 +157,7 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
         setState(() {
           _handling = false;
           _message =
-              'This label was reported damaged. A College Admin needs to replace it before the plant can be opened by scanning.';
+              'This QR was reported damaged. A College Admin needs to reprint it and confirm it is ready before the plant can be opened by scanning.';
           _messageType = _ScanMessageType.error;
         });
         return;
@@ -168,8 +168,8 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
         setState(() {
           _handling = false;
           _message = replacementId == null
-              ? 'This label has been replaced. Scan the newer label attached to the plant.'
-              : 'This label has been replaced by QR #$replacementId. Scan the newer label attached to the plant.';
+              ? 'This QR has been replaced. Scan the newer QR attached to the plant.'
+              : 'This QR has been replaced by QR #$replacementId. Scan the newer QR attached to the plant.';
           _messageType = _ScanMessageType.neutral;
         });
         return;
@@ -179,7 +179,7 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
         setState(() {
           _handling = false;
           _message =
-              'This label is retired and cannot be used again. Contact a College Admin if the plant needs a new label.';
+              'This QR is retired and cannot be used again. Contact a College Admin if the plant needs a new QR.';
           _messageType = _ScanMessageType.neutral;
         });
         return;
@@ -188,7 +188,7 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
       setState(() {
         _handling = false;
         _message =
-            'This EcoTag is unavailable and cannot be used. Try another label.';
+            'This EcoTag is unavailable and cannot be used. Try another QR.';
         _messageType = _ScanMessageType.error;
       });
     } catch (error) {
@@ -197,7 +197,7 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
         _handling = false;
         _message = userFacingError(
           error,
-          fallback: 'The label could not be checked. Please try again.',
+          fallback: 'The QR could not be checked. Please try again.',
         );
         _messageType = _ScanMessageType.error;
       });
@@ -232,7 +232,7 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
     final code = await showDialog<String>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Enter EcoTag code'),
+        title: const Text('Enter EcoTag Code'),
         content: TextField(
           controller: controller,
           autofocus: true,
@@ -240,7 +240,7 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
           textInputAction: TextInputAction.done,
           onSubmitted: (value) => Navigator.pop(dialogContext, value.trim()),
           decoration: const InputDecoration(
-            labelText: 'QR code or tag ID',
+            labelText: 'QR Code Or Tag ID',
             hintText: 'Example: ECOTAG-…',
             prefixIcon: Icon(Icons.qr_code_rounded),
             border: OutlineInputBorder(),
@@ -254,7 +254,7 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
           FilledButton(
             onPressed: () =>
                 Navigator.pop(dialogContext, controller.text.trim()),
-            child: const Text('Check code'),
+            child: const Text('Check Code'),
           ),
         ],
       ),
@@ -267,7 +267,7 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
     setState(() {
       _handling = false;
       _lastCode = null;
-      _message = 'Place another EcoTag label inside the frame.';
+      _message = 'Place another EcoTag QR inside the frame.';
       _messageType = _ScanMessageType.neutral;
     });
   }
@@ -288,12 +288,12 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
         backgroundColor: AppColors.scannerBackground,
         actions: [
           IconButton(
-            tooltip: 'Toggle flashlight',
+            tooltip: 'Toggle Flashlight',
             onPressed: _toggleTorch,
             icon: const Icon(Icons.flashlight_on_outlined),
           ),
           IconButton(
-            tooltip: 'Switch camera',
+            tooltip: 'Switch Camera',
             onPressed: _switchCamera,
             icon: const Icon(Icons.cameraswitch_outlined),
           ),
@@ -406,7 +406,7 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
                 child: OutlinedButton.icon(
                   onPressed: _handling ? null : _showManualEntry,
                   icon: const Icon(Icons.keyboard_outlined),
-                  label: const Text('Enter code'),
+                  label: const Text('Enter Code'),
                   style: OutlinedButton.styleFrom(
                     minimumSize: const Size.fromHeight(48),
                   ),
@@ -418,7 +418,7 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
                   child: FilledButton.icon(
                     onPressed: _resetScanner,
                     icon: const Icon(Icons.refresh_rounded),
-                    label: const Text('Try again'),
+                    label: const Text('Try Again'),
                     style: FilledButton.styleFrom(
                       minimumSize: const Size.fromHeight(48),
                       backgroundColor: AppColors.green,
