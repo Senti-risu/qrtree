@@ -61,7 +61,12 @@ void main() {
         final filters = tester.getRect(find.byKey(const Key('filters')));
         expect(header.left, filters.left);
         expect(header.width, filters.width);
-        expect(header.width, size.width - 32);
+        final combined = tester.getRect(
+          find.byKey(const ValueKey('workspace-heading-filters')),
+        );
+        expect(combined.width, size.width - 32);
+        expect(combined.contains(header.topLeft), isTrue);
+        expect(combined.contains(filters.bottomRight), isTrue);
         expect(tester.takeException(), isNull);
         final action = find.text('View upcoming');
         await tester.ensureVisible(action);

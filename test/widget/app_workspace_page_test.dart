@@ -221,10 +221,15 @@ void main() {
           expect(tester.takeException(), isNull);
           final header = tester.getRect(find.byKey(const Key('header')));
           final tools = tester.getRect(find.byKey(const Key('tools')));
-          expect(header.width, width - 32);
+          final combined = tester.getRect(
+            find.byKey(const ValueKey('workspace-heading-filters')),
+          );
+          expect(combined.width, width - 32);
+          expect(combined.contains(header.topLeft), isTrue);
+          expect(combined.contains(tools.bottomRight), isTrue);
           expect(header.left, tools.left);
           expect(header.width, tools.width);
-          expect(tools.top - header.bottom, 16);
+          expect(tools.top - header.bottom, 41);
           for (final action in page.value) {
             await tester.ensureVisible(find.text(action));
             await tester.tap(find.text(action));

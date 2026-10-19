@@ -3,6 +3,7 @@ import '../theme/app_layout.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_typography.dart';
 import 'app_card.dart';
+import 'app_surface_group.dart';
 
 /// Standard header -> tools -> results layout for staff workspace pages.
 /// Results keep their own scrolling; short windows can scroll the tools away.
@@ -20,8 +21,16 @@ class AppWorkspacePage extends StatelessWidget {
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, constraints) {
       final sections = <Widget>[
-        if (header != null) ...[header!, const SizedBox(height: AppSpacing.lg)],
-        if (tools != null) ...[tools!, const SizedBox(height: AppSpacing.lg)],
+        if (header != null && tools != null) ...[
+          AppWorkspaceHeader(header: header!, tools: tools!),
+          const SizedBox(height: AppSpacing.lg),
+        ] else ...[
+          if (header != null) ...[
+            header!,
+            const SizedBox(height: AppSpacing.lg),
+          ],
+          if (tools != null) ...[tools!, const SizedBox(height: AppSpacing.lg)],
+        ],
       ];
       final short =
           constraints.maxHeight < 440 ||
@@ -48,12 +57,42 @@ class AppWorkspacePage extends StatelessWidget {
   );
 }
 
+class AppWorkspaceHeader extends StatelessWidget {
+  const AppWorkspaceHeader({
+    super.key,
+    required this.header,
+    required this.tools,
+  });
+  final Widget header, tools;
+
+  @override
+  Widget build(BuildContext context) => AppCard(
+    key: const ValueKey('workspace-heading-filters'),
+    width: double.infinity,
+    boxShadow: const [],
+    child: AppSurfaceGroup(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          header,
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 20),
+            child: Divider(height: 1),
+          ),
+          tools,
+        ],
+      ),
+    ),
+  );
+}
+
 /// Filters and task tools use the same inset on every workspace page.
 class AppToolbarCard extends StatelessWidget {
   const AppToolbarCard({super.key, required this.child});
   final Widget child;
   @override
   Widget build(BuildContext context) => AppCard(
+    mergeWithParent: true,
     width: double.infinity,
     padding: const EdgeInsets.all(AppSpacing.lg),
     child: child,
@@ -69,6 +108,7 @@ class AppTablePanel extends StatelessWidget {
     child: AppCard(
       width: double.infinity,
       padding: const EdgeInsets.all(AppSpacing.lg),
+      boxShadow: const [],
       child: child,
     ),
   );

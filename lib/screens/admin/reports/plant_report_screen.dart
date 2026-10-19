@@ -514,6 +514,7 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     _kpiCards(),
+                    const SizedBox(height: AppSpacing.lg),
                     const MonitoringOutcomesCard(),
                     const SizedBox(height: AppSpacing.lg),
                     _analytics(),

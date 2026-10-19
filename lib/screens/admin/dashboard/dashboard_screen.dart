@@ -574,40 +574,29 @@ class _DashboardScreenState extends State<DashboardScreen> {
       builder: (context, constraints) {
         final contentWidth = constraints.maxWidth;
 
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            if (_role == 'college_admin' || _role == 'inspection_team') ...[
-              DashboardPriorityLayout(
-                work: _buildMonitoringWork(
-                  contentWidth >= 720 &&
-                          _totalPlants > 1 &&
-                          MediaQuery.textScalerOf(context).scale(1) < 1.6
-                      ? (contentWidth - AppSpacing.lg) / 2
-                      : contentWidth,
-                ),
-                recent: _totalPlants > 1 ? _buildHealthChartCard() : null,
-              ),
-              const SizedBox(height: AppSpacing.lg),
-            ],
-            if ((_role == 'college_admin' || _role == 'inspection_team') &&
-                _dyingCount > 0) ...[
-              _buildPriorityTaskCard(),
-              const SizedBox(height: AppSpacing.lg),
-            ],
-            _buildResponsiveStats(contentWidth),
-
-            const SizedBox(height: AppSpacing.lg),
-
-            _buildResponsiveAnalytics(contentWidth),
-
-            const SizedBox(height: AppSpacing.lg),
-
-            if (_role != 'college_admin' &&
-                _role != 'inspection_team' &&
-                _totalPlants > 1)
-              _buildHealthChartCard(),
-          ],
+        final hasInspectionOverview =
+            _role == 'college_admin' || _role == 'inspection_team';
+        return DashboardSummaryLayout(
+          stats: _buildResponsiveStats(contentWidth),
+          overview: hasInspectionOverview
+              ? DashboardPriorityLayout(
+                  work: _buildMonitoringWork(
+                    contentWidth >= 720 &&
+                            _totalPlants > 1 &&
+                            MediaQuery.textScalerOf(context).scale(1) < 1.6
+                        ? (contentWidth - AppSpacing.lg) / 2
+                        : contentWidth,
+                  ),
+                  recent: _totalPlants > 1 ? _buildHealthChartCard() : null,
+                )
+              : null,
+          priority: hasInspectionOverview && _dyingCount > 0
+              ? _buildPriorityTaskCard()
+              : null,
+          analytics: _buildResponsiveAnalytics(contentWidth),
+          trailing: !hasInspectionOverview && _totalPlants > 1
+              ? _buildHealthChartCard()
+              : null,
         );
       },
     );

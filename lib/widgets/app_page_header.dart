@@ -19,6 +19,7 @@ class AppPageHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AppCard(
+      mergeWithParent: true,
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       child: LayoutBuilder(
@@ -40,9 +41,9 @@ class AppPageHeader extends StatelessWidget {
               const SizedBox(height: AppSpacing.xs),
               Text(
                 subtitle,
-                style: Theme.of(
-                  context,
-                ).textTheme.bodyMedium?.copyWith(color: AppColors.green),
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: AppColors.textSecondary,
+                ),
               ),
             ],
           );

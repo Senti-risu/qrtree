@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../theme/app_layout.dart';
 import 'app_card.dart';
+import 'app_workspace_page.dart';
 
 /// One scroll surface lets the actions and filters move out of the way of tags.
 class QrMobileTagList extends StatelessWidget {
@@ -45,9 +46,9 @@ class QrMobileTagList extends StatelessWidget {
         child: CustomScrollView(
           keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           slivers: [
-            SliverToBoxAdapter(child: toolbar),
-            const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.lg)),
-            SliverToBoxAdapter(child: AppCard(child: header)),
+            SliverToBoxAdapter(
+              child: AppWorkspaceHeader(header: toolbar, tools: header),
+            ),
             const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.md)),
             if (loading)
               const SliverToBoxAdapter(

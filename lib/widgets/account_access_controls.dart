@@ -25,7 +25,12 @@ class AccountStatusButton extends StatelessWidget {
         backgroundColor: active
             ? AppColors.primaryContainer
             : AppColors.dangerContainer,
-        side: BorderSide(color: active ? AppColors.green : AppColors.danger),
+        side: BorderSide(
+          color: (active ? AppColors.green : AppColors.danger).withValues(
+            alpha: 0.18,
+          ),
+        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
       icon: busy
           ? const SizedBox(
@@ -33,7 +38,7 @@ class AccountStatusButton extends StatelessWidget {
               height: 16,
               child: CircularProgressIndicator(strokeWidth: 2),
             )
-          : Icon(active ? Icons.toggle_on_rounded : Icons.toggle_off_rounded),
+          : const Icon(Icons.circle, size: 8),
       label: Text(active ? 'Active' : 'Inactive'),
     ),
   );
@@ -58,6 +63,10 @@ class AccountRowActions extends StatelessWidget {
     children: [
       OutlinedButton.icon(
         onPressed: busy ? null : onEdit,
+        style: OutlinedButton.styleFrom(
+          side: const BorderSide(color: AppColors.border),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
         icon: const Icon(Icons.edit_outlined, size: 19),
         label: const Text('Edit'),
       ),
@@ -66,6 +75,7 @@ class AccountRowActions extends StatelessWidget {
         style: OutlinedButton.styleFrom(
           foregroundColor: AppColors.danger,
           side: BorderSide(color: AppColors.danger.withValues(alpha: .4)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
         icon: const Icon(Icons.archive_outlined, size: 19),
         label: const Text('Archive'),

@@ -643,6 +643,7 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
 
   Widget _toolbar() {
     return AppCard(
+      mergeWithParent: true,
       padding: const EdgeInsets.all(AppSpacing.lg),
       child: LayoutBuilder(
         builder: (_, constraints) {

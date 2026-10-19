@@ -7,6 +7,43 @@ import 'package:flutter_application_1/widgets/forms/planting_campus_dropdown.dar
 import 'package:flutter_application_1/theme/app_theme.dart';
 
 void main() {
+  for (final width in [320.0, 768.0, 1440.0]) {
+    testWidgets('summary cards precede overview at width $width', (
+      tester,
+    ) async {
+      tester.view.physicalSize = Size(width, 1000);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.light,
+          home: Scaffold(
+            body: SingleChildScrollView(
+              child: DashboardSummaryLayout(
+                stats: const AppCard(child: Text('Summary cards')),
+                overview: const DashboardPriorityLayout(
+                  work: AppCard(child: Text('Inspection overview')),
+                  recent: AppCard(child: Text('Health overview')),
+                ),
+                analytics: const AppCard(child: Text('Analytics')),
+              ),
+            ),
+          ),
+        ),
+      );
+      final summary = tester.getRect(find.text('Summary cards'));
+      final inspection = tester.getRect(find.text('Inspection overview'));
+      final health = tester.getRect(find.text('Health overview'));
+      final analytics = tester.getRect(find.text('Analytics'));
+      expect(summary.bottom, lessThan(inspection.top));
+      expect(summary.bottom, lessThan(health.top));
+      expect(analytics.top, greaterThan(inspection.bottom));
+      expect(analytics.top, greaterThan(health.bottom));
+      expect(tester.takeException(), isNull);
+    });
+  }
+
   testWidgets('inspection actions occupy the card height alongside the chart', (
     tester,
   ) async {

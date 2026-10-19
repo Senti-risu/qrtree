@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
 import '../theme/app_layout.dart';
+import 'app_surface_group.dart';
 
 class AppCard extends StatelessWidget {
   final Widget child;
@@ -15,6 +16,7 @@ class AppCard extends StatelessWidget {
   final BoxBorder border;
   final List<BoxShadow> boxShadow;
   final Clip clipBehavior;
+  final bool mergeWithParent;
 
   const AppCard({
     super.key,
@@ -29,10 +31,14 @@ class AppCard extends StatelessWidget {
     this.border = AppBorders.subtle,
     this.boxShadow = AppShadows.card,
     this.clipBehavior = Clip.none,
+    this.mergeWithParent = false,
   });
 
   @override
   Widget build(BuildContext context) {
+    if (mergeWithParent && AppSurfaceGroup.contains(context)) {
+      return SizedBox(width: width, height: height, child: child);
+    }
     return Container(
       width: width,
       height: height,

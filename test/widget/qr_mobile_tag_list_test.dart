@@ -48,6 +48,7 @@ void main() {
         scrollable: find.byType(Scrollable).first,
         maxScrolls: 30,
       );
+      await tester.pumpAndSettle();
       expect(find.text('ECOTAG-202610-18').hitTestable(), findsOneWidget);
       expect(tester.takeException(), isNull);
     });

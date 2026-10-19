@@ -45,6 +45,7 @@ class InspectionQueueFilters extends StatelessWidget {
   };
   @override
   Widget build(BuildContext context) => AppCard(
+    mergeWithParent: true,
     padding: const EdgeInsets.all(16),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,

@@ -148,9 +148,11 @@ class AppTheme {
         dataRowMaxHeight: double.infinity,
         horizontalMargin: 16,
         columnSpacing: 24,
-        headingTextStyle: compactTextTheme.labelLarge?.copyWith(
+        headingTextStyle: compactTextTheme.labelMedium?.copyWith(
+          fontSize: AppTypography.caption,
           fontWeight: FontWeight.w700,
-          color: AppColors.textPrimary,
+          letterSpacing: 0.8,
+          color: AppColors.textSecondary,
         ),
         dataTextStyle: compactTextTheme.bodyMedium,
       ),
