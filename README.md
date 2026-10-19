@@ -5,6 +5,9 @@ QR identification, recurring inspections, and monitoring reports.
 
 See [Project structure](docs/PROJECT_STRUCTURE.md) for source folders, screen
 locations, and test groups.
+See the [project guide](docs/PROJECT_GUIDE.md) for the system's roles, features,
+user flows, and code responsibilities.
+See the [user guide](docs/USER_GUIDE.md) for staff and guest instructions.
 
 ## Run locally
 
@@ -36,9 +39,10 @@ data before using a fresh Supabase project.
 
 Apply unapplied migrations in filename order, beginning with
 `202608230001_add_plant_inspections.sql` and ending with
-`202610190001_campus_only_lookup_creation.sql`. Use Supabase SQL Editor or your established
-migration runner, and record applied filenames. Do not reapply older function
-definitions after newer migrations. Verify upgrades against a staging copy first.
+`202610200002_automatic_qr_damage.sql` (the latest migration currently in this
+repository). Use Supabase SQL Editor or your established migration runner, and
+record applied filenames. Do not reapply older function definitions after newer
+migrations. Verify upgrades against a staging copy first.
 
 Deploy the unapplied migrations before distributing this client. Monitoring adds request
 IDs and observation timestamps to inspections, the staff timeline, and scope-checked
