@@ -20,16 +20,22 @@ the app warns that the old draft must be discarded. Never submit it again.
 
 ## Missing scientific names
 
-After selecting a plant type and common name, Scientific Name is editable only
-when that classification has no saved name. It remains optional, accepts up to
-200 printable characters, preserves scientific-name capitalization, and is kept
-in a device draft. An existing scientific name autofills and stays read-only.
+After selecting a plant type, type the common name directly. Scientific Name is
+editable when the matching classification has no saved name; an existing
+scientific name autofills and stays read-only. The common name is required and
+accepts up to 100 printable characters. Scientific names remain optional,
+accept up to 200 printable characters, and preserve capitalization. Typed names
+are kept in a device draft.
 
-A newly entered name is submitted with the registration in one database call.
-Apply `supabase/migrations/202610200001_registration_scientific_name.sql` before
-using this combined save. Failed registration rolls back the name change and
-the new plant/QR; the form retains its text for retry. No fallback performs a
-separate name update if the new RPC is missing. Registrations without a new name
+A newly entered scientific name is submitted with the registration in one
+database call. A new common name is created as a shared classification in that
+same transaction. Apply
+`supabase/migrations/202610200001_registration_scientific_name.sql` and
+`supabase/migrations/202610200003_register_new_classifications.sql` before using
+these combined saves. Failed registration rolls back a new classification,
+scientific-name update, and the new plant/QR; the form retains its text for
+retry. No fallback performs a separate write if a required RPC is missing.
+Registrations using an existing classification and no new scientific name
 continue using the existing registration RPC.
 
 Scientific names belong to the shared plant classification, not a plant-specific

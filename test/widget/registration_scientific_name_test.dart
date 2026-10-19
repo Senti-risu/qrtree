@@ -9,6 +9,8 @@ class ScientificService extends helpers.LookupService {
   final String savedName;
   final bool fail;
   String? submittedName;
+  String? submittedCommonName;
+  String? submittedPlantType;
   bool submitted = false;
   @override
   Future<List<Map<String, dynamic>>> getClassifications() async => [
@@ -40,7 +42,9 @@ class ScientificService extends helpers.LookupService {
   Future<Map<String, dynamic>> registerPlantWithQr({
     required String locationType,
     int? locationCampusId,
-    required int classificationId,
+    required int? classificationId,
+    String? newPlantType,
+    String? newCommonName,
     required int campusId,
     required int collegeId,
     required int townId,
@@ -57,6 +61,8 @@ class ScientificService extends helpers.LookupService {
   }) async {
     submitted = true;
     submittedName = scientificName;
+    submittedCommonName = newCommonName;
+    submittedPlantType = newPlantType;
     if (fail) throw StateError('Registration failed.');
     return {'plant_id': 99, 'qr_tag_id': 9, 'qr_code_string': 'ECOTAG-TEST-99'};
   }
@@ -150,6 +156,53 @@ void main() {
     expect(service.submitted, isTrue);
     expect(service.submittedName, isNull);
   });
+  testWidgets('new common and scientific names can be entered and submitted', (
+    tester,
+  ) async {
+    final service = ScientificService();
+    final drafts = draft();
+    drafts.value = {
+      ...drafts.value!,
+      'classificationId': null,
+      'plantType': 'Tree',
+    };
+    await helpers.open(tester, drafts, width: 1440, service: service);
+    await tester.tap(find.text('Resume'));
+    await tester.pumpAndSettle();
+
+    final commonName = find.byWidgetPredicate(
+      (widget) => widget is AppTextField && widget.label == 'Common Name *',
+    );
+    final commonNameInput = find.descendant(
+      of: commonName,
+      matching: find.byType(TextFormField),
+    );
+    await tester.ensureVisible(commonNameInput);
+    await tester.enterText(commonNameInput, 'Banana');
+    await tester.pumpAndSettle();
+
+    final field = tester.widget<AppTextField>(scientific());
+    expect(field.readOnly, isFalse);
+    final scientificInput = find.descendant(
+      of: scientific(),
+      matching: find.byType(TextFormField),
+    );
+    await tester.ensureVisible(scientificInput);
+    await tester.enterText(scientificInput, 'Musa acuminata');
+    expect(field.controller.text, 'Musa acuminata');
+
+    final submit = find.widgetWithText(FilledButton, 'Register Plant');
+    await tester.ensureVisible(submit);
+    await tester.tap(submit);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+
+    expect(service.submitted, isTrue);
+    expect(service.submittedPlantType, 'Tree');
+    expect(service.submittedCommonName, 'Banana');
+    expect(service.submittedName, 'Musa acuminata');
+    expect(find.text('ECOTAG-TEST-99'), findsOneWidget);
+  });
   testWidgets('mobile draft retains an entered scientific name', (
     tester,
   ) async {
@@ -208,6 +261,19 @@ void main() {
         ),
       );
       expect(sql, isNot(contains('exception when')));
+    },
+  );
+  test(
+    'new classifications are created atomically with plant registration',
+    () {
+      final sql = File(
+        'supabase/migrations/202610200003_register_new_classifications.sql',
+      ).readAsStringSync();
+      expect(sql, contains('public.require_app_session(p_session_token)'));
+      expect(sql, contains('p_campus_id is distinct from actor.campus_id'));
+      expect(sql, contains('pg_advisory_xact_lock'));
+      expect(sql, contains('public.register_plant_with_scientific_name'));
+      expect(sql, contains('classification.created'));
     },
   );
 }

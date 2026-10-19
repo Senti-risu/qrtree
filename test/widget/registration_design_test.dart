@@ -51,14 +51,22 @@ void main() {
     }
   }
 
-  testWidgets('desktop photo is separate from classification', (tester) async {
+  testWidgets('web registration is centered and sections flow vertically', (
+    tester,
+  ) async {
     await fixture.open(tester, fixture.MemoryDrafts(), width: 1600);
-    final plant = tester.getRect(find.text('Plant Classification'));
-    final location = tester.getRect(find.text('Location'));
+    final form = tester.getRect(find.byKey(const Key('registration-web-form')));
+    final plant = tester.getRect(
+      find.byKey(const Key('registration-plant-section')),
+    );
+    final location = tester.getRect(
+      find.byKey(const Key('registration-location-section')),
+    );
     final photo = tester.getRect(find.text('Plant Photo'));
-    expect(plant.top, closeTo(location.top, 1));
-    expect(photo.left, closeTo(location.left, 1));
-    expect(photo.top, greaterThan(location.top));
+    expect(form.width, lessThanOrEqualTo(1120));
+    expect(plant.left, closeTo(location.left, 1));
+    expect(plant.bottom, lessThan(location.top));
+    expect(location.bottom, lessThan(photo.top));
     expect(tester.takeException(), isNull);
   });
 

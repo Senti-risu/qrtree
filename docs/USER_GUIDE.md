@@ -76,7 +76,10 @@ Team accounts in their assigned college.
 
 1. Open **Register Plant** from the dashboard or staff navigation.
 2. Complete the required plant details and select the appropriate
-   classification and location options.
+   classification and location options. Type directly into **Common Name**,
+   including when it is not already listed; a new name is saved with the plant
+   registration. Scientific Name can be typed when no name is already saved
+   for the matching classification.
 3. Add a plant photo if available and complete the remaining form sections.
 4. Review the information before submitting.
 5. Submit the registration and wait for the success or error message before

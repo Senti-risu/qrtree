@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_application_1/theme/app_theme.dart';
 import 'package:flutter_application_1/widgets/forms/app_searchable_dropdown.dart';
+import 'package:flutter_application_1/widgets/forms/app_text_field.dart';
 import 'registration_draft_flow_test.dart' as fixture;
 
 void main() {
@@ -76,7 +77,6 @@ void main() {
   });
 
   for (final entry in {
-    'Common Name': 'classificationId',
     'Growth Stage': 'growthId',
     'Health Status': 'healthId',
   }.entries) {
@@ -93,7 +93,13 @@ void main() {
           );
       field('Plant Type').onChanged('Tree');
       await tester.pumpAndSettle();
-      field('Common Name').onChanged('Mango');
+      final commonName = tester.widget<AppTextField>(
+        find.byWidgetPredicate(
+          (widget) => widget is AppTextField && widget.label == 'Common Name *',
+        ),
+      );
+      commonName.controller.text = 'Mango';
+      commonName.onChanged?.call('Mango');
       field('Growth Stage').onChanged('Seedling');
       field('Health Status').onChanged('Healthy');
       await tester.pumpAndSettle();
@@ -108,4 +114,39 @@ void main() {
       expect(tester.takeException(), isNull);
     });
   }
+
+  testWidgets('typing Common Name clears any previous classification ID', (
+    tester,
+  ) async {
+    final drafts = fixture.MemoryDrafts()
+      ..value = {
+        'classificationId': 7,
+        'growthId': 5,
+        'healthId': 6,
+        'townId': 3,
+        'barangayId': 4,
+        'plantingCampus': '1',
+        'datePlanted': '2026-01-01',
+      };
+    await fixture.open(tester, drafts, width: 1600);
+    await tester.tap(find.text('Resume'));
+    await tester.pumpAndSettle();
+    final commonName = find.byWidgetPredicate(
+      (widget) => widget is AppTextField && widget.label == 'Common Name *',
+    );
+    final input = find.descendant(
+      of: commonName,
+      matching: find.byType(TextFormField),
+    );
+    await tester.ensureVisible(input);
+    await tester.enterText(input, 'Unknown tree');
+    await tester.pumpAndSettle();
+    final save = find.byKey(const Key('save-registration-draft'));
+    await tester.ensureVisible(save);
+    await tester.tap(save);
+    await tester.pumpAndSettle();
+    expect(drafts.value!['classificationId'], isNull);
+    expect(drafts.value!['commonName'], 'Unknown tree');
+    expect(tester.takeException(), isNull);
+  });
 }

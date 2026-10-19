@@ -226,7 +226,9 @@ class PlantService {
   Future<Map<String, dynamic>> registerPlantWithQr({
     required String locationType,
     int? locationCampusId,
-    required int classificationId,
+    required int? classificationId,
+    String? newPlantType,
+    String? newCommonName,
     required int campusId,
     required int collegeId,
     required int townId,
@@ -241,6 +243,23 @@ class PlantService {
     String? photoUrl,
     String? scientificName,
   }) async {
+    final isNewClassification = classificationId == null;
+    final normalizedPlantType = newPlantType?.trim();
+    final normalizedCommonName = newCommonName?.trim().replaceAll(
+      RegExp(r'\s+'),
+      ' ',
+    );
+    if (isNewClassification &&
+        (normalizedPlantType == null ||
+            normalizedPlantType.isEmpty ||
+            normalizedCommonName == null ||
+            normalizedCommonName.isEmpty ||
+            normalizedCommonName.runes.length > 100 ||
+            RegExp(r'[\x00-\x1F\x7F]').hasMatch(normalizedCommonName))) {
+      throw const FormatException(
+        'Enter a plant type and a common name of at most 100 printable characters.',
+      );
+    }
     final normalizedScientificName = scientificName?.trim();
     if (normalizedScientificName != null &&
         (normalizedScientificName.runes.length > 200 ||
@@ -251,14 +270,20 @@ class PlantService {
     }
     final addScientificName = normalizedScientificName?.isNotEmpty ?? false;
     final result = await _supabase.rpc(
-      addScientificName
+      isNewClassification
+          ? 'register_plant_with_new_classification'
+          : addScientificName
           ? 'register_plant_with_scientific_name'
           : 'register_plant_at_location',
       params: {
+        if (isNewClassification) 'p_plant_type': normalizedPlantType,
+        if (isNewClassification) 'p_common_name': normalizedCommonName,
+        ...?classificationId == null
+            ? null
+            : {'p_classification_id': classificationId},
         if (addScientificName) 'p_scientific_name': normalizedScientificName,
         'p_location_type': locationType,
         'p_location_campus_id': locationCampusId,
-        'p_classification_id': classificationId,
         'p_campus_id': campusId,
         'p_college_id': collegeId,
         'p_town_id': townId,

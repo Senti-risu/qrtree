@@ -71,8 +71,10 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
   );
 
   static const int _maxVarietyLength = 100;
+  static const int _maxCommonNameLength = 100;
   static const int _maxPlanterLength = 120;
 
+  final TextEditingController _commonNameController = TextEditingController();
   final TextEditingController _varietyController = TextEditingController();
 
   final TextEditingController _scientificNameController =
@@ -174,6 +176,7 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
     ]) {
       controller.removeListener(_markDirty);
     }
+    _commonNameController.dispose();
     _varietyController.dispose();
     _scientificNameController.dispose();
     _planterController.dispose();
@@ -189,6 +192,7 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
 
   Map<String, dynamic> _draftData() => {
     'classificationId': _selectedClassificationId,
+    'commonName': _commonNameController.text.trim(),
     'scientificName': _scientificNameController.text.trim(),
     'plantType': _plantType,
     'growthId': _selectedGrowthStatusId,
@@ -320,7 +324,9 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
                 ? data['plantType'] as String
                 : null)
           : _titleCase(classification['plant_type']?.toString() ?? '');
-      _commonName = classification?['common_name']?.toString();
+      _commonName =
+          classification?['common_name']?.toString() ?? text('commonName', 100);
+      _commonNameController.text = _commonName ?? '';
       _scientificNameController.text =
           (classification?['scientific_name']?.toString().trim().isNotEmpty ??
               false)
@@ -465,20 +471,6 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
   // FILTERED VALUES
   // ============================================================
 
-  List<String> get _filteredCommonNames {
-    if (_plantType == null) return [];
-
-    return _classifications
-        .where(
-          (row) =>
-              _titleCase(row['plant_type']?.toString() ?? '') == _plantType,
-        )
-        .map((row) => row['common_name']?.toString() ?? '')
-        .where((value) => value.isNotEmpty)
-        .toSet()
-        .toList();
-  }
-
   List<String> get _campusNames {
     return _campuses
         .map((row) => row['campus_name']?.toString() ?? '')
@@ -550,45 +542,39 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
       _plantType = value;
 
       _commonName = null;
+      _commonNameController.clear();
       _selectedClassificationId = null;
 
       _scientificNameController.clear();
     });
   }
 
-  void _selectCommonName(String? value) {
-    if (value == null) {
-      setState(() {
-        _hasUnsavedChanges = true;
-        _commonName = null;
-        _selectedClassificationId = null;
-        _scientificNameController.clear();
-      });
-      return;
+  void _onCommonNameChanged(String value) {
+    final previousClassificationId = _selectedClassificationId;
+    final wasAutofilled = _hasSavedScientificName;
+    Map<String, dynamic>? match;
+    if (_plantType != null && value.trim().isNotEmpty) {
+      for (final row in _classifications) {
+        if (row['common_name']?.toString().toLowerCase() ==
+                value.trim().toLowerCase() &&
+            _titleCase(row['plant_type']?.toString() ?? '') == _plantType) {
+          match = row;
+          break;
+        }
+      }
     }
-    if (_plantType == null) {
-      return;
-    }
-
-    final matches = _classifications.where(
-      (row) =>
-          row['common_name']?.toString() == value &&
-          _titleCase(row['plant_type']?.toString() ?? '') == _plantType,
-    );
-
-    if (matches.isEmpty) {
-      return;
-    }
-
-    final row = matches.first;
 
     setState(() {
       _hasUnsavedChanges = true;
       _commonName = value;
-
-      _selectedClassificationId = row['classification_id'] as int?;
-
-      _scientificNameController.text = row['scientific_name']?.toString() ?? '';
+      _selectedClassificationId = match?['classification_id'] as int?;
+      if (match != null) {
+        _scientificNameController.text =
+            match['scientific_name']?.toString() ?? '';
+      } else if (wasAutofilled ||
+          previousClassificationId != _selectedClassificationId) {
+        _scientificNameController.clear();
+      }
     });
   }
 
@@ -912,7 +898,7 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
     if (_selectedCampusId == null || _selectedCollegeId == null)
       'managing campus and college',
     if (_plantType == null) 'plant type',
-    if (_selectedClassificationId == null) 'common name',
+    if (_commonName == null || _commonName!.trim().isEmpty) 'common name',
     if (_selectedGrowthStatusId == null) 'growth stage',
     if (_selectedHealthStatusId == null) 'health status',
     if (_datePlanted == null) 'date planted',
@@ -927,6 +913,7 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
   bool _validatePlantStep({bool announce = true}) {
     final missing = _missingPlantFields;
     final varietyLength = _varietyController.text.trim().runes.length;
+    final commonName = _commonNameController.text.trim();
     final planterLength = _planterController.text.trim().runes.length;
     final today = DateTime.now();
     final todayOnly = DateTime(today.year, today.month, today.day);
@@ -934,6 +921,10 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
     if (varietyLength > _maxVarietyLength) {
       validationError =
           'Variety must be $_maxVarietyLength characters or fewer.';
+    } else if (commonName.runes.length > _maxCommonNameLength ||
+        RegExp(r'[\x00-\x1F\x7F]').hasMatch(commonName)) {
+      validationError =
+          'Common name must contain at most $_maxCommonNameLength printable characters.';
     } else if (planterLength > _maxPlanterLength) {
       validationError =
           'Tree planter must be $_maxPlanterLength characters or fewer.';
@@ -1102,18 +1093,19 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
       if (PlantRecordLock.isDeadStatus(_healthStatus)) {
         if (!await confirmDeadPlant(context) || !mounted) return;
       }
-      final possibleDuplicates = await _plantService
-          .findPossibleDuplicatePlants(
-            classificationId: _selectedClassificationId!,
-            campusId: _selectedCampusId!,
-            collegeId: _selectedCollegeId!,
-            townId: _selectedTownId!,
-            barangayId: _selectedBarangayId!,
-            variety: _emptyToNull(capitalizeWords(_varietyController.text)),
-            datePlanted: _datePlanted == null
-                ? null
-                : _formatDate(_datePlanted!),
-          );
+      final possibleDuplicates = _selectedClassificationId == null
+          ? const <Map<String, dynamic>>[]
+          : await _plantService.findPossibleDuplicatePlants(
+              classificationId: _selectedClassificationId!,
+              campusId: _selectedCampusId!,
+              collegeId: _selectedCollegeId!,
+              townId: _selectedTownId!,
+              barangayId: _selectedBarangayId!,
+              variety: _emptyToNull(capitalizeWords(_varietyController.text)),
+              datePlanted: _datePlanted == null
+                  ? null
+                  : _formatDate(_datePlanted!),
+            );
       if (!mounted) return;
       if (possibleDuplicates.isNotEmpty) {
         final continueRegistration = await _confirmPossibleDuplicates(
@@ -1140,13 +1132,17 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
         scientificName: _hasSavedScientificName
             ? null
             : _emptyToNull(_scientificNameController.text),
+        newPlantType: _selectedClassificationId == null ? _plantType : null,
+        newCommonName: _selectedClassificationId == null
+            ? _commonNameController.text
+            : null,
         locationType: _plantingCampusChoice == PlantingCampusDropdown.outside
             ? 'outside'
             : 'inside',
         locationCampusId: PlantingCampusDropdown.campusId(
           _plantingCampusChoice,
         ),
-        classificationId: _selectedClassificationId!,
+        classificationId: _selectedClassificationId,
 
         campusId: _selectedCampusId!,
 
@@ -1509,66 +1505,45 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
   Widget _form({required bool useMobileStepper}) {
     if (useMobileStepper) return _mobileForm();
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        _registrationHeader(),
-        const SizedBox(height: AppSpacing.lg),
-        LayoutBuilder(
-          builder: (context, constraints) =>
-              constraints.maxWidth >= AppBreakpoints.desktop
-              ? Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: _plantSection(
-                        includePhoto: false,
-                        compactAssignment: true,
-                      ),
-                    ),
-                    const SizedBox(width: AppSpacing.lg),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          _locationSection(),
-                          const SizedBox(height: AppSpacing.lg),
-                          _photoSection(),
-                        ],
-                      ),
-                    ),
-                  ],
-                )
-              : Column(
-                  children: [
-                    _plantSection(includePhoto: false, compactAssignment: true),
-                    const SizedBox(height: AppSpacing.lg),
-                    _locationSection(),
-                    const SizedBox(height: AppSpacing.lg),
-                    _photoSection(),
-                  ],
+    return Center(
+      child: ConstrainedBox(
+        key: const Key('registration-web-form'),
+        constraints: const BoxConstraints(maxWidth: 1120),
+        child: SizedBox(
+          width: double.infinity,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _registrationHeader(),
+              const SizedBox(height: AppSpacing.lg),
+              _plantSection(includePhoto: false, compactAssignment: true),
+              const SizedBox(height: AppSpacing.lg),
+              _locationSection(),
+              const SizedBox(height: AppSpacing.lg),
+              _photoSection(),
+              const SizedBox(height: AppSpacing.lg),
+              AppCard(
+                padding: const EdgeInsets.all(AppSpacing.lg),
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    if (constraints.maxWidth < 650 ||
+                        MediaQuery.textScalerOf(context).scale(1) >= 1.4) {
+                      return SizedBox(
+                        width: double.infinity,
+                        child: _registerButton(),
+                      );
+                    }
+                    return Align(
+                      alignment: Alignment.centerRight,
+                      child: _registerButton(),
+                    );
+                  },
                 ),
-        ),
-        const SizedBox(height: AppSpacing.lg),
-        AppCard(
-          padding: const EdgeInsets.all(AppSpacing.lg),
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              if (constraints.maxWidth < 650 ||
-                  MediaQuery.textScalerOf(context).scale(1) >= 1.4) {
-                return SizedBox(
-                  width: double.infinity,
-                  child: _registerButton(),
-                );
-              }
-              return Align(
-                alignment: Alignment.centerRight,
-                child: _registerButton(),
-              );
-            },
+              ),
+            ],
           ),
         ),
-      ],
+      ),
     );
   }
 
@@ -1725,6 +1700,7 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
     final theme = Theme.of(context);
 
     return _card(
+      key: const Key('registration-plant-section'),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1930,6 +1906,7 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
     final theme = Theme.of(context);
 
     return _card(
+      key: const Key('registration-plant-section'),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
 
@@ -1994,20 +1971,13 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
               onChanged: _selectPlantType,
             ),
 
-            AppSearchableDropdown(
-              label: 'Common Name',
-              isRequired: true,
-              errorText: _showPlantErrors && _selectedClassificationId == null
-                  ? 'Please select a common name.'
-                  : null,
-
-              value: _commonName,
-
-              items: _filteredCommonNames,
-
-              enabled: _plantType != null,
-
-              onChanged: _selectCommonName,
+            AppTextField(
+              label: 'Common Name *',
+              controller: _commonNameController,
+              enabled: _plantType != null && !_saving,
+              maxLength: _maxCommonNameLength,
+              hint: 'Type a common name',
+              onChanged: _onCommonNameChanged,
             ),
           ),
 
@@ -2027,8 +1997,7 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
 
               controller: _scientificNameController,
 
-              readOnly:
-                  _selectedClassificationId == null || _hasSavedScientificName,
+              readOnly: _hasSavedScientificName,
               enabled: !_saving,
               maxLength: 200,
               suffixIcon: _selectedClassificationId == null
@@ -2118,6 +2087,7 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
     final theme = Theme.of(context);
 
     return _card(
+      key: const Key('registration-location-section'),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
 
@@ -2139,70 +2109,56 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
 
           const SizedBox(height: AppSpacing.lg),
 
-          PlantingCampusDropdown(
-            showHelperText: false,
-            isRequired: true,
-            errorText: _showLocationErrors && _plantingCampusChoice == null
-                ? 'Please select a planting campus or Outside campus.'
-                : null,
-            campuses: _campuses,
-            value: _plantingCampusChoice,
-            onChanged: _saving
-                ? null
-                : (value) => setState(() {
-                    _plantingCampusChoice = value;
-                    _hasUnsavedChanges = true;
-                  }),
+          _twoFields(
+            PlantingCampusDropdown(
+              showHelperText: false,
+              isRequired: true,
+              errorText: _showLocationErrors && _plantingCampusChoice == null
+                  ? 'Please select a planting campus or Outside campus.'
+                  : null,
+              campuses: _campuses,
+              value: _plantingCampusChoice,
+              onChanged: _saving
+                  ? null
+                  : (value) => setState(() {
+                      _plantingCampusChoice = value;
+                      _hasUnsavedChanges = true;
+                    }),
+            ),
+            AppSearchableDropdown(
+              label: 'Town',
+              isRequired: true,
+              errorText: _showLocationErrors && _selectedTownId == null
+                  ? 'Please select a town.'
+                  : null,
+              value: _town,
+              items: _townNames,
+              onChanged: _selectTown,
+            ),
           ),
 
           const SizedBox(height: AppSpacing.lg),
 
-          // TOWN FIRST
-          AppSearchableDropdown(
-            label: 'Town',
-            isRequired: true,
-            errorText: _showLocationErrors && _selectedTownId == null
-                ? 'Please select a town.'
-                : null,
-
-            value: _town,
-
-            items: _townNames,
-
-            onChanged: _selectTown,
-          ),
-
-          const SizedBox(height: AppSpacing.lg),
-
-          // BARANGAY FILTERED BY TOWN
-          AppSearchableDropdown(
-            key: ValueKey('barangay-town-$_selectedTownId'),
-            label: 'Barangay',
-            isRequired: true,
-            errorText: _showLocationErrors && _selectedBarangayId == null
-                ? 'Please select a barangay.'
-                : null,
-
-            value: _barangay,
-
-            items: _filteredBarangayNames,
-
-            enabled: _selectedTownId != null,
-
-            onChanged: _selectBarangay,
-          ),
-
-          const SizedBox(height: AppSpacing.lg),
-
-          SizedBox(
-            width: 180,
-
-            child: AppTextField(
-              label: 'Zip Code',
-
-              controller: _zipCodeController,
-
-              readOnly: true,
+          _twoFields(
+            AppSearchableDropdown(
+              key: ValueKey('barangay-town-$_selectedTownId'),
+              label: 'Barangay',
+              isRequired: true,
+              errorText: _showLocationErrors && _selectedBarangayId == null
+                  ? 'Please select a barangay.'
+                  : null,
+              value: _barangay,
+              items: _filteredBarangayNames,
+              enabled: _selectedTownId != null,
+              onChanged: _selectBarangay,
+            ),
+            SizedBox(
+              width: 180,
+              child: AppTextField(
+                label: 'Zip Code',
+                controller: _zipCodeController,
+                readOnly: true,
+              ),
             ),
           ),
         ],

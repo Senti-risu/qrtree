@@ -6,6 +6,7 @@ import 'package:flutter_application_1/screens/admin/registration/register_plant_
 import 'package:flutter_application_1/services/registration_draft_store.dart';
 import 'package:flutter_application_1/theme/app_theme.dart';
 import 'package:flutter_application_1/widgets/forms/app_searchable_dropdown.dart';
+import 'package:flutter_application_1/widgets/forms/app_text_field.dart';
 import 'package:flutter_application_1/widgets/forms/planting_campus_dropdown.dart';
 
 class MemoryDrafts extends RegistrationDraftStore {
@@ -111,6 +112,17 @@ Future<void> open(
 
 void main() {
   Future<void> choose(WidgetTester tester, String label, String value) async {
+    if (label == 'Common Name') {
+      final commonName = tester.widget<AppTextField>(
+        find.byWidgetPredicate(
+          (widget) => widget is AppTextField && widget.label == 'Common Name *',
+        ),
+      );
+      commonName.controller.text = value;
+      commonName.onChanged?.call(value);
+      await tester.pumpAndSettle();
+      return;
+    }
     final field = tester.widget<AppSearchableDropdown>(
       find.byWidgetPredicate(
         (widget) => widget is AppSearchableDropdown && widget.label == label,
@@ -195,7 +207,7 @@ void main() {
       final requiredFields = tester
           .widgetList<AppSearchableDropdown>(find.byType(AppSearchableDropdown))
           .where((field) => field.isRequired);
-      expect(requiredFields.length, 6);
+      expect(requiredFields.length, 5);
       expect(requiredFields.every((field) => field.errorText != null), isTrue);
       expect(
         tester
@@ -206,6 +218,19 @@ void main() {
       expect(tester.takeException(), isNull);
     },
   );
+
+  testWidgets('desktop registration is one continuous vertical form', (
+    tester,
+  ) async {
+    await open(tester, MemoryDrafts(), width: 1440);
+    expect(find.byKey(const Key('registration-step-header')), findsNothing);
+    expect(find.text('Continue To Location'), findsNothing);
+    expect(find.text('Plant Classification'), findsOneWidget);
+    expect(find.text('Location'), findsOneWidget);
+    expect(find.text('Plant Photo'), findsOneWidget);
+    expect(find.widgetWithText(FilledButton, 'Register Plant'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
 
   for (final width in [390.0, 1440.0]) {
     testWidgets('resume, save and leave registration at width $width', (
