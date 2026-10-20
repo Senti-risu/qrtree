@@ -1,3 +1,5 @@
+import '../../widgets/app_search_field.dart';
+import '../../utils/search_match.dart';
 import 'package:flutter/material.dart';
 import '../../widgets/app_workspace_page.dart';
 import '../../theme/app_typography.dart';
@@ -60,7 +62,7 @@ class _InspectionAccountsScreenState extends State<InspectionAccountsScreen> {
     return _accounts.where((account) {
       final username = account['username']?.toString().toLowerCase() ?? '';
       final active = account['is_active'] as bool? ?? true;
-      if (term.isNotEmpty && !username.contains(term)) return false;
+      if (!matchesWordPrefixes([username], term)) return false;
       if (_statusFilter == 'active' && !active) return false;
       if (_statusFilter == 'inactive' && active) return false;
       return true;
@@ -87,7 +89,7 @@ class _InspectionAccountsScreenState extends State<InspectionAccountsScreen> {
     final term = _searchController.text.trim().toLowerCase();
     final searchMatches = _accounts.where((account) {
       final username = account['username']?.toString().toLowerCase() ?? '';
-      return term.isEmpty || username.contains(term);
+      return matchesWordPrefixes([username], term);
     });
     if (status == 'all') return searchMatches.length;
     return searchMatches.where((account) {
@@ -642,11 +644,13 @@ class _InspectionAccountsScreenState extends State<InspectionAccountsScreen> {
     }
   }
 
-  Widget _actions(Map<String, dynamic> account) => AccountRowActions(
-    busy: _busyAccountIds.contains(account['user_id']),
-    onEdit: () => _runAccountAction(account, () => _edit(account)),
-    onArchive: () => _runAccountAction(account, () => _archive(account)),
-  );
+  Widget _actions(Map<String, dynamic> account, {bool wrap = true}) =>
+      AccountRowActions(
+        wrap: wrap,
+        busy: _busyAccountIds.contains(account['user_id']),
+        onEdit: () => _runAccountAction(account, () => _edit(account)),
+        onArchive: () => _runAccountAction(account, () => _archive(account)),
+      );
 
   Widget _statusButton(Map<String, dynamic> account) {
     final active = account['is_active'] as bool? ?? true;
@@ -789,8 +793,11 @@ class _InspectionAccountsScreenState extends State<InspectionAccountsScreen> {
       final isMobile =
           !AppBreakpoints.isDesktop(constraints.maxWidth) ||
           MediaQuery.textScalerOf(context).scale(1) >= 1.4;
-      final search = TextField(
+      final search = AppSearchField(
         controller: _searchController,
+        suggestions: _accounts.map(
+          (account) => account['username']?.toString() ?? '',
+        ),
         onChanged: (_) => setState(() {}),
         textInputAction: TextInputAction.search,
         decoration: InputDecoration(
@@ -1075,7 +1082,7 @@ class _InspectionAccountsScreenState extends State<InspectionAccountsScreen> {
                 ),
                 const DataCell(Text('Inspection Team')),
                 DataCell(_statusButton(account)),
-                DataCell(_actions(account)),
+                DataCell(_actions(account, wrap: false)),
               ],
             );
           }).toList(),

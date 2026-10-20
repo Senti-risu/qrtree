@@ -50,7 +50,7 @@ class AppTopNavbar extends StatelessWidget {
 
     return Container(
       height: (MediaQuery.textScalerOf(context).scale(40) + 24).clamp(
-        83.0,
+        64.0,
         160.0,
       ),
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),

@@ -1,3 +1,5 @@
+import '../../widgets/app_search_field.dart';
+import '../../utils/search_match.dart';
 import 'package:flutter/material.dart';
 import '../../widgets/app_workspace_page.dart';
 import '../../theme/app_typography.dart';
@@ -51,10 +53,11 @@ class _ManageAccountsScreenState extends State<ManageAccountsScreen> {
   List<AdminAccount> get _visibleAccounts {
     final term = _searchController.text.trim().toLowerCase();
     return _accounts.where((account) {
-      if (term.isNotEmpty &&
-          !'${account.username} ${account.roleLabel} ${account.scopeLabel}'
-              .toLowerCase()
-              .contains(term)) {
+      if (!matchesWordPrefixes([
+        account.username,
+        account.roleLabel,
+        account.scopeLabel,
+      ], term)) {
         return false;
       }
       if (_roleFilter != 'all' && account.role != _roleFilter) {
@@ -713,11 +716,13 @@ class _ManageAccountsScreenState extends State<ManageAccountsScreen> {
     }
   }
 
-  Widget _actions(AdminAccount account) => AccountRowActions(
-    busy: _busyAccountIds.contains(account.userId),
-    onEdit: () => _runAccountAction(account, () => _edit(account)),
-    onArchive: () => _runAccountAction(account, () => _archive(account)),
-  );
+  Widget _actions(AdminAccount account, {bool wrap = true}) =>
+      AccountRowActions(
+        wrap: wrap,
+        busy: _busyAccountIds.contains(account.userId),
+        onEdit: () => _runAccountAction(account, () => _edit(account)),
+        onArchive: () => _runAccountAction(account, () => _archive(account)),
+      );
 
   Widget _statusButton(AdminAccount account) => AccountStatusButton(
     active: account.isActive,
@@ -816,8 +821,15 @@ class _ManageAccountsScreenState extends State<ManageAccountsScreen> {
         final isMobile =
             !AppBreakpoints.isDesktop(constraints.maxWidth) ||
             MediaQuery.textScalerOf(context).scale(1) >= 1.4;
-        final search = TextField(
+        final search = AppSearchField(
           controller: _searchController,
+          suggestions: _accounts.expand(
+            (account) => [
+              account.username,
+              account.roleLabel,
+              account.scopeLabel,
+            ],
+          ),
           onChanged: (_) => setState(() {}),
           textInputAction: TextInputAction.search,
           decoration: InputDecoration(
@@ -1207,7 +1219,7 @@ class _ManageAccountsScreenState extends State<ManageAccountsScreen> {
                     DataCell(Text(account.roleLabel)),
                     DataCell(Text(account.scopeLabel)),
                     DataCell(_statusButton(account)),
-                    DataCell(_actions(account)),
+                    DataCell(_actions(account, wrap: false)),
                   ],
                 ),
               )

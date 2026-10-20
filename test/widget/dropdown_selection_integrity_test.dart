@@ -135,8 +135,7 @@ void main() {
     await tester.ensureVisible(input);
     await tester.enterText(input, 'Unknown tree');
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Add "Unknown tree"'));
-    await tester.pumpAndSettle();
+    expect(find.text('Add "Unknown tree"'), findsNothing);
     final save = find.byKey(const Key('save-registration-draft'));
     await tester.ensureVisible(save);
     await tester.tap(save);

@@ -71,8 +71,20 @@ class _PlantDetailsEditorState extends State<PlantDetailsEditor> {
         _plant = plant;
         _classes = List<Map<String, dynamic>>.from(data['classifications']);
         _campuses = List<Map<String, dynamic>>.from(data['campuses']);
-        _towns = List<Map<String, dynamic>>.from(data['towns']);
-        _barangays = List<Map<String, dynamic>>.from(data['barangays']);
+        _towns = List<Map<String, dynamic>>.from(data['towns'])
+          ..sort(
+            (a, b) => a['town_name'].toString().trim().toLowerCase().compareTo(
+              b['town_name'].toString().trim().toLowerCase(),
+            ),
+          );
+        _barangays = List<Map<String, dynamic>>.from(data['barangays'])
+          ..sort(
+            (a, b) => a['barangay_name']
+                .toString()
+                .trim()
+                .toLowerCase()
+                .compareTo(b['barangay_name'].toString().trim().toLowerCase()),
+          );
         _classification = plant['classification_id'] as int?;
         _type = _selected['plant_type']?.toString();
         _variety.text = plant['variety']?.toString() ?? '';

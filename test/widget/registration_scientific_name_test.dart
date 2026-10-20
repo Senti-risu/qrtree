@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_application_1/widgets/forms/app_searchable_dropdown.dart';
 import 'package:flutter_application_1/widgets/forms/app_text_field.dart';
 import 'registration_draft_flow_test.dart' as helpers;
+import 'package:flutter_application_1/widgets/plant_details_presentation.dart';
 
 class ScientificService extends helpers.LookupService {
   ScientificService({this.savedName = '', this.fail = false});
@@ -90,6 +91,58 @@ Finder scientific() => find.byWidgetPredicate(
 );
 
 void main() {
+  testWidgets('closing post-registration details returns to plant records', (
+    tester,
+  ) async {
+    await helpers.open(
+      tester,
+      draft(),
+      width: 1440,
+      service: ScientificService(),
+      onGenerateRoute: (settings) {
+        if (settings.name == '/plant-details') {
+          return plantDetailsRoute<void>(
+            settings: settings,
+            platformIsWeb: true,
+            builder: (context) => Scaffold(
+              appBar: AppBar(
+                title: const Text('Registered plant details'),
+                leading: IconButton(
+                  tooltip: 'Close Plant Details',
+                  onPressed: () => Navigator.maybePop(context),
+                  icon: const Icon(Icons.close),
+                ),
+              ),
+            ),
+          );
+        }
+        if (settings.name == '/plant-list') {
+          return MaterialPageRoute<void>(
+            settings: settings,
+            builder: (_) =>
+                const Scaffold(body: Text('Plant Records destination')),
+          );
+        }
+        return null;
+      },
+    );
+    await tester.tap(find.text('Resume'));
+    await tester.pumpAndSettle();
+    final submit = find.widgetWithText(FilledButton, 'Register Plant');
+    await tester.ensureVisible(submit);
+    await tester.tap(submit);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.tap(find.text('View Plant'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.text('Registered plant details'), findsOneWidget);
+    await tester.tap(find.byTooltip('Close Plant Details'));
+    await tester.pumpAndSettle();
+    expect(find.text('Plant Records destination'), findsOneWidget);
+    expect(find.text('Registered plant details'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
   for (final saved in [false, true]) {
     testWidgets(
       'scientific name ${saved ? 'auto-fills and stays protected' : 'is editable and submitted with registration'}',
@@ -182,8 +235,7 @@ void main() {
     await tester.ensureVisible(commonNameInput);
     await tester.enterText(commonNameInput, 'Banana');
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Add "Banana"'));
-    await tester.pumpAndSettle();
+    expect(find.text('Add "Banana"'), findsNothing);
 
     final field = tester.widget<AppTextField>(scientific());
     expect(field.readOnly, isFalse);

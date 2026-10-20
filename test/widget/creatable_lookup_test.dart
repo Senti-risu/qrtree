@@ -6,6 +6,47 @@ import 'package:flutter_application_1/widgets/forms/creatable_lookup_input.dart'
 import 'package:flutter_application_1/theme/app_theme.dart';
 
 void main() {
+  testWidgets('custom common name is ready to submit without Add', (
+    tester,
+  ) async {
+    String? selected;
+    var enabled = true;
+    late StateSetter update;
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: Scaffold(
+          body: StatefulBuilder(
+            builder: (context, setState) {
+              update = setState;
+              return AppSearchableDropdown(
+                label: 'Common Name',
+                value: selected,
+                items: const ['Mango'],
+                allowCustomValue: true,
+                enabled: enabled,
+                onChanged: (value) => setState(() => selected = value),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+    await tester.enterText(find.byType(TextField), 'New plant name');
+    await tester.pumpAndSettle();
+    expect(selected, 'New plant name');
+    expect(find.textContaining('Add "'), findsNothing);
+    update(() => enabled = false);
+    await tester.pumpAndSettle();
+    expect(find.widgetWithText(TextField, 'New Plant Name'), findsOneWidget);
+    update(() => enabled = true);
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), '');
+    await tester.pumpAndSettle();
+    expect(selected, isNull);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('missing values are explicitly added, normalized and selected', (
     tester,
   ) async {

@@ -98,41 +98,53 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    backgroundColor: AppColors.background,
-    appBar: AppBar(
-      title: const Text('Plant Details'),
-      leading: PlantDetailsPresentation.floatsFor(MediaQuery.sizeOf(context))
-          ? IconButton(
-              tooltip: 'Close Plant Details',
-              onPressed: () => Navigator.maybePop(context),
-              icon: const Icon(Icons.close_rounded),
-            )
-          : const BackButton(),
+  Widget build(BuildContext context) => PopScope(
+    canPop: !_savingAction,
+    child: Scaffold(
       backgroundColor: AppColors.background,
-    ),
-    body: _loading
-        ? const Center(child: CircularProgressIndicator())
-        : _error != null
-        ? AppErrorState(
-            title: 'Unable To Load This Plant',
-            message: userFacingError(
-              _error!,
-              fallback:
-                  'The plant details could not be loaded. Please try again.',
-            ),
-            technicalDetails: _error,
-            onRetry: _load,
-          )
-        : SafeArea(
-            top: false,
-            child: Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 640),
-                child: _body(),
+      appBar: AppBar(
+        title: const Text('Plant Details'),
+        leading: PlantDetailsPresentation.floatsFor(MediaQuery.sizeOf(context))
+            ? IconButton(
+                tooltip: 'Close Plant Details',
+                onPressed: _savingAction
+                    ? null
+                    : () => Navigator.maybePop(context),
+                icon: const Icon(Icons.close_rounded),
+              )
+            : BackButton(
+                onPressed: () {
+                  if (!_savingAction) Navigator.maybePop(context);
+                },
               ),
-            ),
-          ),
+        backgroundColor: AppColors.background,
+      ),
+      body: AbsorbPointer(
+        absorbing: _savingAction,
+        child: _loading
+            ? const Center(child: CircularProgressIndicator())
+            : _error != null
+            ? AppErrorState(
+                title: 'Unable To Load This Plant',
+                message: userFacingError(
+                  _error!,
+                  fallback:
+                      'The plant details could not be loaded. Please try again.',
+                ),
+                technicalDetails: _error,
+                onRetry: _load,
+              )
+            : SafeArea(
+                top: false,
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 640),
+                    child: _body(),
+                  ),
+                ),
+              ),
+      ),
+    ),
   );
 
   Widget _body() {

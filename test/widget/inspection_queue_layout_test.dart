@@ -26,6 +26,40 @@ Widget queuePage({
 );
 
 void main() {
+  testWidgets('shared search stays available across every queue tab', (
+    tester,
+  ) async {
+    final controller = TextEditingController();
+    addTearDown(controller.dispose);
+    var selected = 'action';
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: Scaffold(
+          body: StatefulBuilder(
+            builder: (context, setState) {
+              return InspectionQueueFilters(
+                selected: selected,
+                onSelected: (value) => setState(() => selected = value),
+                search: TextField(controller: controller),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+    await tester.enterText(find.byType(TextField), 'Mango');
+    for (final entry in InspectionQueueFilters.filters.entries) {
+      await tester.ensureVisible(find.text(entry.value));
+      await tester.tap(find.text(entry.value));
+      await tester.pumpAndSettle();
+      expect(selected, entry.key);
+      expect(find.byType(TextField), findsOneWidget);
+      expect(controller.text, 'Mango');
+      expect(tester.takeException(), isNull);
+    }
+  });
+
   for (final size in [
     const Size(320, 700),
     const Size(600, 300),

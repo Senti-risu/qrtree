@@ -21,7 +21,7 @@ class AppPageHeader extends StatelessWidget {
     return AppCard(
       mergeWithParent: true,
       width: double.infinity,
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: LayoutBuilder(
         builder: (context, constraints) {
           final stackActions =
@@ -54,7 +54,7 @@ class AppPageHeader extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 heading,
-                const SizedBox(height: AppSpacing.lg),
+                const SizedBox(height: AppSpacing.sm),
                 Align(alignment: Alignment.centerLeft, child: trailing!),
               ],
             );

@@ -259,6 +259,7 @@ class _InspectionFormScreenState extends State<InspectionFormScreen> {
   }
 
   Future<void> _saveDraft() async {
+    if (_saving || _loading) return;
     setState(() => _saving = true);
     try {
       await _persistDraft(ready: false);

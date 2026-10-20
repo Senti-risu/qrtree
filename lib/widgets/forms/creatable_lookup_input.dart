@@ -1,3 +1,4 @@
+import '../../utils/search_match.dart';
 import 'package:flutter/material.dart';
 import '../../theme/app_colors.dart';
 import '../../utils/user_facing_error.dart';
@@ -15,6 +16,7 @@ class CreatableLookupInput extends StatefulWidget {
     this.enabled = true,
     this.errorText,
     this.disabledItems = const {},
+    this.allowCustomValue = false,
   });
   final String label;
   final String? value, errorText;
@@ -24,6 +26,7 @@ class CreatableLookupInput extends StatefulWidget {
   final Future<String?> Function(String)? onCreate;
   final String hintText;
   final bool enabled;
+  final bool allowCustomValue;
 
   @override
   State<CreatableLookupInput> createState() => _CreatableLookupInputState();
@@ -48,6 +51,12 @@ class _CreatableLookupInputState extends State<CreatableLookupInput> {
     if (!_syncing && mounted) {
       _editing = true;
       setState(() => _error = null);
+      if (widget.allowCustomValue) {
+        widget.onChanged(
+          _controller.text.trim().isEmpty ? null : _controller.text,
+        );
+        return;
+      }
       if (widget.value != null &&
           _controller.text != capitalizeWords(widget.value!)) {
         widget.onChanged(null);
@@ -61,7 +70,7 @@ class _CreatableLookupInputState extends State<CreatableLookupInput> {
     if (oldWidget.value != widget.value ||
         oldWidget.enabled != widget.enabled) {
       _syncing = true;
-      if (widget.value != null ||
+      if ((!widget.allowCustomValue && widget.value != null) ||
           !_editing ||
           oldWidget.enabled != widget.enabled) {
         _controller.text = capitalizeWords(widget.value ?? '');
@@ -131,6 +140,9 @@ class _CreatableLookupInputState extends State<CreatableLookupInput> {
             hintText: widget.hintText,
             requestFocusOnTap: true,
             enableFilter: true,
+            filterCallback: (entries, query) => entries
+                .where((entry) => matchesWordPrefixes([entry.label], query))
+                .toList(),
             enableSearch: true,
             menuHeight: 280,
             errorText: _error ?? widget.errorText,
@@ -163,7 +175,10 @@ class _CreatableLookupInputState extends State<CreatableLookupInput> {
             },
           ),
         ),
-        if (widget.onCreate != null && widget.enabled && (canAdd || _busy)) ...[
+        if (!widget.allowCustomValue &&
+            widget.onCreate != null &&
+            widget.enabled &&
+            (canAdd || _busy)) ...[
           const SizedBox(height: 4),
           Align(
             alignment: Alignment.centerLeft,

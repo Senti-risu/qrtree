@@ -1,4 +1,7 @@
+import '../../widgets/app_search_field.dart';
 import 'package:flutter/material.dart';
+import '../../utils/search_match.dart';
+import '../../widgets/app_workspace_page.dart';
 import '../../theme/app_typography.dart';
 import '../../models/plant_record_lock.dart';
 import '../../widgets/plant_details_presentation.dart';
@@ -103,14 +106,13 @@ class _InspectionHistoryScreenState extends State<InspectionHistoryScreen> {
       if (growthFilter != 'all' && growth != growthFilter) return false;
       if (term.isEmpty) return true;
 
-      final searchable = [
+      return matchesWordPrefixes([
         classification['common_name'],
         plant['variety'],
         plant['plant_id'],
         _map(inspection['users'])['username'],
         inspection['observation'],
-      ].where((value) => value != null).join(' ').toLowerCase();
-      return searchable.contains(term);
+      ], term);
     }).toList();
   }
 
@@ -369,7 +371,7 @@ class _InspectionHistoryScreenState extends State<InspectionHistoryScreen> {
     mobileTitle: 'Inspections',
     mobileSubtitle: _queueFilter == 'history'
         ? '${_visibleInspections.length} of ${_inspections.length} inspection records'
-        : '${_queue.length} ${(_queueFilters[_queueFilter] ?? 'scheduled').toLowerCase()}',
+        : '${_visibleQueue.length} of ${_queue.length} ${(_queueFilters[_queueFilter] ?? 'scheduled').toLowerCase()}',
     userId: widget.userId,
     username: widget.username,
     role: widget.role,
@@ -387,10 +389,28 @@ class _InspectionHistoryScreenState extends State<InspectionHistoryScreen> {
       filters: InspectionQueueFilters(
         selected: _queueFilter,
         onSelected: _selectQueueFilter,
+        search: _inspectionSearchField(),
       ),
       body: _queueFilter == 'history' ? _content() : _queueContent(),
     ),
   );
+
+  List<Map<String, dynamic>> get _visibleQueue {
+    final term = _searchController.text.trim().toLowerCase();
+    if (term.isEmpty) return _queue;
+    return _queue.where((item) {
+      final classification = _map(item['plant_classification']);
+      final campus = _map(item['campus']);
+      return matchesWordPrefixes([
+        item['common_name'],
+        classification['common_name'],
+        item['variety'],
+        item['plant_id'],
+        item['campus_name'],
+        campus['campus_name'],
+      ], term);
+    }).toList();
+  }
 
   Widget _queueContent() {
     if (_queueLoading) {
@@ -419,10 +439,25 @@ class _InspectionHistoryScreenState extends State<InspectionHistoryScreen> {
       );
     }
     if (_queue.isEmpty) return _emptyQueue();
+    final visibleQueue = _visibleQueue;
+    if (visibleQueue.isEmpty) {
+      return AppEmptyState(
+        title: 'No Matching Inspections',
+        message: 'Try another search in this queue.',
+        icon: Icons.search_off_rounded,
+        action: TextButton(
+          onPressed: () {
+            _searchController.clear();
+            setState(() {});
+          },
+          child: const Text('Clear Search'),
+        ),
+      );
+    }
 
     return ListView.builder(
-      itemCount: _queue.length,
-      itemBuilder: (_, index) => _queueCard(_queue[index]),
+      itemCount: visibleQueue.length,
+      itemBuilder: (_, index) => _queueCard(visibleQueue[index]),
     );
   }
 
@@ -864,8 +899,6 @@ class _InspectionHistoryScreenState extends State<InspectionHistoryScreen> {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _inspectionSearchField(),
-              const SizedBox(height: 10),
               Row(
                 children: [
                   Expanded(child: _mobileFilterButton()),
@@ -911,8 +944,6 @@ class _InspectionHistoryScreenState extends State<InspectionHistoryScreen> {
           children: [
             Row(
               children: [
-                Expanded(child: _inspectionSearchField()),
-                const SizedBox(width: 10),
                 _filterDropdown(
                   label: 'Health',
                   allLabel: 'All Health Statuses',
@@ -951,11 +982,38 @@ class _InspectionHistoryScreenState extends State<InspectionHistoryScreen> {
     ),
   );
 
-  Widget _inspectionSearchField() => TextField(
+  Widget _inspectionSearchField() => AppSearchField(
     controller: _searchController,
+    suggestions: _queueFilter == 'history'
+        ? _inspections
+              .expand(
+                (inspection) => [
+                  _map(
+                    _map(inspection['plant'])['plant_classification'],
+                  )['common_name'],
+                  _map(inspection['users'])['username'],
+                  inspection['observation'],
+                ],
+              )
+              .whereType<Object>()
+              .map((value) => value.toString())
+        : _queue
+              .expand(
+                (item) => [
+                  item['common_name'],
+                  _map(item['plant_classification'])['common_name'],
+                  item['variety'],
+                  item['campus_name'],
+                  item['plant_id'],
+                ],
+              )
+              .whereType<Object>()
+              .map((value) => value.toString()),
     onChanged: (_) => setState(() {}),
     decoration: InputDecoration(
-      hintText: 'Search plant, inspector, or observation',
+      hintText: _queueFilter == 'history'
+          ? 'Search plant, inspector, or observation'
+          : 'Search plant, variety, campus, or ID',
       prefixIcon: const Icon(Icons.search_rounded, color: AppColors.green),
       suffixIcon: _searchController.text.isEmpty
           ? null

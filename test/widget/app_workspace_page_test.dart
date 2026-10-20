@@ -299,7 +299,7 @@ void main() {
           expect(combined.contains(tools.bottomRight), isTrue);
           expect(header.left, tools.left);
           expect(header.width, tools.width);
-          expect(tools.top - header.bottom, 41);
+          expect(tools.top - header.bottom, 25);
           for (final action in page.value) {
             await tester.ensureVisible(find.text(action));
             await tester.tap(find.text(action));

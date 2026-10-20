@@ -1,3 +1,5 @@
+import '../../widgets/app_search_field.dart';
+import '../../utils/search_match.dart';
 import 'package:flutter/material.dart';
 import '../../widgets/app_workspace_page.dart';
 import '../../theme/app_typography.dart';
@@ -160,7 +162,7 @@ class _PlantListScreenState extends State<PlantListScreen> {
         _map(plant['campus'])['campus_name'],
         _map(plant['college'])['college_name'],
       ].join(' ').toLowerCase();
-      return term.isEmpty || text.contains(term);
+      return matchesWordPrefixes([text], term);
     }).toList();
   }
 
@@ -380,8 +382,19 @@ class _PlantListScreenState extends State<PlantListScreen> {
     ],
   );
 
-  Widget _searchField() => TextField(
+  Widget _searchField() => AppSearchField(
     controller: _searchController,
+    suggestions: _plants
+        .expand(
+          (plant) => [
+            _map(plant['plant_classification'])['common_name'],
+            _map(plant['plant_classification'])['scientific_name'],
+            plant['variety'],
+            _tagId(plant),
+          ],
+        )
+        .whereType<Object>()
+        .map((value) => value.toString()),
     onChanged: (_) => setState(() {}),
     textInputAction: TextInputAction.search,
     decoration: InputDecoration(

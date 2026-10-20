@@ -4,6 +4,48 @@ import 'package:flutter_application_1/theme/app_theme.dart';
 import 'package:flutter_application_1/widgets/account_access_controls.dart';
 
 void main() {
+  testWidgets('table actions reserve enough width for both labels', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: Scaffold(
+          body: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: DataTable(
+              dataRowMaxHeight: double.infinity,
+              columns: const [DataColumn(label: Text('ACTIONS'))],
+              rows: [
+                DataRow(
+                  cells: [
+                    DataCell(
+                      AccountRowActions(
+                        wrap: false,
+                        onEdit: () {},
+                        onArchive: () {},
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+    final edit = tester.getRect(find.widgetWithText(OutlinedButton, 'Edit'));
+    final archive = tester.getRect(
+      find.widgetWithText(OutlinedButton, 'Archive'),
+    );
+    expect(edit.top, archive.top);
+    expect(edit.right, lessThan(archive.left));
+    final table = tester.getRect(find.byType(DataTable));
+    expect(table.contains(archive.bottomRight), isTrue);
+    expect(find.text('Archive').hitTestable(), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   for (final role in [
     'University Admin',
     'Campus Admin',

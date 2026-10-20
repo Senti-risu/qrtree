@@ -12,7 +12,7 @@ class RegistrationPageHeader extends StatelessWidget {
     final theme = Theme.of(context);
 
     return AppCard(
-      padding: const EdgeInsets.all(AppSpacing.xl),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
         children: [
           Expanded(
@@ -21,7 +21,7 @@ class RegistrationPageHeader extends StatelessWidget {
               children: [
                 Text(
                   'Register Plant',
-                  style: theme.textTheme.headlineLarge?.copyWith(
+                  style: theme.textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.w700,
                     color: AppColors.darkGreen,
                   ),

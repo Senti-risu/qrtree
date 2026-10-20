@@ -71,11 +71,11 @@ class AppWorkspaceHeader extends StatelessWidget {
               AppBreakpoints.isPhone(MediaQuery.sizeOf(context).width)
                   ? 16
                   : 24,
-              24,
+              12,
               AppBreakpoints.isPhone(MediaQuery.sizeOf(context).width)
                   ? 16
                   : 24,
-              20,
+              12,
             ),
             child: header,
           ),
@@ -87,11 +87,11 @@ class AppWorkspaceHeader extends StatelessWidget {
                 AppBreakpoints.isPhone(MediaQuery.sizeOf(context).width)
                     ? 16
                     : 24,
-                20,
+                12,
                 AppBreakpoints.isPhone(MediaQuery.sizeOf(context).width)
                     ? 16
                     : 24,
-                24,
+                12,
               ),
               child: tools,
             ),

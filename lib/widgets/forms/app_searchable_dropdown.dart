@@ -16,6 +16,7 @@ class AppSearchableDropdown extends StatelessWidget {
   final bool isRequired;
   final Future<String?> Function(String)? onCreate;
   final Set<String> disabledItems;
+  final bool allowCustomValue;
 
   const AppSearchableDropdown({
     super.key,
@@ -29,11 +30,12 @@ class AppSearchableDropdown extends StatelessWidget {
     this.isRequired = false,
     this.onCreate,
     this.disabledItems = const {},
+    this.allowCustomValue = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    final validValue = value != null && items.contains(value) ? value : null;
+    final validValue = allowCustomValue || items.contains(value) ? value : null;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -55,6 +57,7 @@ class AppSearchableDropdown extends StatelessWidget {
           errorText: errorText,
           onChanged: onChanged,
           onCreate: onCreate,
+          allowCustomValue: allowCustomValue,
           disabledItems: disabledItems,
           hintText: hintText,
         ),

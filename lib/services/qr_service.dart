@@ -1,3 +1,4 @@
+import '../utils/search_match.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'app_session.dart';
@@ -180,9 +181,11 @@ class QrService {
         return false;
       }
       if (term.isEmpty) return true;
-      return '${tag['qr_code_string']} ${tag['qr_tag_id']} $tagStatus'
-          .toLowerCase()
-          .contains(term);
+      return matchesWordPrefixes([
+        tag['qr_code_string'],
+        tag['qr_tag_id'],
+        tagStatus,
+      ], term);
     }).toList();
     if (offset >= rows.length) return const [];
     final end = (offset + limit).clamp(0, rows.length);

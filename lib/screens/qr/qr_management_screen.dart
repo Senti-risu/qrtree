@@ -1,3 +1,4 @@
+import '../../widgets/app_search_field.dart';
 import 'dart:async';
 import '../../widgets/media_preview.dart';
 import '../../widgets/plant_details_presentation.dart';
@@ -21,7 +22,7 @@ import '../../widgets/app_filter_sheet.dart';
 import '../../widgets/app_page_header.dart';
 import '../../widgets/app_shell.dart';
 import '../../widgets/qr_mobile_tag_list.dart';
-import '../../widgets/full_width_data_table.dart';
+
 import '../../widgets/qr_tag_actions.dart';
 import 'qr_problem_reports_screen.dart';
 
@@ -758,12 +759,12 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
             : null,
       );
     }
-    return AppTablePanel(
+    return SingleChildScrollView(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _tagTable(),
+          ..._visibleTags.map(_desktopTagCard),
           if (_hasMore) ...[
             const SizedBox(height: AppSpacing.lg),
             Center(
@@ -785,8 +786,18 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
     );
   }
 
-  Widget _searchField() => TextField(
+  Widget _searchField() => AppSearchField(
     controller: _searchController,
+    suggestions: _tags
+        .expand(
+          (tag) => [
+            tag['qr_code_string'],
+            tag['common_name'],
+            tag['qr_tag_id'],
+          ],
+        )
+        .whereType<Object>()
+        .map((value) => value.toString()),
     onChanged: _onSearchChanged,
     decoration: InputDecoration(
       hintText: 'Search QR code or ID',
@@ -1006,54 +1017,78 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
     },
   );
 
-  Widget _tagTable() => FullWidthDataTable(
-    columns: const [
-      DataColumn(label: Text('QR CODE'), columnWidth: FlexColumnWidth(4)),
-      DataColumn(label: Text('ID'), columnWidth: FlexColumnWidth(.7)),
-      DataColumn(label: Text('STATUS'), columnWidth: FlexColumnWidth(1.3)),
-      DataColumn(label: Text('ACTIONS'), columnWidth: FlexColumnWidth(4)),
-    ],
-    rows: _visibleTags.map((tag) {
-      final code = tag['qr_code_string']?.toString() ?? '';
-      final status = QrService.statusOf(tag);
-      return DataRow(
-        cells: [
-          DataCell(
-            Row(
+  Widget _desktopTagCard(Map<String, dynamic> tag) {
+    final code = tag['qr_code_string']?.toString() ?? '';
+    final plantName = tag['common_name']?.toString().trim();
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.md),
+      child: AppCard(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        boxShadow: const [],
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final identity = Row(
               children: [
                 const CircleAvatar(
                   backgroundColor: AppColors.primaryContainer,
                   child: Icon(Icons.qr_code_2_rounded, color: AppColors.green),
                 ),
-                const SizedBox(width: 10),
+                const SizedBox(width: AppSpacing.md),
                 Expanded(
-                  child: Text(
-                    code,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.green,
-                    ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      TextButton(
+                        style: TextButton.styleFrom(
+                          padding: EdgeInsets.zero,
+                          alignment: Alignment.centerLeft,
+                          minimumSize: const Size(0, 32),
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                        onPressed: () => _showTagDetails(tag),
+                        child: Text(code, softWrap: true),
+                      ),
+                      Text(
+                        'ID: ${tag['qr_tag_id']}${plantName != null && plantName.isNotEmpty ? ' · $plantName' : ''}',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ],
                   ),
                 ),
               ],
-            ),
-            onTap: () => _showTagDetails(tag),
-          ),
-          DataCell(
-            Text('${tag['qr_tag_id']}'),
-            onTap: () => _showTagDetails(tag),
-          ),
-          DataCell(_statusChip(status), onTap: () => _showTagDetails(tag)),
-          DataCell(
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              child: _tagActions(tag, code),
-            ),
-          ),
-        ],
-      );
-    }).toList(),
-  );
+            );
+            final controls = Wrap(
+              spacing: AppSpacing.md,
+              runSpacing: AppSpacing.sm,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                _statusChip(QrService.statusOf(tag)),
+                _tagActions(tag, code),
+              ],
+            );
+            if (constraints.maxWidth < 850 ||
+                MediaQuery.textScalerOf(context).scale(1) > 1.3) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  identity,
+                  const SizedBox(height: AppSpacing.md),
+                  controls,
+                ],
+              );
+            }
+            return Row(
+              children: [
+                Expanded(child: identity),
+                const SizedBox(width: AppSpacing.lg),
+                Flexible(child: controls),
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
 
   Widget _tagTile(Map<String, dynamic> tag) {
     final code = tag['qr_code_string']?.toString() ?? '';

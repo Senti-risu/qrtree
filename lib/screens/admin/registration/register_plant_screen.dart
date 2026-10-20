@@ -418,8 +418,20 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
         _classifications = namedRows(results[0], 'common_name');
         _campuses = namedRows(results[1], 'campus_name');
         _colleges = namedRows(results[2], 'college_name');
-        _towns = namedRows(results[3], 'town_name');
-        _barangays = namedRows(results[4], 'barangay_name');
+        _towns = namedRows(results[3], 'town_name')
+          ..sort(
+            (a, b) => a['town_name'].toString().trim().toLowerCase().compareTo(
+              b['town_name'].toString().trim().toLowerCase(),
+            ),
+          );
+        _barangays = namedRows(results[4], 'barangay_name')
+          ..sort(
+            (a, b) => a['barangay_name']
+                .toString()
+                .trim()
+                .toLowerCase()
+                .compareTo(b['barangay_name'].toString().trim().toLowerCase()),
+          );
         _growthStatuses = results[5];
         _healthStatuses = results[6];
 
@@ -565,7 +577,7 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
   }
 
   void _onCommonNameChanged(String? value) {
-    final selectedName = value?.trim() ?? '';
+    final selectedName = capitalizeWords(value?.trim() ?? '');
     final previousClassificationId = _selectedClassificationId;
     final wasAutofilled = _hasSavedScientificName;
     Map<String, dynamic>? match;
@@ -1301,9 +1313,10 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
               label: const Text('Register Another'),
             ),
             FilledButton.icon(
-              onPressed: () {
+              onPressed: () async {
                 Navigator.pop(dialogContext);
-                Navigator.pushReplacementNamed(
+                // Keep a route beneath details so Close/Back/Escape can pop it.
+                await Navigator.pushNamed(
                   context,
                   '/plant-details',
                   arguments: {
@@ -1311,6 +1324,19 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
                     'user_id': widget.userId,
                     'username': widget.username,
                     'role': widget.role,
+                  },
+                );
+                if (!mounted) return;
+                // Registration has completed; do not return to a submitted form.
+                Navigator.pushReplacementNamed(
+                  context,
+                  '/plant-list',
+                  arguments: {
+                    'user_id': widget.userId,
+                    'username': widget.username,
+                    'role': widget.role,
+                    'campus_id': widget.campusId,
+                    'college_id': widget.collegeId,
                   },
                 );
               },
@@ -1992,11 +2018,11 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
               items: _commonNameOptions,
               enabled: _plantType != null && !_saving,
               errorText: _showPlantErrors && _commonName == null
-                  ? 'Please select or add a common name.'
+                  ? 'Please type or select a common name.'
                   : null,
               onChanged: _onCommonNameChanged,
-              onCreate: (name) async => name,
-              hintText: 'Search or add a common name',
+              allowCustomValue: true,
+              hintText: 'Type or select a common name',
             ),
           ),
 

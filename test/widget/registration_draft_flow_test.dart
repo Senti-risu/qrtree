@@ -74,6 +74,7 @@ Future<void> open(
   double scale = 1,
   String role = 'college_admin',
   PlantService? service,
+  RouteFactory? onGenerateRoute,
 }) async {
   tester.view.physicalSize = Size(width, 900);
   tester.view.devicePixelRatio = 1;
@@ -81,6 +82,7 @@ Future<void> open(
   addTearDown(tester.view.resetDevicePixelRatio);
   await tester.pumpWidget(
     MaterialApp(
+      onGenerateRoute: onGenerateRoute,
       theme: AppTheme.light,
       builder: (context, child) => MediaQuery(
         data: MediaQuery.of(

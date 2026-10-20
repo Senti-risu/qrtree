@@ -24,9 +24,11 @@ class InspectionQueueFilters extends StatelessWidget {
     super.key,
     required this.selected,
     required this.onSelected,
+    this.search,
   });
   final String selected;
   final ValueChanged<String> onSelected;
+  final Widget? search;
   static const filters = {
     'action': 'Needs Action',
     'due_today': 'Due Today',
@@ -50,31 +52,7 @@ class InspectionQueueFilters extends StatelessWidget {
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const Row(
-          children: [
-            Icon(Icons.event_note_rounded, color: AppColors.green, size: 21),
-            SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                'Inspection Queue',
-                style: TextStyle(
-                  fontSize: AppTypography.sectionTitle,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.darkGreen,
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 4),
-        const Text(
-          'Review scheduled work or open inspection history.',
-          style: TextStyle(
-            fontSize: AppTypography.caption,
-            color: AppColors.textSecondary,
-          ),
-        ),
-        const SizedBox(height: 12),
+        if (search != null) ...[search!, const SizedBox(height: 12)],
         LayoutBuilder(
           builder: (context, constraints) {
             final chips = filters.entries.map((entry) {

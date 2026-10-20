@@ -68,7 +68,7 @@ class AppShell extends StatelessWidget {
     this.showQrButton = true,
     this.bottomAction,
 
-    this.desktopPadding = const EdgeInsets.fromLTRB(40, 32, 40, 24),
+    this.desktopPadding = const EdgeInsets.fromLTRB(32, 20, 32, 20),
 
     this.mobilePadding = const EdgeInsets.fromLTRB(
       AppSpacing.lg,

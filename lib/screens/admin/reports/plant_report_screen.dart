@@ -1,3 +1,5 @@
+import '../../../widgets/app_search_field.dart';
+import '../../../utils/search_match.dart';
 import 'dart:math' as math;
 
 import 'package:fl_chart/fl_chart.dart';
@@ -266,7 +268,7 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
           (_plantType == 'All' || type == _plantType) &&
           (_healthStatus == 'All' || _health(plant) == _healthStatus) &&
           (_growthStage == 'All' || growth == _growthStage) &&
-          (term.isEmpty || searchable.contains(term));
+          (matchesWordPrefixes([searchable], term));
     }).toList();
   }
 
@@ -654,8 +656,19 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
     ],
   );
 
-  Widget _reportSearchField() => TextField(
+  Widget _reportSearchField() => AppSearchField(
     controller: _searchController,
+    suggestions: _plants
+        .expand(
+          (plant) => [
+            _related(plant, 'plant_classification', 'common_name'),
+            _related(plant, 'plant_classification', 'scientific_name'),
+            plant['variety'],
+            _tag(plant),
+          ],
+        )
+        .whereType<Object>()
+        .map((value) => value.toString()),
     onChanged: (_) => setState(() {}),
     textInputAction: TextInputAction.search,
     decoration: InputDecoration(

@@ -48,24 +48,23 @@ class AccountRowActions extends StatelessWidget {
   final bool busy;
   final VoidCallback onEdit;
   final VoidCallback onArchive;
+  final bool wrap;
 
   const AccountRowActions({
     super.key,
     required this.onEdit,
     required this.onArchive,
     this.busy = false,
+    this.wrap = true,
   });
 
   @override
-  Widget build(BuildContext context) => Wrap(
-    spacing: AppSpacing.sm,
-    runSpacing: AppSpacing.sm,
-    children: [
+  Widget build(BuildContext context) {
+    final buttons = <Widget>[
       OutlinedButton.icon(
         onPressed: busy ? null : onEdit,
         style: OutlinedButton.styleFrom(
           side: const BorderSide(color: AppColors.border),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
         icon: const Icon(Icons.edit_outlined, size: 19),
         label: const Text('Edit'),
@@ -75,13 +74,31 @@ class AccountRowActions extends StatelessWidget {
         style: OutlinedButton.styleFrom(
           foregroundColor: AppColors.danger,
           side: BorderSide(color: AppColors.danger.withValues(alpha: .4)),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
         icon: const Icon(Icons.archive_outlined, size: 19),
         label: const Text('Archive'),
       ),
-    ],
-  );
+    ];
+    if (wrap) {
+      return Wrap(
+        spacing: AppSpacing.sm,
+        runSpacing: AppSpacing.sm,
+        children: buttons,
+      );
+    }
+    // A Row reports the full intrinsic width to DataTable, keeping labels visible.
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          buttons[0],
+          const SizedBox(width: AppSpacing.sm),
+          buttons[1],
+        ],
+      ),
+    );
+  }
 }
 
 /// Account identity above wrapping controls, shared by all mobile account lists.

@@ -41,8 +41,20 @@ class _PlantLocationEditorState extends State<PlantLocationEditor> {
       if (!mounted) return;
       setState(() {
         _campuses = lists[0];
-        _towns = lists[1];
-        _barangays = lists[2];
+        _towns = List<Map<String, dynamic>>.of(lists[1])
+          ..sort(
+            (a, b) => a['town_name'].toString().trim().toLowerCase().compareTo(
+              b['town_name'].toString().trim().toLowerCase(),
+            ),
+          );
+        _barangays = List<Map<String, dynamic>>.of(lists[2])
+          ..sort(
+            (a, b) => a['barangay_name']
+                .toString()
+                .trim()
+                .toLowerCase()
+                .compareTo(b['barangay_name'].toString().trim().toLowerCase()),
+          );
         _choice = location['planting_location_type'] == 'outside'
             ? 'outside'
             : location['planting_campus_id']?.toString();
@@ -57,6 +69,7 @@ class _PlantLocationEditorState extends State<PlantLocationEditor> {
   }
 
   Future<void> _save() async {
+    if (_saving || _loading) return;
     if (!_form.currentState!.validate()) return;
     setState(() {
       _saving = true;
