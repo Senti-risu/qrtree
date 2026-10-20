@@ -371,7 +371,7 @@ class AppMobileNavbar extends StatelessWidget {
             icon: Icons.support_agent_rounded,
             title: 'Need more help?',
             body:
-                'Contact your College Admin. Open My Profile to confirm your role, campus, and college.',
+                'Contact your College Admin. Open Profile to confirm your role, campus, and college.',
           ),
           const SizedBox(height: AppSpacing.sm),
           SizedBox(

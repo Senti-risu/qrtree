@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_application_1/theme/app_theme.dart';
 import 'package:flutter_application_1/widgets/forms/app_searchable_dropdown.dart';
-import 'package:flutter_application_1/widgets/forms/app_text_field.dart';
 import 'registration_draft_flow_test.dart' as fixture;
 
 void main() {
@@ -93,13 +92,7 @@ void main() {
           );
       field('Plant Type').onChanged('Tree');
       await tester.pumpAndSettle();
-      final commonName = tester.widget<AppTextField>(
-        find.byWidgetPredicate(
-          (widget) => widget is AppTextField && widget.label == 'Common Name *',
-        ),
-      );
-      commonName.controller.text = 'Mango';
-      commonName.onChanged?.call('Mango');
+      field('Common Name').onChanged('Mango');
       field('Growth Stage').onChanged('Seedling');
       field('Health Status').onChanged('Healthy');
       await tester.pumpAndSettle();
@@ -132,21 +125,46 @@ void main() {
     await tester.tap(find.text('Resume'));
     await tester.pumpAndSettle();
     final commonName = find.byWidgetPredicate(
-      (widget) => widget is AppTextField && widget.label == 'Common Name *',
+      (widget) =>
+          widget is AppSearchableDropdown && widget.label == 'Common Name',
     );
     final input = find.descendant(
       of: commonName,
-      matching: find.byType(TextFormField),
+      matching: find.byType(TextField),
     );
     await tester.ensureVisible(input);
     await tester.enterText(input, 'Unknown tree');
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Add "Unknown tree"'));
     await tester.pumpAndSettle();
     final save = find.byKey(const Key('save-registration-draft'));
     await tester.ensureVisible(save);
     await tester.tap(save);
     await tester.pumpAndSettle();
     expect(drafts.value!['classificationId'], isNull);
-    expect(drafts.value!['commonName'], 'Unknown tree');
+    expect(drafts.value!['commonName'], 'Unknown Tree');
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('common names are filtered by the selected plant type', (
+    tester,
+  ) async {
+    await fixture.open(tester, fixture.MemoryDrafts(), width: 1600);
+    AppSearchableDropdown field(String label) =>
+        tester.widget<AppSearchableDropdown>(
+          find.byWidgetPredicate(
+            (w) => w is AppSearchableDropdown && w.label == label,
+          ),
+        );
+
+    field('Plant Type').onChanged('Tree');
+    await tester.pumpAndSettle();
+    expect(field('Common Name').items, ['Mango']);
+
+    field('Plant Type').onChanged('Herb');
+    await tester.pumpAndSettle();
+    expect(field('Common Name').items, isEmpty);
+    expect(field('Common Name').value, isNull);
     expect(tester.takeException(), isNull);
   });
 }

@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_application_1/widgets/forms/app_searchable_dropdown.dart';
 import 'package:flutter_application_1/widgets/forms/app_text_field.dart';
 import 'registration_draft_flow_test.dart' as helpers;
 
@@ -171,14 +172,17 @@ void main() {
     await tester.pumpAndSettle();
 
     final commonName = find.byWidgetPredicate(
-      (widget) => widget is AppTextField && widget.label == 'Common Name *',
+      (widget) =>
+          widget is AppSearchableDropdown && widget.label == 'Common Name',
     );
     final commonNameInput = find.descendant(
       of: commonName,
-      matching: find.byType(TextFormField),
+      matching: find.byType(TextField),
     );
     await tester.ensureVisible(commonNameInput);
     await tester.enterText(commonNameInput, 'Banana');
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Add "Banana"'));
     await tester.pumpAndSettle();
 
     final field = tester.widget<AppTextField>(scientific());

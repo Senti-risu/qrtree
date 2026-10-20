@@ -33,7 +33,7 @@ Future<AppMobileMoreAction?> showAppMobileMoreSheet(
         _MoreItem(
           action: AppMobileMoreAction.profile,
           icon: Icons.person_outline_rounded,
-          title: 'My Profile',
+          title: 'Profile',
         ),
       ],
     ),

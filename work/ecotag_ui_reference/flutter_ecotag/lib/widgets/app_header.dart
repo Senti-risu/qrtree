@@ -116,7 +116,7 @@ class _UserProfile extends StatelessWidget {
         const Divider(height: 1),
         MenuItemButton(
           leadingIcon: const Icon(Icons.person_outline_rounded, size: 18),
-          child: const Text('My Profile'),
+          child: const Text('Profile'),
           onPressed: () {},
         ),
         MenuItemButton(

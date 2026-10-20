@@ -126,7 +126,7 @@ void main() {
     await tester.tap(find.text('More'));
     await tester.pumpAndSettle();
 
-    expect(find.text('My Profile'), findsOneWidget);
+    expect(find.text('Profile'), findsOneWidget);
     expect(find.text('Register Plant'), findsOneWidget);
     expect(find.text('QR Management'), findsOneWidget);
     expect(find.text('User Management'), findsOneWidget);
@@ -242,7 +242,7 @@ void main() {
     await tester.tap(find.text('More'));
     await tester.pumpAndSettle();
 
-    expect(find.text('My Profile'), findsOneWidget);
+    expect(find.text('Profile'), findsOneWidget);
     expect(find.text('Sign Out'), findsOneWidget);
     expect(find.text('Register Plant'), findsNothing);
     expect(find.text('QR Management'), findsNothing);

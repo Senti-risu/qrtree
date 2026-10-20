@@ -72,7 +72,7 @@ function ProfileDropdown({ small }: { small?: boolean }) {
             <div className="text-sm font-semibold text-gray-900">{USER_NAME}</div>
             <div className="text-xs text-gray-400">{USER_ROLE}</div>
           </div>
-          {[{ icon: User, label: "My Profile" }, { icon: Settings, label: "Account Settings" }].map(
+          {[{ icon: User, label: "Profile" }, { icon: Settings, label: "Account Settings" }].map(
             ({ icon: Icon, label }) => (
               <button key={label} className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-green-50 transition-colors">
                 <Icon size={15} className="text-gray-400" />{label}

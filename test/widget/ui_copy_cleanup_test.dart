@@ -84,7 +84,7 @@ void main() {
       final tiles = tester.widgetList<ListTile>(find.byType(ListTile));
       expect(tiles, isNotEmpty);
       expect(tiles.every((tile) => tile.subtitle == null), isTrue);
-      expect(find.text('My Profile'), findsOneWidget);
+      expect(find.text('Profile'), findsOneWidget);
       expect(find.text('View your account and access details'), findsNothing);
       await tester.scrollUntilVisible(
         find.text('Sign Out'),

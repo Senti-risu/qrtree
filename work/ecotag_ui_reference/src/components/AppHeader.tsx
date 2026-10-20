@@ -98,7 +98,7 @@ export default function AppHeader({ sidebarCollapsed, onToggleSidebar }: AppHead
                 <div className="text-xs text-green-600">jumi.delacruz@csu.edu.ph</div>
               </div>
               {[
-                { icon: User, label: "My Profile" },
+                { icon: User, label: "Profile" },
                 { icon: Settings, label: "Account Settings" },
               ].map(({ icon: Icon, label }) => (
                 <button

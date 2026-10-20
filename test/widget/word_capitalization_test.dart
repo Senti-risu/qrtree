@@ -164,13 +164,7 @@ void main() {
       field('Plant Type').onChanged('Tree');
       await tester.pumpAndSettle();
       expect(field('Town').items, ['Santa Maria']);
-      final commonName = tester.widget<AppTextField>(
-        find.byWidgetPredicate(
-          (widget) => widget is AppTextField && widget.label == 'Common Name *',
-        ),
-      );
-      commonName.controller.text = 'Mango Tree';
-      commonName.onChanged?.call('Mango Tree');
+      field('Common Name').onChanged('Mango Tree');
       await tester.pumpAndSettle();
       final scientific = tester.widget<AppTextField>(
         find.byWidgetPredicate(

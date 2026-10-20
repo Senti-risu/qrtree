@@ -74,7 +74,6 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
   static const int _maxCommonNameLength = 100;
   static const int _maxPlanterLength = 120;
 
-  final TextEditingController _commonNameController = TextEditingController();
   final TextEditingController _varietyController = TextEditingController();
 
   final TextEditingController _scientificNameController =
@@ -176,7 +175,6 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
     ]) {
       controller.removeListener(_markDirty);
     }
-    _commonNameController.dispose();
     _varietyController.dispose();
     _scientificNameController.dispose();
     _planterController.dispose();
@@ -192,7 +190,7 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
 
   Map<String, dynamic> _draftData() => {
     'classificationId': _selectedClassificationId,
-    'commonName': _commonNameController.text.trim(),
+    'commonName': _commonName?.trim() ?? '',
     'scientificName': _scientificNameController.text.trim(),
     'plantType': _plantType,
     'growthId': _selectedGrowthStatusId,
@@ -326,7 +324,6 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
           : _titleCase(classification['plant_type']?.toString() ?? '');
       _commonName =
           classification?['common_name']?.toString() ?? text('commonName', 100);
-      _commonNameController.text = _commonName ?? '';
       _scientificNameController.text =
           (classification?['scientific_name']?.toString().trim().isNotEmpty ??
               false)
@@ -536,27 +533,46 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
         (c['scientific_name']?.toString().trim().isNotEmpty ?? false),
   );
 
+  List<String> get _commonNameOptions {
+    if (_plantType == null) return const [];
+    final names = _classifications
+        .where(
+          (row) =>
+              _titleCase(row['plant_type']?.toString() ?? '') == _plantType,
+        )
+        .map((row) => row['common_name']?.toString() ?? '')
+        .where((name) => name.isNotEmpty)
+        .toSet()
+        .toList();
+    if (_commonName != null &&
+        _commonName!.isNotEmpty &&
+        !names.contains(_commonName)) {
+      names.add(_commonName!);
+    }
+    return names;
+  }
+
   void _selectPlantType(String? value) {
     setState(() {
       _hasUnsavedChanges = true;
       _plantType = value;
 
       _commonName = null;
-      _commonNameController.clear();
       _selectedClassificationId = null;
 
       _scientificNameController.clear();
     });
   }
 
-  void _onCommonNameChanged(String value) {
+  void _onCommonNameChanged(String? value) {
+    final selectedName = value?.trim() ?? '';
     final previousClassificationId = _selectedClassificationId;
     final wasAutofilled = _hasSavedScientificName;
     Map<String, dynamic>? match;
-    if (_plantType != null && value.trim().isNotEmpty) {
+    if (_plantType != null && selectedName.isNotEmpty) {
       for (final row in _classifications) {
         if (row['common_name']?.toString().toLowerCase() ==
-                value.trim().toLowerCase() &&
+                selectedName.toLowerCase() &&
             _titleCase(row['plant_type']?.toString() ?? '') == _plantType) {
           match = row;
           break;
@@ -566,7 +582,7 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
 
     setState(() {
       _hasUnsavedChanges = true;
-      _commonName = value;
+      _commonName = selectedName.isEmpty ? null : selectedName;
       _selectedClassificationId = match?['classification_id'] as int?;
       if (match != null) {
         _scientificNameController.text =
@@ -913,7 +929,7 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
   bool _validatePlantStep({bool announce = true}) {
     final missing = _missingPlantFields;
     final varietyLength = _varietyController.text.trim().runes.length;
-    final commonName = _commonNameController.text.trim();
+    final commonName = _commonName?.trim() ?? '';
     final planterLength = _planterController.text.trim().runes.length;
     final today = DateTime.now();
     final todayOnly = DateTime(today.year, today.month, today.day);
@@ -1133,9 +1149,7 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
             ? null
             : _emptyToNull(_scientificNameController.text),
         newPlantType: _selectedClassificationId == null ? _plantType : null,
-        newCommonName: _selectedClassificationId == null
-            ? _commonNameController.text
-            : null,
+        newCommonName: _selectedClassificationId == null ? _commonName : null,
         locationType: _plantingCampusChoice == PlantingCampusDropdown.outside
             ? 'outside'
             : 'inside',
@@ -1971,13 +1985,18 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
               onChanged: _selectPlantType,
             ),
 
-            AppTextField(
-              label: 'Common Name *',
-              controller: _commonNameController,
+            AppSearchableDropdown(
+              label: 'Common Name',
+              isRequired: true,
+              value: _commonName,
+              items: _commonNameOptions,
               enabled: _plantType != null && !_saving,
-              maxLength: _maxCommonNameLength,
-              hint: 'Type a common name',
+              errorText: _showPlantErrors && _commonName == null
+                  ? 'Please select or add a common name.'
+                  : null,
               onChanged: _onCommonNameChanged,
+              onCreate: (name) async => name,
+              hintText: 'Search or add a common name',
             ),
           ),
 
