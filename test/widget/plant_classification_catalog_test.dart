@@ -11,9 +11,11 @@ class FakePlantCatalog implements PlantClassificationCatalog {
   final plantTypes = <String>['Tree', 'Herb'];
   int creates = 0;
   int updates = 0;
+  int deletes = 0;
 
   @override
-  Future<List<Map<String, dynamic>>> getClassifications() async => entries;
+  Future<List<Map<String, dynamic>>> getClassifications() async =>
+      entries.where((entry) => entry['is_active'] != false).toList();
 
   @override
   Future<List<String>> getPlantTypes() async => plantTypes;
@@ -44,6 +46,7 @@ class FakePlantCatalog implements PlantClassificationCatalog {
       'plant_type': plantType,
       'common_name': commonName,
       'scientific_name': scientificName,
+      'is_active': true,
       'plant_classification_variety': variety == null
           ? []
           : [
@@ -68,6 +71,17 @@ class FakePlantCatalog implements PlantClassificationCatalog {
     entry['common_name'] = commonName;
     entry['scientific_name'] = scientificName;
   }
+
+  @override
+  Future<void> deletePlantClassification({
+    required int classificationId,
+  }) async {
+    deletes++;
+    final entry = entries.firstWhere(
+      (entry) => entry['classification_id'] == classificationId,
+    );
+    entry['is_active'] = false;
+  }
 }
 
 Finder field(String label) => find.byWidgetPredicate(
@@ -75,6 +89,25 @@ Finder field(String label) => find.byWidgetPredicate(
 );
 
 void main() {
+  test('removing a classification is a soft delete', () {
+    final sql = File(
+      'supabase/migrations/202610220005_soft_delete_plant_classifications.sql',
+    ).readAsStringSync();
+    expect(
+      sql,
+      contains(
+        'add column if not exists is_active boolean not null default true',
+      ),
+    );
+    expect(sql, contains("set is_active = false"));
+    expect(sql, contains('create trigger plant_classification_must_be_active'));
+    expect(sql, contains('university_admin_delete_plant_classification'));
+    expect(
+      sql.toLowerCase(),
+      isNot(contains('delete from public.plant_classification')),
+    );
+  });
+
   test('plant types are stored in a managed, extensible catalog', () {
     final sql = File(
       'supabase/migrations/202610220001_addable_plant_types.sql',
@@ -156,6 +189,28 @@ void main() {
       expect(catalog.updates, 1);
       expect(catalog.entries.single['common_name'], 'Narra Tree');
       expect(find.text('Narra Tree'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+
+      await tester.tap(find.byTooltip('Delete Narra Tree'));
+      await tester.pumpAndSettle();
+      expect(
+        find.textContaining(
+          'Existing plants and their saved data will not be deleted.',
+        ),
+        findsOneWidget,
+      );
+      await tester.tap(find.text('Cancel'));
+      await tester.pumpAndSettle();
+      expect(catalog.deletes, 0);
+
+      await tester.tap(find.byTooltip('Delete Narra Tree'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Remove from Catalog'));
+      await tester.pumpAndSettle();
+      expect(catalog.deletes, 1);
+      expect(catalog.entries.single['is_active'], isFalse);
+      expect(catalog.entries, hasLength(1));
+      expect(find.text('Narra Tree'), findsNothing);
       expect(tester.takeException(), isNull);
     },
   );

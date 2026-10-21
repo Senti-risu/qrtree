@@ -4,6 +4,8 @@ import 'package:image_picker/image_picker.dart';
 import '../models/plant_record_lock.dart';
 import '../services/plant_service.dart';
 import '../services/plant_details_editor_service.dart';
+import '../theme/app_colors.dart';
+import '../theme/app_layout.dart';
 import '../utils/user_facing_error.dart';
 import '../theme/app_typography.dart';
 import 'forms/planting_campus_dropdown.dart';
@@ -279,16 +281,75 @@ class _PlantDetailsEditorState extends State<PlantDetailsEditor> {
     }
   }
 
-  Widget _heading(String text) => Padding(
-    padding: const EdgeInsets.only(top: 16, bottom: 12),
-    child: Text(
-      text,
-      style: const TextStyle(
-        fontSize: AppTypography.sectionTitle,
-        fontWeight: FontWeight.w700,
+  Widget _heading(String text, IconData icon) => Padding(
+    padding: const EdgeInsets.only(top: AppSpacing.lg, bottom: AppSpacing.md),
+    child: Row(
+      children: [
+        Container(
+          width: 34,
+          height: 34,
+          decoration: const BoxDecoration(
+            color: AppColors.primaryContainer,
+            borderRadius: AppRadii.small,
+          ),
+          child: Icon(icon, size: 18, color: AppColors.green),
+        ),
+        const SizedBox(width: AppSpacing.md),
+        Expanded(
+          child: Text(
+            text,
+            style: const TextStyle(
+              fontSize: AppTypography.sectionTitle,
+              fontWeight: FontWeight.w800,
+              color: AppColors.darkGreen,
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
+
+  Widget _formField(Widget child) => Padding(
+    padding: const EdgeInsets.only(bottom: AppSpacing.md),
+    child: child,
+  );
+
+  Widget _infoBanner() => Container(
+    padding: const EdgeInsets.all(AppSpacing.md),
+    decoration: BoxDecoration(
+      color: AppColors.infoContainer,
+      borderRadius: AppRadii.medium,
+      border: Border.all(color: AppColors.info.withValues(alpha: 0.16)),
+    ),
+    child: const Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(Icons.info_outline_rounded, color: AppColors.info, size: 20),
+        SizedBox(width: AppSpacing.sm),
+        Expanded(
+          child: Text(
+            'Campus, college, and QR code stay unchanged. Update plant health and growth through Inspect Plant.',
+            style: TextStyle(color: AppColors.textPrimary, height: 1.4),
+          ),
+        ),
+      ],
+    ),
+  );
+
+  Widget _readOnlyScientificName() => _formField(
+    TextFormField(
+      key: ValueKey('scientific-$_classification'),
+      initialValue: _selected['scientific_name']?.toString() ?? '',
+      readOnly: true,
+      enabled: !_disabled,
+      maxLength: 200,
+      decoration: const InputDecoration(
+        labelText: 'Scientific Name',
+        helperText: 'Managed by University Admin.',
       ),
     ),
   );
+
   Widget _dropdown({
     required String label,
     required int? value,
@@ -330,9 +391,48 @@ class _PlantDetailsEditorState extends State<PlantDetailsEditor> {
     child: AlertDialog(
       scrollable: true,
       insetPadding: const EdgeInsets.all(16),
-      title: const Text('Update Plant Details'),
+      title: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: const BoxDecoration(
+              color: AppColors.primaryContainer,
+              borderRadius: AppRadii.medium,
+            ),
+            child: const Icon(
+              Icons.edit_note_rounded,
+              color: AppColors.green,
+              size: 25,
+            ),
+          ),
+          const SizedBox(width: AppSpacing.md),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Update Plant Details'),
+                SizedBox(height: AppSpacing.xs),
+                Text(
+                  'Edit classification and planting information',
+                  style: TextStyle(
+                    fontSize: AppTypography.caption,
+                    fontWeight: FontWeight.w400,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            tooltip: 'Close',
+            onPressed: _saving || _picking ? null : _close,
+            icon: const Icon(Icons.close_rounded),
+          ),
+        ],
+      ),
       content: SizedBox(
-        width: 520,
+        width: 560,
         child: _loading
             ? const Center(child: CircularProgressIndicator())
             : _plant.isEmpty
@@ -351,13 +451,19 @@ class _PlantDetailsEditorState extends State<PlantDetailsEditor> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     if (_locked)
-                      const Text(
-                        'This plant is locked or archived and cannot be edited.',
+                      Container(
+                        padding: const EdgeInsets.all(AppSpacing.md),
+                        decoration: BoxDecoration(
+                          color: AppColors.warningContainer,
+                          borderRadius: AppRadii.medium,
+                        ),
+                        child: const Text(
+                          'This plant is locked or archived and cannot be edited.',
+                          style: TextStyle(color: AppColors.textPrimary),
+                        ),
                       ),
-                    const Text(
-                      'Managing campus, college and EcoTag code stay the same. Record health and growth changes through Inspect Plant.',
-                    ),
-                    _heading('Plant Classification'),
+                    _infoBanner(),
+                    _heading('Plant Classification', Icons.eco_outlined),
                     DropdownButtonFormField<String>(
                       initialValue: _type,
                       isExpanded: true,
@@ -385,7 +491,7 @@ class _PlantDetailsEditorState extends State<PlantDetailsEditor> {
                       validator: (v) =>
                           v == null ? 'Select a plant type.' : null,
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: AppSpacing.md),
                     _dropdown(
                       label: 'Common Name',
                       value: _classification,
@@ -399,82 +505,77 @@ class _PlantDetailsEditorState extends State<PlantDetailsEditor> {
                         _variety.clear();
                       },
                     ),
-                    TextFormField(
-                      key: ValueKey('scientific-$_classification'),
-                      initialValue:
-                          _selected['scientific_name']?.toString() ?? '',
-                      readOnly: true,
-                      enabled: !_disabled,
-                      maxLength: 200,
-                      decoration: const InputDecoration(
-                        labelText: 'Scientific Name',
-                        helperText: 'Managed by University Admin.',
-                      ),
-                    ),
-                    DropdownButtonFormField<String>(
-                      key: ValueKey(
-                        'variety-$_classification-${_variety.text}',
-                      ),
-                      initialValue: _varietyOptions.contains(_variety.text)
-                          ? _variety.text
-                          : _noVariety,
-                      isExpanded: true,
-                      decoration: const InputDecoration(
-                        labelText: 'Variety (Optional)',
-                      ),
-                      items: _varietyOptions
-                          .map(
-                            (variety) => DropdownMenuItem(
-                              value: variety,
-                              child: Text(variety),
-                            ),
-                          )
-                          .toList(),
-                      onChanged: _disabled
-                          ? null
-                          : (value) => setState(() {
-                              _variety.text = value == _noVariety
-                                  ? ''
-                                  : value ?? '';
-                              _dirty = true;
-                            }),
-                    ),
-                    TextFormField(
-                      controller: _planter,
-                      enabled: !_disabled,
-                      maxLength: 200,
-                      decoration: const InputDecoration(
-                        labelText: 'Tree Planter (optional)',
-                      ),
-                    ),
-                    TextFormField(
-                      key: ValueKey('date-$_date'),
-                      readOnly: true,
-                      enabled: !_disabled,
-                      initialValue: _date == null
-                          ? ''
-                          : MaterialLocalizations.of(
-                              context,
-                            ).formatMediumDate(_date!),
-                      onTap: _disabled ? null : _pickDate,
-                      decoration: InputDecoration(
-                        labelText: 'Date Planted (optional)',
-                        prefixIcon: const Icon(Icons.event_outlined),
-                        suffixIcon: _date == null
-                            ? null
-                            : IconButton(
-                                tooltip: 'Clear Date Planted',
-                                onPressed: _disabled
-                                    ? null
-                                    : () => setState(() {
-                                        _date = null;
-                                        _dirty = true;
-                                      }),
-                                icon: const Icon(Icons.clear),
+                    _readOnlyScientificName(),
+                    _formField(
+                      DropdownButtonFormField<String>(
+                        key: ValueKey(
+                          'variety-$_classification-${_variety.text}',
+                        ),
+                        initialValue: _varietyOptions.contains(_variety.text)
+                            ? _variety.text
+                            : _noVariety,
+                        isExpanded: true,
+                        decoration: const InputDecoration(
+                          labelText: 'Variety (Optional)',
+                        ),
+                        items: _varietyOptions
+                            .map(
+                              (variety) => DropdownMenuItem(
+                                value: variety,
+                                child: Text(variety),
                               ),
+                            )
+                            .toList(),
+                        onChanged: _disabled
+                            ? null
+                            : (value) => setState(() {
+                                _variety.text = value == _noVariety
+                                    ? ''
+                                    : value ?? '';
+                                _dirty = true;
+                              }),
                       ),
                     ),
-                    _heading('Planting Location'),
+                    _formField(
+                      TextFormField(
+                        controller: _planter,
+                        enabled: !_disabled,
+                        maxLength: 200,
+                        decoration: const InputDecoration(
+                          labelText: 'Tree Planter (optional)',
+                        ),
+                      ),
+                    ),
+                    _formField(
+                      TextFormField(
+                        key: ValueKey('date-$_date'),
+                        readOnly: true,
+                        enabled: !_disabled,
+                        initialValue: _date == null
+                            ? ''
+                            : MaterialLocalizations.of(
+                                context,
+                              ).formatMediumDate(_date!),
+                        onTap: _disabled ? null : _pickDate,
+                        decoration: InputDecoration(
+                          labelText: 'Date Planted (optional)',
+                          prefixIcon: const Icon(Icons.event_outlined),
+                          suffixIcon: _date == null
+                              ? null
+                              : IconButton(
+                                  tooltip: 'Clear Date Planted',
+                                  onPressed: _disabled
+                                      ? null
+                                      : () => setState(() {
+                                          _date = null;
+                                          _dirty = true;
+                                        }),
+                                  icon: const Icon(Icons.clear),
+                                ),
+                        ),
+                      ),
+                    ),
+                    _heading('Planting Location', Icons.location_on_outlined),
                     PlantingCampusDropdown(
                       campuses: _campuses,
                       value: _choice,
@@ -485,7 +586,7 @@ class _PlantDetailsEditorState extends State<PlantDetailsEditor> {
                               _dirty = true;
                             }),
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: AppSpacing.md),
                     _dropdown(
                       label: 'Planting Town',
                       value: _town,
@@ -507,7 +608,7 @@ class _PlantDetailsEditorState extends State<PlantDetailsEditor> {
                       name: 'barangay_name',
                       changed: (v) => _barangay = v,
                     ),
-                    _heading('Plant Photo'),
+                    _heading('Plant Photo', Icons.photo_camera_outlined),
                     if (_photo != null)
                       Image.memory(_photo!, height: 140, fit: BoxFit.contain)
                     else if (_photoUrl.isNotEmpty)

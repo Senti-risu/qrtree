@@ -206,6 +206,70 @@ class _PlantClassificationCatalogScreenState
     }
   }
 
+  Future<void> _deleteClassification(
+    Map<String, dynamic> classification,
+  ) async {
+    final commonName =
+        classification['common_name']?.toString() ?? 'this classification';
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Remove plant classification?'),
+        content: Text(
+          '"$commonName" will be removed from the catalog and no longer be '
+          'available for new plant records. Existing plants and their saved '
+          'data will not be deleted.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.danger,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Remove from Catalog'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
+    try {
+      await _catalog.deletePlantClassification(
+        classificationId: classification['classification_id'] as int,
+      );
+      await _loadCatalog();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Classification removed from the catalog. Existing plant data was kept.',
+            ),
+          ),
+        );
+      }
+    } catch (error) {
+      if (mounted) {
+        setState(
+          () => _error = userFacingError(
+            error,
+            fallback: 'Plant classification could not be removed. Try again.',
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
   List<Map<String, dynamic>> get _filteredClassifications {
     final query = _search.text.trim().toLowerCase();
     return _classifications.where((classification) {
@@ -285,6 +349,15 @@ class _PlantClassificationCatalogScreenState
           onPressed: _saving ? null : () => _editClassification(classification),
           icon: const Icon(Icons.edit_outlined),
           color: AppColors.green,
+        ),
+        IconButton(
+          tooltip:
+              'Delete ${classification['common_name'] ?? 'classification'}',
+          onPressed: _saving
+              ? null
+              : () => _deleteClassification(classification),
+          icon: const Icon(Icons.delete_outline_rounded),
+          color: AppColors.danger,
         ),
       ],
     ),

@@ -65,6 +65,7 @@ abstract class PlantClassificationCatalog {
     required String commonName,
     required String scientificName,
   });
+  Future<void> deletePlantClassification({required int classificationId});
 }
 
 class PlantService implements PlantClassificationCatalog {
@@ -124,6 +125,7 @@ class PlantService implements PlantClassificationCatalog {
           'classification_id, plant_type, common_name, scientific_name, '
           'plant_classification_variety(variety_id, variety_name)',
         )
+        .eq('is_active', true)
         .order('common_name');
 
     return List<Map<String, dynamic>>.from(
@@ -198,6 +200,19 @@ class PlantService implements PlantClassificationCatalog {
         'p_plant_type': plantType.trim(),
         'p_common_name': commonName.trim(),
         'p_scientific_name': scientificName.trim(),
+      },
+    );
+  }
+
+  @override
+  Future<void> deletePlantClassification({
+    required int classificationId,
+  }) async {
+    await _supabase.rpc(
+      'university_admin_delete_plant_classification',
+      params: {
+        'p_session_token': AppSession.requiredToken,
+        'p_classification_id': classificationId,
       },
     );
   }
