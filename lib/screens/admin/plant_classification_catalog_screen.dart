@@ -87,9 +87,7 @@ class _PlantClassificationCatalogScreenState
   }
 
   Future<void> _createClassification() async {
-    if (_saving ||
-        !_formKey.currentState!.validate() ||
-        _plantType == null) {
+    if (_saving || !_formKey.currentState!.validate() || _plantType == null) {
       return;
     }
     setState(() {
@@ -149,7 +147,9 @@ class _PlantClassificationCatalogScreenState
         _plantType = added;
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Plant type "$added" is available in the catalog.')),
+        SnackBar(
+          content: Text('Plant type "$added" is available in the catalog.'),
+        ),
       );
     } catch (error) {
       if (mounted) {
@@ -157,6 +157,47 @@ class _PlantClassificationCatalogScreenState
           () => _error = userFacingError(
             error,
             fallback: 'Plant type could not be added. Try again.',
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  Future<void> _editClassification(Map<String, dynamic> classification) async {
+    final updated = await showDialog<Map<String, String>>(
+      context: context,
+      builder: (_) => _EditClassificationDialog(
+        classification: classification,
+        plantTypes: _plantTypes,
+      ),
+    );
+    if (updated == null || !mounted) return;
+
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
+    try {
+      await _catalog.updatePlantClassification(
+        classificationId: classification['classification_id'] as int,
+        plantType: updated['plant_type']!,
+        commonName: capitalizeWords(updated['common_name']!),
+        scientificName: updated['scientific_name']!,
+      );
+      await _loadCatalog();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Plant classification updated.')),
+        );
+      }
+    } catch (error) {
+      if (mounted) {
+        setState(
+          () => _error = userFacingError(
+            error,
+            fallback: 'Plant classification could not be updated. Try again.',
           ),
         );
       }
@@ -184,69 +225,66 @@ class _PlantClassificationCatalogScreenState
   }
 
   Widget _buildEntryCard(Map<String, dynamic> classification) => AppCard(
-    padding: const EdgeInsets.all(AppSpacing.lg),
-    borderRadius: AppRadii.large,
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    padding: const EdgeInsets.symmetric(
+      horizontal: AppSpacing.lg,
+      vertical: AppSpacing.md,
+    ),
+    borderRadius: AppRadii.medium,
+    child: Row(
       children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              width: 42,
-              height: 42,
-              decoration: const BoxDecoration(
-                color: AppColors.primaryContainer,
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.eco_rounded,
-                color: AppColors.green,
-                size: 22,
-              ),
-            ),
-            const SizedBox(width: AppSpacing.md),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    classification['common_name']?.toString() ??
-                        'Unnamed plant',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: AppColors.darkGreen,
-                      fontWeight: FontWeight.w800,
-                      fontSize: 18,
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.xs),
-                  Text(
-                    classification['scientific_name']?.toString() ?? '',
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: AppColors.textSecondary,
-                      fontStyle: FontStyle.italic,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
+        Container(
+          width: 42,
+          height: 42,
+          decoration: const BoxDecoration(
+            color: AppColors.primaryContainer,
+            shape: BoxShape.circle,
+          ),
+          child: const Icon(
+            Icons.eco_rounded,
+            color: AppColors.green,
+            size: 22,
+          ),
         ),
-        const SizedBox(height: AppSpacing.md),
-        Wrap(
-          spacing: AppSpacing.xs,
-          runSpacing: AppSpacing.xs,
-          children: [
-            _catalogBadge(
-              Icons.category_outlined,
-              classification['plant_type']?.toString() ?? 'Plant',
-              background: AppColors.secondaryContainer,
-            ),
-          ],
+        const SizedBox(width: AppSpacing.md),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                classification['common_name']?.toString() ?? 'Unnamed plant',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: AppColors.darkGreen,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 16,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.xs),
+              Text(
+                classification['scientific_name']?.toString() ?? '',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: AppColors.textSecondary,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(width: AppSpacing.md),
+        _catalogBadge(
+          Icons.category_outlined,
+          classification['plant_type']?.toString() ?? 'Plant',
+          background: AppColors.secondaryContainer,
+        ),
+        const SizedBox(width: AppSpacing.xs),
+        IconButton(
+          tooltip: 'Edit ${classification['common_name'] ?? 'classification'}',
+          onPressed: _saving ? null : () => _editClassification(classification),
+          icon: const Icon(Icons.edit_outlined),
+          color: AppColors.green,
         ),
       ],
     ),
@@ -346,9 +384,8 @@ class _PlantClassificationCatalogScreenState
                           onChanged: _saving
                               ? null
                               : (value) => setState(() => _plantType = value),
-                          validator: (value) => value == null
-                              ? 'Select a plant type.'
-                              : null,
+                          validator: (value) =>
+                              value == null ? 'Select a plant type.' : null,
                         ),
                       ),
                       const SizedBox(width: AppSpacing.sm),
@@ -459,32 +496,67 @@ class _PlantClassificationCatalogScreenState
               child: Text('No plant classifications have been added yet.'),
             )
           else ...[
-            TextField(
-              controller: _search,
-              onChanged: (_) => setState(() {}),
-              decoration: InputDecoration(
-                hintText: 'Search common name, scientific name, or plant type',
-                prefixIcon: const Icon(Icons.search),
-                suffixIcon: _search.text.isEmpty
-                    ? null
-                    : IconButton(
-                        tooltip: 'Clear search',
-                        onPressed: () {
-                          _search.clear();
-                          setState(() {});
-                        },
-                        icon: const Icon(Icons.close),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final searchField = TextField(
+                  key: const ValueKey('catalog-search'),
+                  controller: _search,
+                  onChanged: (_) => setState(() {}),
+                  decoration: InputDecoration(
+                    hintText:
+                        'Search common name, scientific name, or plant type',
+                    prefixIcon: const Icon(Icons.search),
+                    suffixIcon: _search.text.isEmpty
+                        ? null
+                        : IconButton(
+                            tooltip: 'Clear search',
+                            onPressed: () {
+                              _search.clear();
+                              setState(() {});
+                            },
+                            icon: const Icon(Icons.close),
+                          ),
+                  ),
+                );
+                final typeFilter = DropdownButtonFormField<String>(
+                  key: ValueKey('catalog-type-filter-$_typeFilter'),
+                  initialValue: _typeFilter ?? '',
+                  isExpanded: true,
+                  decoration: const InputDecoration(
+                    labelText: 'Plant Type',
+                    border: OutlineInputBorder(),
+                  ),
+                  items: [
+                    const DropdownMenuItem(value: '', child: Text('All types')),
+                    ..._plantTypes.map(
+                      (type) => DropdownMenuItem(
+                        value: type,
+                        child: Text(type, overflow: TextOverflow.ellipsis),
                       ),
-              ),
-            ),
-            const SizedBox(height: AppSpacing.md),
-            Wrap(
-              spacing: AppSpacing.sm,
-              runSpacing: AppSpacing.sm,
-              children: [
-                _typeFilterChip(null, 'All types'),
-                ..._plantTypes.map((type) => _typeFilterChip(type, type)),
-              ],
+                    ),
+                  ],
+                  onChanged: (value) => setState(
+                    () => _typeFilter = value?.isEmpty ?? true ? null : value,
+                  ),
+                );
+                if (constraints.maxWidth >= 640) {
+                  return Row(
+                    children: [
+                      Expanded(child: searchField),
+                      const SizedBox(width: AppSpacing.md),
+                      SizedBox(width: 210, child: typeFilter),
+                    ],
+                  );
+                }
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    searchField,
+                    const SizedBox(height: AppSpacing.sm),
+                    typeFilter,
+                  ],
+                );
+              },
             ),
             const SizedBox(height: AppSpacing.md),
             Builder(
@@ -497,27 +569,14 @@ class _PlantClassificationCatalogScreenState
                     ),
                   );
                 }
-                return LayoutBuilder(
-                  builder: (context, constraints) {
-                    final columns = constraints.maxWidth >= 1080
-                        ? 3
-                        : constraints.maxWidth >= 680
-                        ? 2
-                        : 1;
-                    return GridView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: entries.length,
-                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: columns,
-                        crossAxisSpacing: AppSpacing.md,
-                        mainAxisSpacing: AppSpacing.md,
-                        mainAxisExtent: 160,
-                      ),
-                      itemBuilder: (context, index) =>
-                          _buildEntryCard(entries[index]),
-                    );
-                  },
+                return ListView.separated(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: entries.length,
+                  separatorBuilder: (_, _) =>
+                      const SizedBox(height: AppSpacing.sm),
+                  itemBuilder: (context, index) =>
+                      _buildEntryCard(entries[index]),
                 );
               },
             ),
@@ -527,16 +586,116 @@ class _PlantClassificationCatalogScreenState
       ),
     ),
   );
+}
 
-  Widget _typeFilterChip(String? type, String label) => FilterChip(
-    selected: _typeFilter == type,
-    label: Text(label),
-    onSelected: (_) => setState(() => _typeFilter = type),
-    selectedColor: AppColors.primaryContainer,
-    checkmarkColor: AppColors.green,
-    side: BorderSide(
-      color: _typeFilter == type ? AppColors.borderStrong : AppColors.border,
+class _EditClassificationDialog extends StatefulWidget {
+  const _EditClassificationDialog({
+    required this.classification,
+    required this.plantTypes,
+  });
+
+  final Map<String, dynamic> classification;
+  final List<String> plantTypes;
+
+  @override
+  State<_EditClassificationDialog> createState() =>
+      _EditClassificationDialogState();
+}
+
+class _EditClassificationDialogState extends State<_EditClassificationDialog> {
+  final _formKey = GlobalKey<FormState>();
+  late final _commonName = TextEditingController(
+    text: widget.classification['common_name']?.toString() ?? '',
+  );
+  late final _scientificName = TextEditingController(
+    text: widget.classification['scientific_name']?.toString() ?? '',
+  );
+  late String? _plantType = widget.classification['plant_type']?.toString();
+
+  @override
+  void dispose() {
+    _commonName.dispose();
+    _scientificName.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    if (!_formKey.currentState!.validate() || _plantType == null) return;
+    Navigator.pop(context, {
+      'plant_type': _plantType!,
+      'common_name': _commonName.text.trim(),
+      'scientific_name': _scientificName.text.trim(),
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) => AlertDialog(
+    title: const Text('Edit Plant Classification'),
+    content: Form(
+      key: _formKey,
+      child: SizedBox(
+        width: 420,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              DropdownButtonFormField<String>(
+                initialValue: widget.plantTypes.contains(_plantType)
+                    ? _plantType
+                    : null,
+                decoration: const InputDecoration(labelText: 'Plant Type'),
+                items: widget.plantTypes
+                    .map(
+                      (type) =>
+                          DropdownMenuItem(value: type, child: Text(type)),
+                    )
+                    .toList(),
+                onChanged: (value) => setState(() => _plantType = value),
+                validator: (value) =>
+                    value == null ? 'Select a plant type.' : null,
+              ),
+              const SizedBox(height: AppSpacing.md),
+              TextFormField(
+                controller: _commonName,
+                autofocus: true,
+                maxLength: 100,
+                textCapitalization: TextCapitalization.words,
+                decoration: const InputDecoration(labelText: 'Common Name'),
+                validator: (value) {
+                  final name = value?.trim() ?? '';
+                  if (name.isEmpty) return 'Enter a common name.';
+                  if (name.runes.length > 100) {
+                    return 'Use at most 100 characters.';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: AppSpacing.md),
+              TextFormField(
+                controller: _scientificName,
+                maxLength: 200,
+                decoration: const InputDecoration(labelText: 'Scientific Name'),
+                validator: (value) {
+                  final name = value?.trim() ?? '';
+                  if (name.isEmpty) return 'Enter a scientific name.';
+                  if (name.runes.length > 200) {
+                    return 'Use at most 200 characters.';
+                  }
+                  return null;
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
     ),
+    actions: [
+      TextButton(
+        onPressed: () => Navigator.pop(context),
+        child: const Text('Cancel'),
+      ),
+      FilledButton(onPressed: _submit, child: const Text('Save Changes')),
+    ],
   );
 }
 

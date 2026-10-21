@@ -50,6 +50,7 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
   final _searchController = TextEditingController();
   final Map<int, DateTime> _inspectionDates = {};
   List<Map<String, dynamic>> _plants = [];
+  List<Map<String, dynamic>> _campuses = [];
   bool _loading = true;
   bool _exporting = false;
   String? _error;
@@ -133,6 +134,14 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
         plants.addAll(page);
         if (page.length < 500) break;
       }
+      final campuses = _universityScope
+          ? List<Map<String, dynamic>>.from(
+              await _supabase
+                  .from('campus')
+                  .select('campus_id, campus_name')
+                  .order('campus_name'),
+            )
+          : <Map<String, dynamic>>[];
 
       final inspections = <int, DateTime>{};
       for (final plant in plants) {
@@ -193,6 +202,7 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
       if (!mounted) return;
       setState(() {
         _plants = plants;
+        _campuses = campuses;
         _campus = normalizedCampus;
         _college = normalizedCollege;
         _plantType = normalizedPlantType;
@@ -1579,21 +1589,33 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
     ),
   );
 
-  Widget _inspectionAndScope() => LayoutBuilder(
-    builder: (_, constraints) {
-      final width = !AppBreakpoints.isPhone(constraints.maxWidth)
-          ? (constraints.maxWidth - AppSpacing.lg) / 2
-          : constraints.maxWidth;
-      return Wrap(
-        spacing: AppSpacing.lg,
-        runSpacing: AppSpacing.lg,
+  Widget _inspectionAndScope() {
+    if (_universityScope) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          SizedBox(width: width, child: _inspectionOverview()),
-          SizedBox(width: width, child: _scopeSummary()),
+          _inspectionOverview(),
+          const SizedBox(height: AppSpacing.lg),
+          _scopeSummary(),
         ],
       );
-    },
-  );
+    }
+    return LayoutBuilder(
+      builder: (_, constraints) {
+        final width = !AppBreakpoints.isPhone(constraints.maxWidth)
+            ? (constraints.maxWidth - AppSpacing.lg) / 2
+            : constraints.maxWidth;
+        return Wrap(
+          spacing: AppSpacing.lg,
+          runSpacing: AppSpacing.lg,
+          children: [
+            SizedBox(width: width, child: _inspectionOverview()),
+            SizedBox(width: width, child: _scopeSummary()),
+          ],
+        );
+      },
+    );
+  }
 
   Widget _inspectionOverview() {
     final inspected = _filteredPlants.where(_inspected).length;
@@ -1675,11 +1697,10 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
   );
 
   Widget _scopeSummary() {
-    final relation = _universityScope ? 'campus' : 'college';
-    final field = _universityScope ? 'campus_name' : 'college_name';
+    if (_universityScope) return _campusHealthSummary();
     final entries = _groupCounts(
       _filteredPlants,
-      (plant) => _related(plant, relation, field),
+      (plant) => _related(plant, 'college', 'college_name'),
     ).entries.toList()..sort((a, b) => b.value.compareTo(a.value));
     return AppCard(
       padding: const EdgeInsets.all(18),
@@ -1687,7 +1708,7 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            _universityScope ? 'Campus Summary' : 'College Summary',
+            'College Summary',
             style: const TextStyle(
               fontSize: AppTypography.sectionTitle,
               fontWeight: FontWeight.w800,
@@ -1738,6 +1759,335 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
       ),
     );
   }
+
+  Widget _campusHealthSummary() {
+    final plantsByCampus = <int, List<Map<String, dynamic>>>{};
+    for (final plant in _filteredPlants) {
+      final campusId = int.tryParse(plant['campus_id']?.toString() ?? '');
+      if (campusId == null) continue;
+      plantsByCampus.putIfAbsent(campusId, () => []).add(plant);
+    }
+
+    final campuses = _campuses.where((campus) {
+      if (_campus != 'All') {
+        return campus['campus_name']?.toString() == _campus;
+      }
+      return true;
+    }).toList();
+
+    final counts =
+        <
+          int,
+          ({int healthy, int attention, int dead, int unknown, int total})
+        >{};
+    for (final campus in campuses) {
+      final id = int.tryParse(campus['campus_id']?.toString() ?? '');
+      if (id == null) continue;
+      final plants = plantsByCampus[id] ?? const <Map<String, dynamic>>[];
+      counts[id] = (
+        healthy: plants.where((plant) => _health(plant) == 'Healthy').length,
+        attention: plants
+            .where((plant) => _health(plant) == 'Needs Attention')
+            .length,
+        dead: plants.where((plant) => _health(plant) == 'Dead').length,
+        unknown: plants.where((plant) => _health(plant) == 'Unknown').length,
+        total: plants.length,
+      );
+    }
+
+    final healthyTotal = counts.values.fold<int>(
+      0,
+      (sum, value) => sum + value.healthy,
+    );
+    final attentionTotal = counts.values.fold<int>(
+      0,
+      (sum, value) => sum + value.attention,
+    );
+    final deadTotal = counts.values.fold<int>(
+      0,
+      (sum, value) => sum + value.dead,
+    );
+    final unknownTotal = counts.values.fold<int>(
+      0,
+      (sum, value) => sum + value.unknown,
+    );
+    final plantTotal = counts.values.fold<int>(
+      0,
+      (sum, value) => sum + value.total,
+    );
+
+    return AppCard(
+      padding: const EdgeInsets.fromLTRB(20, 18, 20, 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: AppColors.primaryContainer,
+                  borderRadius: AppRadii.medium,
+                ),
+                child: const Icon(
+                  Icons.account_balance_outlined,
+                  color: AppColors.green,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.md),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Campus Summary',
+                      style: TextStyle(
+                        fontSize: AppTypography.sectionTitle,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.darkGreen,
+                      ),
+                    ),
+                    SizedBox(height: 2),
+                    Text(
+                      'Plant health totals for each campus',
+                      style: TextStyle(
+                        fontSize: AppTypography.caption,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          if (campuses.isEmpty)
+            SizedBox(height: 116, child: _emptyChart())
+          else
+            DecoratedBox(
+              decoration: BoxDecoration(
+                border: Border.all(color: AppColors.border),
+                borderRadius: AppRadii.medium,
+              ),
+              child: ClipRRect(
+                borderRadius: AppRadii.medium,
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: DataTable(
+                    horizontalMargin: 18,
+                    columnSpacing: 30,
+                    headingRowHeight: 54,
+                    dataRowMinHeight: 54,
+                    dataRowMaxHeight: 62,
+                    dividerThickness: 0.7,
+                    headingRowColor: const WidgetStatePropertyAll(
+                      AppColors.background,
+                    ),
+                    columns: [
+                      const DataColumn(
+                        label: Text(
+                          'CAMPUS',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.textSecondary,
+                            fontSize: AppTypography.caption,
+                          ),
+                        ),
+                      ),
+                      _campusHealthColumn('HEALTHY', AppColors.green),
+                      _campusHealthColumn(
+                        'NEEDS ATTENTION',
+                        AppColors.warningAccent,
+                      ),
+                      _campusHealthColumn('DEAD', AppColors.danger),
+                      _campusHealthColumn('UNKNOWN', AppColors.textSecondary),
+                      const DataColumn(
+                        numeric: true,
+                        label: Text(
+                          'TOTAL',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.darkGreen,
+                            fontSize: AppTypography.caption,
+                          ),
+                        ),
+                      ),
+                    ],
+                    rows: [
+                      for (final campus in campuses)
+                        if (int.tryParse(campus['campus_id']?.toString() ?? '')
+                            case final int id)
+                          DataRow(
+                            cells: [
+                              DataCell(
+                                SizedBox(
+                                  width: 220,
+                                  child: Text(
+                                    campus['campus_name']?.toString() ??
+                                        'Unknown campus',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w700,
+                                      color: AppColors.darkGreen,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              DataCell(
+                                _campusHealthValue(
+                                  counts[id]?.healthy ?? 0,
+                                  AppColors.green,
+                                  AppColors.primaryContainer,
+                                ),
+                              ),
+                              DataCell(
+                                _campusHealthValue(
+                                  counts[id]?.attention ?? 0,
+                                  AppColors.warning,
+                                  AppColors.warningContainer,
+                                ),
+                              ),
+                              DataCell(
+                                _campusHealthValue(
+                                  counts[id]?.dead ?? 0,
+                                  AppColors.danger,
+                                  AppColors.dangerContainer,
+                                ),
+                              ),
+                              DataCell(
+                                _campusHealthValue(
+                                  counts[id]?.unknown ?? 0,
+                                  AppColors.textSecondary,
+                                  AppColors.surfaceVariant,
+                                ),
+                              ),
+                              DataCell(
+                                _campusHealthValue(
+                                  counts[id]?.total ?? 0,
+                                  AppColors.darkGreen,
+                                  AppColors.primaryContainer,
+                                  emphasize: true,
+                                ),
+                              ),
+                            ],
+                          ),
+                      DataRow(
+                        color: const WidgetStatePropertyAll(
+                          AppColors.primaryContainer,
+                        ),
+                        cells: [
+                          const DataCell(
+                            Text(
+                              'TOTAL',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w900,
+                                color: AppColors.darkGreen,
+                              ),
+                            ),
+                          ),
+                          DataCell(
+                            _campusHealthValue(
+                              healthyTotal,
+                              AppColors.green,
+                              Colors.white,
+                              emphasize: true,
+                            ),
+                          ),
+                          DataCell(
+                            _campusHealthValue(
+                              attentionTotal,
+                              AppColors.warning,
+                              Colors.white,
+                              emphasize: true,
+                            ),
+                          ),
+                          DataCell(
+                            _campusHealthValue(
+                              deadTotal,
+                              AppColors.danger,
+                              Colors.white,
+                              emphasize: true,
+                            ),
+                          ),
+                          DataCell(
+                            _campusHealthValue(
+                              unknownTotal,
+                              AppColors.textSecondary,
+                              Colors.white,
+                              emphasize: true,
+                            ),
+                          ),
+                          DataCell(
+                            _campusHealthValue(
+                              plantTotal,
+                              AppColors.darkGreen,
+                              Colors.white,
+                              emphasize: true,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  DataColumn _campusHealthColumn(String label, Color color) => DataColumn(
+    numeric: true,
+    label: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: AppSpacing.xs),
+        Text(
+          label,
+          style: const TextStyle(
+            fontWeight: FontWeight.w800,
+            color: AppColors.textSecondary,
+            fontSize: AppTypography.caption,
+          ),
+        ),
+      ],
+    ),
+  );
+
+  Widget _campusHealthValue(
+    int value,
+    Color foreground,
+    Color background, {
+    bool emphasize = false,
+  }) => Align(
+    alignment: Alignment.centerRight,
+    child: Container(
+      constraints: const BoxConstraints(minWidth: 38),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: background,
+        borderRadius: AppRadii.fullyRounded,
+      ),
+      child: Text(
+        value.toString(),
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          color: foreground,
+          fontWeight: emphasize ? FontWeight.w900 : FontWeight.w700,
+          fontFeatures: const [FontFeature.tabularFigures()],
+        ),
+      ),
+    ),
+  );
 
   Widget _detailedReport() {
     final plants = _filteredPlants;

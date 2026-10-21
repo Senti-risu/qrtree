@@ -59,6 +59,12 @@ abstract class PlantClassificationCatalog {
     required String scientificName,
     String? variety,
   });
+  Future<void> updatePlantClassification({
+    required int classificationId,
+    required String plantType,
+    required String commonName,
+    required String scientificName,
+  });
 }
 
 class PlantService implements PlantClassificationCatalog {
@@ -132,7 +138,9 @@ class PlantService implements PlantClassificationCatalog {
         .select('plant_type')
         .order('plant_type');
     return List<Map<String, dynamic>>.from(data)
-        .map((row) => capitalizeLookupNames(row)['plant_type']?.toString() ?? '')
+        .map(
+          (row) => capitalizeLookupNames(row)['plant_type']?.toString() ?? '',
+        )
         .where((name) => name.isNotEmpty)
         .toList();
   }
@@ -173,6 +181,25 @@ class PlantService implements PlantClassificationCatalog {
       throw StateError('The plant classification was not created.');
     }
     return result;
+  }
+
+  @override
+  Future<void> updatePlantClassification({
+    required int classificationId,
+    required String plantType,
+    required String commonName,
+    required String scientificName,
+  }) async {
+    await _supabase.rpc(
+      'university_admin_update_plant_classification',
+      params: {
+        'p_session_token': AppSession.requiredToken,
+        'p_classification_id': classificationId,
+        'p_plant_type': plantType.trim(),
+        'p_common_name': commonName.trim(),
+        'p_scientific_name': scientificName.trim(),
+      },
+    );
   }
 
   // ============================================================

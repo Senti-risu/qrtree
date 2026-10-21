@@ -10,6 +10,7 @@ class FakePlantCatalog implements PlantClassificationCatalog {
   final entries = <Map<String, dynamic>>[];
   final plantTypes = <String>['Tree', 'Herb'];
   int creates = 0;
+  int updates = 0;
 
   @override
   Future<List<Map<String, dynamic>>> getClassifications() async => entries;
@@ -50,6 +51,22 @@ class FakePlantCatalog implements PlantClassificationCatalog {
             ],
     });
     return creates;
+  }
+
+  @override
+  Future<void> updatePlantClassification({
+    required int classificationId,
+    required String plantType,
+    required String commonName,
+    required String scientificName,
+  }) async {
+    updates++;
+    final entry = entries.firstWhere(
+      (entry) => entry['classification_id'] == classificationId,
+    );
+    entry['plant_type'] = plantType;
+    entry['common_name'] = commonName;
+    entry['scientific_name'] = scientificName;
   }
 }
 
@@ -127,7 +144,76 @@ void main() {
       expect(find.text('Variety (Optional)'), findsNothing);
       expect(find.text('VARIETIES'), findsNothing);
       expect(find.text('Plant Classifications'), findsOneWidget);
+      expect(find.byTooltip('Edit Narra'), findsOneWidget);
+      expect(find.byType(GridView), findsNothing);
+
+      await tester.tap(find.byTooltip('Edit Narra'));
+      await tester.pumpAndSettle();
+      await tester.enterText(field('Common Name').last, 'Narra Tree');
+      await tester.tap(find.text('Save Changes'));
+      await tester.pumpAndSettle();
+
+      expect(catalog.updates, 1);
+      expect(catalog.entries.single['common_name'], 'Narra Tree');
+      expect(find.text('Narra Tree'), findsOneWidget);
       expect(tester.takeException(), isNull);
     },
   );
+
+  testWidgets('catalog type filter is a dropdown beside search', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1440, 1000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final catalog = FakePlantCatalog()
+      ..entries.addAll([
+        {
+          'classification_id': 1,
+          'plant_type': 'Tree',
+          'common_name': 'Mango',
+          'scientific_name': 'Mangifera indica',
+          'plant_classification_variety': [],
+        },
+        {
+          'classification_id': 2,
+          'plant_type': 'Herb',
+          'common_name': 'Basil',
+          'scientific_name': 'Ocimum basilicum',
+          'plant_classification_variety': [],
+        },
+      ]);
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: PlantClassificationCatalogScreen(
+          userId: 5,
+          username: 'University Admin',
+          role: 'university_admin',
+          catalog: catalog,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final search = find.byKey(const ValueKey('catalog-search'));
+    final typeFilter = find.byKey(const ValueKey('catalog-type-filter-null'));
+    expect(
+      (tester.getTopLeft(search).dy - tester.getTopLeft(typeFilter).dy).abs(),
+      lessThan(8),
+    );
+    expect(find.text('All types'), findsOneWidget);
+    expect(find.byType(FilterChip), findsNothing);
+
+    await tester.tap(typeFilter);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Tree').last);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Mango'), findsOneWidget);
+    expect(find.text('Basil'), findsNothing);
+    expect(find.text('All types'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
 }

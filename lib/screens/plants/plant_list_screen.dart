@@ -47,12 +47,15 @@ class _PlantListScreenState extends State<PlantListScreen> {
   final _plantService = PlantService();
   final _searchController = TextEditingController();
   List<Map<String, dynamic>> _plants = [];
+  List<Map<String, dynamic>> _campuses = [];
   bool _loading = true;
   String? _error;
   String _healthFilter = 'All';
+  int? _campusFilter;
   String _recordFilter = 'active';
 
   RoleCapabilities get _capabilities => RoleCapabilities.fromValue(widget.role);
+  bool get _canFilterCampus => widget.role == 'university_admin';
 
   @override
   void initState() {
@@ -99,6 +102,9 @@ class _PlantListScreenState extends State<PlantListScreen> {
       final rows = List<Map<String, dynamic>>.from(
         await query.order('created_at', ascending: false),
       );
+      final campuses = _canFilterCampus
+          ? await _plantService.getCampuses()
+          : <Map<String, dynamic>>[];
       try {
         final plantIds = rows.map((row) => row['plant_id'] as int).toList();
         if (plantIds.isNotEmpty) {
@@ -120,6 +126,7 @@ class _PlantListScreenState extends State<PlantListScreen> {
       if (!mounted) return;
       setState(() {
         _plants = rows;
+        _campuses = campuses;
         _loading = false;
       });
     } catch (e) {
@@ -167,28 +174,68 @@ class _PlantListScreenState extends State<PlantListScreen> {
   }
 
   List<Map<String, dynamic>> get _visiblePlants {
-    final plants = _searchMatchedPlants;
+    final plants = _campusMatchedPlants;
     if (_healthFilter == 'All') return plants;
     return plants.where((plant) => _health(plant) == _healthFilter).toList();
   }
 
+  List<Map<String, dynamic>> get _campusMatchedPlants {
+    final plants = _searchMatchedPlants;
+    if (_campusFilter == null) return plants;
+    return plants
+        .where(
+          (plant) =>
+              int.tryParse(plant['campus_id']?.toString() ?? '') ==
+              _campusFilter,
+        )
+        .toList();
+  }
+
+  List<MapEntry<int, String>> get _campusOptions {
+    final campuses = <int, String>{};
+    for (final campus in _campuses) {
+      final campusId = int.tryParse(campus['campus_id']?.toString() ?? '');
+      if (campusId == null) continue;
+      final campusName = campus['campus_name']?.toString().trim() ?? '';
+      campuses[campusId] = campusName.isEmpty ? 'Campus $campusId' : campusName;
+    }
+    return campuses.entries
+        .map((entry) => MapEntry(entry.key, entry.value))
+        .toList()
+      ..sort(
+        (left, right) =>
+            left.value.toLowerCase().compareTo(right.value.toLowerCase()),
+      );
+  }
+
+  String _campusName(int campusId) {
+    for (final campus in _campusOptions) {
+      if (campus.key == campusId) return campus.value;
+    }
+    return 'Unknown';
+  }
+
   bool get _hasActiveFilters =>
       _healthFilter != 'All' ||
+      _campusFilter != null ||
       _searchController.text.trim().isNotEmpty ||
       _recordFilter != 'active';
 
   int get _activeFilterCount => [
     _healthFilter != 'All',
+    _campusFilter != null,
     _searchController.text.trim().isNotEmpty,
     _recordFilter != 'active',
   ].where((active) => active).length;
 
-  int get _hiddenFilterCount => _healthFilter == 'All' ? 0 : 1;
+  int get _hiddenFilterCount =>
+      (_healthFilter == 'All' ? 0 : 1) + (_campusFilter == null ? 0 : 1);
 
   void _clearFilters() {
     _searchController.clear();
     setState(() {
       _healthFilter = 'All';
+      _campusFilter = null;
       _recordFilter = 'active';
     });
   }
@@ -290,11 +337,12 @@ class _PlantListScreenState extends State<PlantListScreen> {
   );
 
   Widget _desktopFilters() {
-    final plants = _searchMatchedPlants;
+    final plants = _campusMatchedPlants;
     return CompactFilterPanel(
       search: _searchField(),
       controls: [
         if (_capabilities.canRestorePlants) _recordSelector(),
+        if (_canFilterCampus) _campusSelector(),
         if (_hasActiveFilters)
           TextButton(onPressed: _clearFilters, child: const Text('Reset')),
       ],
@@ -368,6 +416,20 @@ class _PlantListScreenState extends State<PlantListScreen> {
             color: _healthColor(_healthFilter),
           ),
           onDeleted: () => setState(() => _healthFilter = 'All'),
+          deleteIconColor: AppColors.textSecondary,
+          backgroundColor: AppColors.primaryContainer,
+          side: const BorderSide(color: AppColors.borderStrong),
+          labelStyle: const TextStyle(
+            color: AppColors.darkGreen,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ],
+      if (_campusFilter != null) ...[
+        const SizedBox(height: AppSpacing.sm),
+        InputChip(
+          label: Text('Campus: ${_campusName(_campusFilter!)}'),
+          onDeleted: () => setState(() => _campusFilter = null),
           deleteIconColor: AppColors.textSecondary,
           backgroundColor: AppColors.primaryContainer,
           side: const BorderSide(color: AppColors.borderStrong),
@@ -627,9 +689,65 @@ class _PlantListScreenState extends State<PlantListScreen> {
     ),
   );
 
+  Widget _campusSelector({
+    int? selectedCampus,
+    bool useSelectedCampus = false,
+    ValueChanged<int?>? onChanged,
+  }) {
+    final options = _campusOptions;
+    return SizedBox(
+      width: 190,
+      child: DropdownButtonFormField<int>(
+        initialValue: useSelectedCampus ? selectedCampus : _campusFilter,
+        isExpanded: true,
+        decoration: const InputDecoration(
+          labelText: 'Campus',
+          isDense: true,
+          border: OutlineInputBorder(
+            borderRadius: AppRadii.medium,
+            borderSide: AppBorders.subtleSide,
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: AppRadii.medium,
+            borderSide: AppBorders.subtleSide,
+          ),
+        ),
+        items: [
+          const DropdownMenuItem<int>(value: null, child: Text('All campuses')),
+          ...options.map(
+            (campus) => DropdownMenuItem<int>(
+              value: campus.key,
+              child: Text(campus.value, overflow: TextOverflow.ellipsis),
+            ),
+          ),
+        ],
+        onChanged:
+            onChanged ?? (value) => setState(() => _campusFilter = value),
+      ),
+    );
+  }
+
   Future<void> _showHealthFilters() async {
     var pendingHealth = _healthFilter;
+    var pendingCampus = _campusFilter;
     final plants = _searchMatchedPlants;
+    List<Map<String, dynamic>> filteredPlants() {
+      final campusPlants = pendingCampus == null
+          ? plants
+          : plants
+                .where(
+                  (plant) =>
+                      int.tryParse(plant['campus_id']?.toString() ?? '') ==
+                      pendingCampus,
+                )
+                .toList();
+      return pendingHealth == 'All'
+          ? campusPlants
+          : campusPlants
+                .where((plant) => _health(plant) == pendingHealth)
+                .toList();
+    }
+
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -638,15 +756,32 @@ class _PlantListScreenState extends State<PlantListScreen> {
       builder: (sheetContext) => StatefulBuilder(
         builder: (context, updateSheet) => AppFilterSheet(
           title: 'Filter Plants',
-          applyLabel: 'Apply · ${_healthCount(pendingHealth, plants)} plants',
-          onReset: () => updateSheet(() => pendingHealth = 'All'),
+          applyLabel: 'Apply · ${filteredPlants().length} plants',
+          onReset: () => updateSheet(() {
+            pendingHealth = 'All';
+            pendingCampus = null;
+          }),
           onApply: () {
-            setState(() => _healthFilter = pendingHealth);
+            setState(() {
+              _healthFilter = pendingHealth;
+              _campusFilter = pendingCampus;
+            });
             Navigator.pop(sheetContext);
           },
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              if (_canFilterCampus) ...[
+                const Text('Campus'),
+                const SizedBox(height: AppSpacing.sm),
+                _campusSelector(
+                  selectedCampus: pendingCampus,
+                  useSelectedCampus: true,
+                  onChanged: (selected) =>
+                      updateSheet(() => pendingCampus = selected),
+                ),
+                const SizedBox(height: AppSpacing.lg),
+              ],
               const Text('Health Status'),
               const SizedBox(height: AppSpacing.sm),
               Wrap(
@@ -656,7 +791,29 @@ class _PlantListScreenState extends State<PlantListScreen> {
                     .map(
                       (value) => _healthChoice(
                         value,
-                        _healthCount(value, plants),
+                        pendingCampus == null
+                            ? _healthCount(value, plants)
+                            : value == 'All'
+                            ? plants
+                                  .where(
+                                    (plant) =>
+                                        int.tryParse(
+                                          plant['campus_id']?.toString() ?? '',
+                                        ) ==
+                                        pendingCampus,
+                                  )
+                                  .length
+                            : plants
+                                  .where(
+                                    (plant) =>
+                                        int.tryParse(
+                                              plant['campus_id']?.toString() ??
+                                                  '',
+                                            ) ==
+                                            pendingCampus &&
+                                        _health(plant) == value,
+                                  )
+                                  .length,
                         pendingHealth,
                         (selected) =>
                             updateSheet(() => pendingHealth = selected),
@@ -803,6 +960,7 @@ class _PlantListScreenState extends State<PlantListScreen> {
                 DataColumn(label: Text('PLANT NAME')),
                 DataColumn(label: Text('TAG ID')),
                 DataColumn(label: Text('PLANT TYPE')),
+                DataColumn(label: Text('CAMPUS')),
                 DataColumn(label: Text('STAGE')),
                 DataColumn(label: Text('HEALTH')),
                 DataColumn(label: Text('DATE PLANTED')),
@@ -837,6 +995,11 @@ class _PlantListScreenState extends State<PlantListScreen> {
                     DataCell(Text(_tagId(plant))),
                     DataCell(
                       Text(classification['plant_type']?.toString() ?? '—'),
+                    ),
+                    DataCell(
+                      Text(
+                        _map(plant['campus'])['campus_name']?.toString() ?? '—',
+                      ),
                     ),
                     DataCell(
                       Text(
