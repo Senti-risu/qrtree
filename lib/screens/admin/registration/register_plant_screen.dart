@@ -87,8 +87,7 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
   Uint8List? _selectedImageBytes;
   bool _isPickingImage = false;
 
-  // PostgreSQL enum values.
-  final List<String> _plantTypes = const ['Tree', 'Shrub', 'Herb', 'Vine'];
+  static const String _noVarietyLabel = 'Not specified';
 
   bool _loading = true;
   bool _saving = false;
@@ -310,25 +309,38 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
       'classification_id',
       data['classificationId'],
     );
+    final classificationHasScientificName =
+        classification != null &&
+        (classification['scientific_name']?.toString().trim().isNotEmpty ??
+            false);
+    final savedVariety = text('variety', _maxVarietyLength);
+    final catalogVarieties = classification == null
+        ? const <String>[]
+        : _varietyNames(classification);
+    final restoredVariety =
+        catalogVarieties.any(
+          (name) => name.toLowerCase() == savedVariety.toLowerCase(),
+        )
+        ? savedVariety
+        : '';
     final growth = row(_growthStatuses, 'growth_status_id', data['growthId']);
     final health = row(_healthStatuses, 'health_status_id', data['healthId']);
     final town = row(_towns, 'town_id', data['townId']);
     final barangay = row(_barangays, 'barangay_id', data['barangayId']);
     final planting = data['plantingCampus'];
     setState(() {
-      _selectedClassificationId = classification?['classification_id'] as int?;
-      _plantType = classification == null
-          ? (_plantTypes.contains(data['plantType'])
-                ? data['plantType'] as String
-                : null)
-          : _titleCase(classification['plant_type']?.toString() ?? '');
-      _commonName =
-          classification?['common_name']?.toString() ?? text('commonName', 100);
-      _scientificNameController.text =
-          (classification?['scientific_name']?.toString().trim().isNotEmpty ??
-              false)
-          ? classification!['scientific_name'].toString()
-          : data['scientificName']?.toString() ?? '';
+      _selectedClassificationId = classificationHasScientificName
+          ? classification['classification_id'] as int?
+          : null;
+      _plantType = classificationHasScientificName
+          ? _titleCase(classification['plant_type']?.toString() ?? '')
+          : null;
+      _commonName = classificationHasScientificName
+          ? classification['common_name']?.toString()
+          : null;
+      _scientificNameController.text = classificationHasScientificName
+          ? classification['scientific_name'].toString()
+          : '';
       _selectedGrowthStatusId = growth?['growth_status_id'] as int?;
       _growthStage = growth == null
           ? null
@@ -354,9 +366,7 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
                   _campuses.any((c) => '${c['campus_id']}' == planting))
           ? planting
           : null;
-      _varietyController.text = capitalizeWords(
-        text('variety', _maxVarietyLength),
-      );
+      _varietyController.text = capitalizeWords(restoredVariety);
       _planterController.text = capitalizeWords(
         text('planter', _maxPlanterLength),
       );
@@ -372,6 +382,12 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
       _mobileStep = 0;
       _hasUnsavedChanges = true;
     });
+    if (savedVariety.isNotEmpty && restoredVariety.isEmpty && mounted) {
+      _message(
+        'The saved variety is no longer in the university catalog. Select an available variety.',
+        error: true,
+      );
+    }
   }
 
   // ============================================================
@@ -539,15 +555,19 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
   // PLANT SELECTIONS
   // ============================================================
 
-  bool get _hasSavedScientificName => _classifications.any(
-    (c) =>
-        c['classification_id'] == _selectedClassificationId &&
-        (c['scientific_name']?.toString().trim().isNotEmpty ?? false),
-  );
+  List<String> get _plantTypes =>
+      _classifications
+          .where(_hasScientificName)
+          .map((row) => _titleCase(row['plant_type']?.toString() ?? ''))
+          .where((value) => value.isNotEmpty)
+          .toSet()
+          .toList()
+        ..sort();
 
   List<String> get _commonNameOptions {
     if (_plantType == null) return const [];
-    final names = _classifications
+    return _classifications
+        .where(_hasScientificName)
         .where(
           (row) =>
               _titleCase(row['plant_type']?.toString() ?? '') == _plantType,
@@ -555,13 +575,32 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
         .map((row) => row['common_name']?.toString() ?? '')
         .where((name) => name.isNotEmpty)
         .toSet()
+        .toList()
+      ..sort();
+  }
+
+  List<String> get _varietyOptions {
+    final classification = _classifications.where(
+      (row) => row['classification_id'] == _selectedClassificationId,
+    );
+    if (classification.isEmpty) return const [];
+    final varieties = _varietyNames(classification.first);
+    varieties.sort();
+    return [_noVarietyLabel, ...varieties];
+  }
+
+  bool _hasScientificName(Map<String, dynamic> classification) =>
+      classification['scientific_name']?.toString().trim().isNotEmpty ?? false;
+
+  List<String> _varietyNames(Map<String, dynamic> classification) {
+    final value = classification['plant_classification_variety'];
+    if (value is! List) return [];
+    return value
+        .whereType<Map>()
+        .map((row) => row['variety_name']?.toString() ?? '')
+        .where((name) => name.trim().isNotEmpty)
+        .toSet()
         .toList();
-    if (_commonName != null &&
-        _commonName!.isNotEmpty &&
-        !names.contains(_commonName)) {
-      names.add(_commonName!);
-    }
-    return names;
   }
 
   void _selectPlantType(String? value) {
@@ -573,19 +612,20 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
       _selectedClassificationId = null;
 
       _scientificNameController.clear();
+      _varietyController.clear();
     });
   }
 
   void _onCommonNameChanged(String? value) {
     final selectedName = capitalizeWords(value?.trim() ?? '');
     final previousClassificationId = _selectedClassificationId;
-    final wasAutofilled = _hasSavedScientificName;
     Map<String, dynamic>? match;
     if (_plantType != null && selectedName.isNotEmpty) {
       for (final row in _classifications) {
         if (row['common_name']?.toString().toLowerCase() ==
                 selectedName.toLowerCase() &&
-            _titleCase(row['plant_type']?.toString() ?? '') == _plantType) {
+            _titleCase(row['plant_type']?.toString() ?? '') == _plantType &&
+            _hasScientificName(row)) {
           match = row;
           break;
         }
@@ -594,14 +634,17 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
 
     setState(() {
       _hasUnsavedChanges = true;
-      _commonName = selectedName.isEmpty ? null : selectedName;
+      _commonName = match?['common_name']?.toString();
       _selectedClassificationId = match?['classification_id'] as int?;
       if (match != null) {
         _scientificNameController.text =
             match['scientific_name']?.toString() ?? '';
-      } else if (wasAutofilled ||
-          previousClassificationId != _selectedClassificationId) {
+        if (previousClassificationId != _selectedClassificationId) {
+          _varietyController.clear();
+        }
+      } else if (previousClassificationId != _selectedClassificationId) {
         _scientificNameController.clear();
+        _varietyController.clear();
       }
     });
   }
@@ -925,6 +968,7 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
   List<String> get _missingPlantFields => [
     if (_selectedCampusId == null || _selectedCollegeId == null)
       'managing campus and college',
+    if (_selectedClassificationId == null) 'plant classification',
     if (_plantType == null) 'plant type',
     if (_commonName == null || _commonName!.trim().isEmpty) 'common name',
     if (_selectedGrowthStatusId == null) 'growth stage',
@@ -1157,18 +1201,13 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
       }
 
       final result = await _plantService.registerPlantWithQr(
-        scientificName: _hasSavedScientificName
-            ? null
-            : _emptyToNull(_scientificNameController.text),
-        newPlantType: _selectedClassificationId == null ? _plantType : null,
-        newCommonName: _selectedClassificationId == null ? _commonName : null,
         locationType: _plantingCampusChoice == PlantingCampusDropdown.outside
             ? 'outside'
             : 'inside',
         locationCampusId: PlantingCampusDropdown.campusId(
           _plantingCampusChoice,
         ),
-        classificationId: _selectedClassificationId,
+        classificationId: _selectedClassificationId!,
 
         campusId: _selectedCampusId!,
 
@@ -2018,23 +2057,32 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
               items: _commonNameOptions,
               enabled: _plantType != null && !_saving,
               errorText: _showPlantErrors && _commonName == null
-                  ? 'Please type or select a common name.'
+                  ? 'Please select a common name.'
                   : null,
               onChanged: _onCommonNameChanged,
-              allowCustomValue: true,
-              hintText: 'Type or select a common name',
+              hintText: 'Select a university catalog entry',
             ),
           ),
 
           const SizedBox(height: AppSpacing.lg),
 
           _twoFields(
-            AppTextField(
+            AppSearchableDropdown(
               label: 'Variety (Optional)',
-              textCapitalization: TextCapitalization.words,
-              inputFormatters: const [WordCapitalizationFormatter()],
-              controller: _varietyController,
-              maxLength: _maxVarietyLength,
+              value: _varietyController.text.trim().isEmpty
+                  ? _noVarietyLabel
+                  : _varietyController.text.trim(),
+              items: _varietyOptions,
+              enabled: _selectedClassificationId != null && !_saving,
+              hintText: 'Select a catalog variety',
+              onChanged: (value) {
+                final variety = value == _noVarietyLabel ? '' : value ?? '';
+                if (_varietyController.text == variety) return;
+                setState(() {
+                  _hasUnsavedChanges = true;
+                  _varietyController.text = variety;
+                });
+              },
             ),
 
             AppTextField(
@@ -2042,20 +2090,13 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
 
               controller: _scientificNameController,
 
-              readOnly: _hasSavedScientificName,
+              readOnly: true,
               enabled: !_saving,
               maxLength: 200,
               suffixIcon: _selectedClassificationId == null
                   ? null
-                  : Icon(
-                      _hasSavedScientificName
-                          ? Icons.lock_outline
-                          : Icons.edit_outlined,
-                      size: 18,
-                    ),
-              hint: _hasSavedScientificName
-                  ? 'Filled automatically'
-                  : 'Type the scientific name if known',
+                  : const Icon(Icons.lock_outline, size: 18),
+              hint: 'Managed by University Admin',
             ),
           ),
 

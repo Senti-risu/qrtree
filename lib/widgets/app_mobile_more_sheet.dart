@@ -10,6 +10,7 @@ import 'app_version_info.dart';
 enum AppMobileMoreAction {
   profile,
   reminders,
+  plantClassifications,
   registerPlant,
   qrManagement,
   qrReports,
@@ -56,6 +57,17 @@ Future<AppMobileMoreAction?> showAppMobileMoreSheet(
             action: AppMobileMoreAction.userManagement,
             icon: Icons.manage_accounts_outlined,
             title: 'User Management',
+          ),
+        ],
+      ),
+    if (role == 'university_admin')
+      const _MoreGroup(
+        label: 'Management',
+        items: [
+          _MoreItem(
+            action: AppMobileMoreAction.plantClassifications,
+            icon: Icons.local_florist_outlined,
+            title: 'Plant Catalog',
           ),
         ],
       ),

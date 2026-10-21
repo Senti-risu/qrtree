@@ -7,12 +7,10 @@ import 'registration_draft_flow_test.dart' as helpers;
 import 'package:flutter_application_1/widgets/plant_details_presentation.dart';
 
 class ScientificService extends helpers.LookupService {
-  ScientificService({this.savedName = '', this.fail = false});
+  ScientificService({this.savedName = 'Mangifera indica', this.fail = false});
   final String savedName;
   final bool fail;
-  String? submittedName;
-  String? submittedCommonName;
-  String? submittedPlantType;
+  int? submittedClassificationId;
   bool submitted = false;
   @override
   Future<List<Map<String, dynamic>>> getClassifications() async => [
@@ -21,6 +19,7 @@ class ScientificService extends helpers.LookupService {
       'plant_type': 'tree',
       'common_name': 'Mango',
       'scientific_name': savedName,
+      'plant_classification_variety': [],
     },
   ];
   @override
@@ -35,18 +34,10 @@ class ScientificService extends helpers.LookupService {
     int limit = 10,
   }) async => [];
   @override
-  Future<String> saveMissingScientificName(
-    int classificationId,
-    String name,
-  ) async =>
-      throw StateError('A separate scientific-name write must not be used.');
-  @override
   Future<Map<String, dynamic>> registerPlantWithQr({
     required String locationType,
     int? locationCampusId,
-    required int? classificationId,
-    String? newPlantType,
-    String? newCommonName,
+    required int classificationId,
     required int campusId,
     required int collegeId,
     required int townId,
@@ -59,12 +50,9 @@ class ScientificService extends helpers.LookupService {
     String? datePlanted,
     String? treePlanter,
     String? photoUrl,
-    String? scientificName,
   }) async {
     submitted = true;
-    submittedName = scientificName;
-    submittedCommonName = newCommonName;
-    submittedPlantType = newPlantType;
+    submittedClassificationId = classificationId;
     if (fail) throw StateError('Registration failed.');
     return {'plant_id': 99, 'qr_tag_id': 9, 'qr_code_string': 'ECOTAG-TEST-99'};
   }
@@ -143,42 +131,34 @@ void main() {
     expect(find.text('Registered plant details'), findsNothing);
     expect(tester.takeException(), isNull);
   });
-  for (final saved in [false, true]) {
-    testWidgets(
-      'scientific name ${saved ? 'auto-fills and stays protected' : 'is editable and submitted with registration'}',
-      (tester) async {
-        final service = ScientificService(
-          savedName: saved ? 'Mangifera indica' : '',
-        );
-        await helpers.open(tester, draft(), width: 1440, service: service);
-        await tester.tap(find.text('Resume'));
-        await tester.pumpAndSettle();
-        final field = tester.widget<AppTextField>(scientific());
-        expect(field.readOnly, saved);
-        if (saved) {
-          expect(field.controller.text, 'Mangifera indica');
-        } else {
-          final input = find.descendant(
-            of: scientific(),
-            matching: find.byType(TextFormField),
-          );
-          await tester.ensureVisible(input);
-          await tester.enterText(input, 'Mangifera indica');
-          expect(field.controller.text, 'Mangifera indica');
-        }
-        final submit = find.widgetWithText(FilledButton, 'Register Plant');
-        await tester.ensureVisible(submit);
-        await tester.tap(submit);
-        await tester.pump();
-        await tester.pump(const Duration(milliseconds: 400));
-        expect(service.submitted, isTrue);
-        expect(service.submittedName, saved ? isNull : 'Mangifera indica');
-        expect(find.text('ECOTAG-TEST-99'), findsOneWidget);
-        expect(tester.takeException(), isNull);
-      },
+  testWidgets('scientific name is selected from the university catalog', (
+    tester,
+  ) async {
+    final service = ScientificService();
+    await helpers.open(tester, draft(), width: 1440, service: service);
+    await tester.tap(find.text('Resume'));
+    await tester.pumpAndSettle();
+    final field = tester.widget<AppTextField>(scientific());
+    expect(field.readOnly, isTrue);
+    expect(field.controller.text, 'Mangifera indica');
+    final input = find.descendant(
+      of: scientific(),
+      matching: find.byType(TextFormField),
     );
-  }
-  testWidgets('failed registration keeps the entered name and draft', (
+    await tester.ensureVisible(input);
+    await tester.enterText(input, 'Not allowed');
+    expect(field.controller.text, 'Mangifera indica');
+    final submit = find.widgetWithText(FilledButton, 'Register Plant');
+    await tester.ensureVisible(submit);
+    await tester.tap(submit);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(service.submitted, isTrue);
+    expect(service.submittedClassificationId, 7);
+    expect(find.text('ECOTAG-TEST-99'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+  testWidgets('failed registration preserves the catalog name and draft', (
     tester,
   ) async {
     final service = ScientificService(fail: true);
@@ -187,7 +167,7 @@ void main() {
     await tester.tap(find.text('Resume'));
     await tester.pumpAndSettle();
     final field = tester.widget<AppTextField>(scientific());
-    field.controller.text = 'Mangifera indica';
+    expect(field.readOnly, isTrue);
     final submit = find.widgetWithText(FilledButton, 'Register Plant');
     await tester.ensureVisible(submit);
     await tester.tap(submit);
@@ -197,20 +177,7 @@ void main() {
     expect(drafts.value, isNotNull);
     expect(find.text('ECOTAG-TEST-99'), findsNothing);
   });
-  testWidgets('missing scientific name remains optional', (tester) async {
-    final service = ScientificService();
-    await helpers.open(tester, draft(), width: 1440, service: service);
-    await tester.tap(find.text('Resume'));
-    await tester.pumpAndSettle();
-    final submit = find.widgetWithText(FilledButton, 'Register Plant');
-    await tester.ensureVisible(submit);
-    await tester.tap(submit);
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 400));
-    expect(service.submitted, isTrue);
-    expect(service.submittedName, isNull);
-  });
-  testWidgets('new common and scientific names can be entered and submitted', (
+  testWidgets('common names cannot be added from plant registration', (
     tester,
   ) async {
     final service = ScientificService();
@@ -224,28 +191,25 @@ void main() {
     await tester.tap(find.text('Resume'));
     await tester.pumpAndSettle();
 
-    final commonName = find.byWidgetPredicate(
-      (widget) =>
-          widget is AppSearchableDropdown && widget.label == 'Common Name',
+    final type = tester.widget<AppSearchableDropdown>(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is AppSearchableDropdown && widget.label == 'Plant Type',
+      ),
     );
-    final commonNameInput = find.descendant(
-      of: commonName,
-      matching: find.byType(TextField),
+    type.onChanged('Tree');
+    await tester.pumpAndSettle();
+    final commonName = tester.widget<AppSearchableDropdown>(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is AppSearchableDropdown && widget.label == 'Common Name',
+      ),
     );
-    await tester.ensureVisible(commonNameInput);
-    await tester.enterText(commonNameInput, 'Banana');
+    expect(commonName.allowCustomValue, isFalse);
+    expect(commonName.items, ['Mango']);
+    commonName.onChanged('Banana');
     await tester.pumpAndSettle();
     expect(find.text('Add "Banana"'), findsNothing);
-
-    final field = tester.widget<AppTextField>(scientific());
-    expect(field.readOnly, isFalse);
-    final scientificInput = find.descendant(
-      of: scientific(),
-      matching: find.byType(TextFormField),
-    );
-    await tester.ensureVisible(scientificInput);
-    await tester.enterText(scientificInput, 'Musa acuminata');
-    expect(field.controller.text, 'Musa acuminata');
 
     final submit = find.widgetWithText(FilledButton, 'Register Plant');
     await tester.ensureVisible(submit);
@@ -253,46 +217,22 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
 
-    expect(service.submitted, isTrue);
-    expect(service.submittedPlantType, 'Tree');
-    expect(service.submittedCommonName, 'Banana');
-    expect(service.submittedName, 'Musa acuminata');
-    expect(find.text('ECOTAG-TEST-99'), findsOneWidget);
+    expect(service.submitted, isFalse);
+    expect(find.text('Please select a common name.'), findsOneWidget);
   });
-  testWidgets('mobile draft retains an entered scientific name', (
-    tester,
-  ) async {
+  testWidgets('mobile draft keeps scientific name read only', (tester) async {
     final drafts = draft();
     await helpers.open(tester, drafts, service: ScientificService());
     await tester.tap(find.text('Resume'));
     await tester.pumpAndSettle();
     final field = tester.widget<AppTextField>(scientific());
-    expect(field.readOnly, isFalse);
-    field.controller.text = 'Mangifera indica';
+    expect(field.readOnly, isTrue);
     final save = find.byKey(const Key('save-registration-draft'));
     await tester.ensureVisible(save);
     await tester.tap(save);
     await tester.pumpAndSettle();
     expect(drafts.value?['scientificName'], 'Mangifera indica');
     expect(tester.takeException(), isNull);
-  });
-  testWidgets('invalid scientific-name length blocks registration', (
-    tester,
-  ) async {
-    final service = ScientificService();
-    await helpers.open(tester, draft(), width: 1440, service: service);
-    await tester.tap(find.text('Resume'));
-    await tester.pumpAndSettle();
-    tester.widget<AppTextField>(scientific()).controller.text = List.filled(
-      201,
-      'a',
-    ).join();
-    final submit = find.widgetWithText(FilledButton, 'Register Plant');
-    await tester.ensureVisible(submit);
-    await tester.tap(submit);
-    await tester.pumpAndSettle();
-    expect(service.submitted, isFalse);
-    expect(find.textContaining('200 printable characters'), findsWidgets);
   });
   test(
     'scientific name migration keeps updates and registration atomic and scoped',
@@ -319,17 +259,34 @@ void main() {
       expect(sql, isNot(contains('exception when')));
     },
   );
-  test(
-    'new classifications are created atomically with plant registration',
-    () {
-      final sql = File(
-        'supabase/migrations/202610200003_register_new_classifications.sql',
-      ).readAsStringSync();
-      expect(sql, contains('public.require_app_session(p_session_token)'));
-      expect(sql, contains('p_campus_id is distinct from actor.campus_id'));
-      expect(sql, contains('pg_advisory_xact_lock'));
-      expect(sql, contains('public.register_plant_with_scientific_name'));
-      expect(sql, contains('classification.created'));
-    },
-  );
+  test('university catalog RPC owns classification creation', () {
+    final sql = File(
+      'supabase/migrations/202610210002_university_plant_catalog.sql',
+    ).readAsStringSync();
+    expect(
+      sql,
+      contains('public.university_admin_create_plant_classification'),
+    );
+    expect(sql, contains("actor.role is distinct from 'university_admin'"));
+    expect(sql, contains('classification.variety_created'));
+    expect(sql, contains('public.validate_plant_catalog_variety'));
+    expect(
+      sql,
+      contains(
+        'revoke all on function public.register_plant_with_new_classification',
+      ),
+    );
+    expect(
+      sql,
+      contains(
+        'revoke all on function public.register_plant_with_scientific_name',
+      ),
+    );
+    expect(
+      sql,
+      contains(
+        'revoke insert, update, delete on table public.plant_classification',
+      ),
+    );
+  });
 }

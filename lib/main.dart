@@ -27,6 +27,7 @@ import 'screens/super_admin/super_admin_screen.dart';
 import 'screens/super_admin/manage_accounts_screen.dart';
 import 'screens/admin/inspection_accounts_screen.dart';
 import 'screens/admin/activity_log_screen.dart';
+import 'screens/admin/plant_classification_catalog_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -190,6 +191,26 @@ class MyApp extends StatelessWidget {
                 role: args['role'].toString(),
                 campusId: args['campus_id'] as int?,
                 collegeId: args['college_id'] as int?,
+              ),
+            ),
+          );
+        }
+
+        if (settings.name == '/plant-classifications') {
+          if (args is! Map<String, dynamic> ||
+              args['user_id'] is! int ||
+              args['username'] == null ||
+              args['role'] != 'university_admin') {
+            return _errorRoute('University Admin access is required.');
+          }
+          return MaterialPageRoute(
+            settings: settings,
+            builder: _protected(
+              args,
+              (_) => PlantClassificationCatalogScreen(
+                userId: args['user_id'] as int,
+                username: args['username'].toString(),
+                role: args['role'].toString(),
               ),
             ),
           );

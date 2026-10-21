@@ -5,7 +5,7 @@ class QrNumberingInfo extends StatelessWidget {
   const QrNumberingInfo({super.key});
 
   static const explanation =
-      'Format: ECOTAG-YYYYMM-000001. YYYYMM is the creation month and year; the last number starts at 1 and continues globally without resetting.';
+      'Format: CSU-YYYYMM-000001. YYYYMM is the creation month and year; the last number starts at 1 and continues globally without resetting.';
 
   @override
   Widget build(BuildContext context) => TextButton.icon(

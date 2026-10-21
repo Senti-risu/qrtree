@@ -39,6 +39,9 @@ class LookupService extends PlantService {
       'plant_type': 'tree',
       'common_name': 'Mango',
       'scientific_name': 'Mangifera indica',
+      'plant_classification_variety': [
+        {'variety_id': 1, 'variety_name': 'Native'},
+      ],
     },
   ];
   @override
@@ -234,14 +237,14 @@ void main() {
       final drafts = MemoryDrafts()
         ..value = {
           'classificationId': 7,
-          'variety': 'Native Mango',
+          'variety': 'Native',
           'planter': 'Russel',
         };
       await open(tester, drafts, width: width);
       expect(find.text('Resume saved registration?'), findsOneWidget);
       await tester.tap(find.text('Resume'));
       await tester.pumpAndSettle();
-      expect(find.text('Native Mango'), findsOneWidget);
+      expect(find.text('Native'), findsOneWidget);
       expect(
         find.textContaining('Assigned College', findRichText: true),
         findsWidgets,
@@ -249,14 +252,14 @@ void main() {
       await tester.tap(find.byKey(const Key('save-registration-draft')));
       await tester.pumpAndSettle();
       expect(drafts.value?['classificationId'], 7);
-      expect(drafts.value?['variety'], 'Native Mango');
+      expect(drafts.value?['variety'], 'Native');
       // Both desktop sidebar and mobile navbar use the same navigation guard.
       await tester.tap(find.text('Dashboard').last);
       await tester.pumpAndSettle();
       expect(find.text('Leave this registration?'), findsOneWidget);
       await tester.tap(find.text('Stay'));
       await tester.pumpAndSettle();
-      expect(find.text('Native Mango'), findsOneWidget);
+      expect(find.text('Native'), findsOneWidget);
       await tester.tap(find.text('Dashboard').last);
       await tester.pumpAndSettle();
       await tester.tap(
@@ -274,7 +277,7 @@ void main() {
 
   testWidgets('failed draft save keeps the registration open', (tester) async {
     final drafts = MemoryDrafts()
-      ..value = {'variety': 'Unsaved'}
+      ..value = {'classificationId': 7, 'variety': 'Native'}
       ..failSave = true;
     await open(tester, drafts);
     await tester.tap(find.text('Resume'));
@@ -289,7 +292,7 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.text('Dashboard destination'), findsNothing);
-    expect(find.text('Unsaved'), findsOneWidget);
+    expect(find.text('Native'), findsOneWidget);
     expect(find.textContaining('Could not save the draft'), findsOneWidget);
   });
 

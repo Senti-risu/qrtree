@@ -76,6 +76,12 @@ class AppSidebar extends StatelessWidget {
             icon: Icons.grid_view_rounded,
             label: 'Dashboard',
           ),
+          if (role == 'university_admin')
+            const _NavItemData(
+              route: '/plant-classifications',
+              icon: Icons.local_florist_outlined,
+              label: 'Plant Catalog',
+            ),
           if (_canRegisterPlant)
             const _NavItemData(
               route: '/register-plant',

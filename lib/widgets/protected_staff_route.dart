@@ -25,6 +25,7 @@ class ProtectedStaffRoute extends StatefulWidget {
 class _ProtectedStaffRouteState extends State<ProtectedStaffRoute>
     with WidgetsBindingObserver {
   bool _allowed = false;
+  bool _hasVerified = false;
   bool _checking = false;
   String? _error;
 
@@ -70,6 +71,7 @@ class _ProtectedStaffRouteState extends State<ProtectedStaffRoute>
       );
       setState(() {
         _allowed = matches;
+        if (matches) _hasVerified = true;
         _checking = false;
         if (!matches) {
           _error =
@@ -99,25 +101,43 @@ class _ProtectedStaffRouteState extends State<ProtectedStaffRoute>
   }
 
   @override
-  Widget build(BuildContext context) {
-    if (_allowed) return widget.builder(context);
-    return Scaffold(
-      body: Center(
-        child: _error == null
-            ? const CircularProgressIndicator()
-            : Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(_error!, textAlign: TextAlign.center),
-                    const SizedBox(height: 16),
-                    FilledButton(onPressed: _check, child: const Text('Retry')),
-                    TextButton(onPressed: _login, child: const Text('Sign In')),
-                  ],
-                ),
-              ),
+  Widget build(BuildContext context) => Stack(
+    fit: StackFit.expand,
+    children: [
+      // Preserve form controllers and pending image-picker callbacks on resume.
+      // The page stays invisible and unfocusable until access is verified again.
+      Offstage(
+        offstage: !_allowed,
+        child: TickerMode(
+          enabled: _allowed,
+          child: ExcludeFocus(
+            excluding: !_allowed,
+            child: _hasVerified
+                ? Builder(builder: widget.builder)
+                : const SizedBox.shrink(),
+          ),
+        ),
       ),
-    );
-  }
+      if (!_allowed) _accessGate(),
+    ],
+  );
+
+  Widget _accessGate() => Scaffold(
+    body: Center(
+      child: _error == null
+          ? const CircularProgressIndicator()
+          : Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(_error!, textAlign: TextAlign.center),
+                  const SizedBox(height: 16),
+                  FilledButton(onPressed: _check, child: const Text('Retry')),
+                  TextButton(onPressed: _login, child: const Text('Sign In')),
+                ],
+              ),
+            ),
+    ),
+  );
 }

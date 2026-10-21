@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_application_1/models/app_role.dart';
 import 'package:flutter_application_1/services/persistent_session.dart';
@@ -12,6 +13,47 @@ void main() {
     campusId: 1,
     collegeId: 2,
   );
+
+  testWidgets('returning from image picker preserves the hidden form state', (
+    tester,
+  ) async {
+    final validation = Completer<SessionIdentity?>();
+    var checks = 0;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ProtectedStaffRoute(
+          arguments: identity.arguments,
+          validateSession: () =>
+              checks++ == 0 ? Future.value(identity) : validation.future,
+          builder: (_) => const Scaffold(body: TextField()),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'Mango registration draft');
+    final originalState = tester.state(find.byType(TextField));
+    for (final state in [
+      AppLifecycleState.inactive,
+      AppLifecycleState.hidden,
+      AppLifecycleState.paused,
+      AppLifecycleState.hidden,
+      AppLifecycleState.inactive,
+      AppLifecycleState.resumed,
+    ]) {
+      tester.binding.handleAppLifecycleStateChanged(state);
+    }
+    await tester.pump();
+    expect(find.byType(TextField), findsNothing);
+    expect(
+      tester.state(find.byType(TextField, skipOffstage: false)),
+      same(originalState),
+    );
+    validation.complete(identity);
+    await tester.pumpAndSettle();
+    expect(find.text('Mango registration draft'), findsOneWidget);
+    expect(tester.state(find.byType(TextField)), same(originalState));
+    expect(tester.takeException(), isNull);
+  });
 
   Widget app(
     Future<SessionIdentity?> Function() validate, {

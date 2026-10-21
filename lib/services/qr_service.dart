@@ -70,6 +70,22 @@ class QrService {
           ? await query.eq('qr_code_string', value).maybeSingle()
           : await query.eq('qr_tag_id', numericId).maybeSingle();
     }
+    if (data == null && numericId == null) {
+      try {
+        final matches = await _supabase.rpc(
+          'staff_find_qr_tag_by_code',
+          params: {
+            'p_session_token': AppSession.requiredToken,
+            'p_qr_code': value,
+          },
+        );
+        if (matches is List && matches.isNotEmpty) {
+          data = Map<String, dynamic>.from(matches.first as Map);
+        }
+      } on PostgrestException catch (error) {
+        if (!_isMissingFunction(error)) rethrow;
+      }
+    }
     if (data == null) return null;
     return Map<String, dynamic>.from(data);
   }

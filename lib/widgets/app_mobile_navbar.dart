@@ -128,7 +128,9 @@ class AppMobileNavbar extends StatelessWidget {
       'university_admin',
       'campus_admin',
     }.contains(role)) {
-      return activeRoute == '/activity-log';
+      return activeRoute == '/activity-log' ||
+          (role == 'university_admin' &&
+              activeRoute == '/plant-classifications');
     }
     return false;
   }
@@ -280,6 +282,9 @@ class AppMobileNavbar extends StatelessWidget {
             collegeId: collegeId,
           ),
         );
+        return;
+      case AppMobileMoreAction.plantClassifications:
+        _navigate(context, '/plant-classifications');
         return;
       case AppMobileMoreAction.registerPlant:
         _navigate(context, '/register-plant');
@@ -446,6 +451,11 @@ class AppMobileNavbar extends StatelessWidget {
         _showError(context, 'Your account has no assigned campus or college.');
         return;
       }
+    }
+
+    if (route == '/plant-classifications' && role != 'university_admin') {
+      _showError(context, 'University Admin access is required.');
+      return;
     }
 
     if (route == '/inspections' && !_canViewInspections) {

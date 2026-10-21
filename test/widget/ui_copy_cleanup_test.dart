@@ -30,6 +30,8 @@ void main() {
         await tester.tap(find.text('QR Code Format'));
         await tester.pumpAndSettle();
         expect(find.text(QrNumberingInfo.explanation), findsOneWidget);
+        expect(QrNumberingInfo.explanation, contains('CSU-YYYYMM'));
+        expect(QrNumberingInfo.explanation, isNot(contains('ECOTAG')));
         await tester.ensureVisible(find.text('Close'));
         await tester.tap(find.text('Close'));
         await tester.pumpAndSettle();

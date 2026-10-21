@@ -802,12 +802,11 @@ class _PlantListScreenState extends State<PlantListScreen> {
               columns: const [
                 DataColumn(label: Text('PLANT NAME')),
                 DataColumn(label: Text('TAG ID')),
-                DataColumn(label: Text('VARIETY')),
-                DataColumn(label: Text('TREE PLANTER')),
+                DataColumn(label: Text('PLANT TYPE')),
                 DataColumn(label: Text('STAGE')),
                 DataColumn(label: Text('HEALTH')),
                 DataColumn(label: Text('DATE PLANTED')),
-                DataColumn(label: Text('LAST INSPECTED')),
+                DataColumn(label: Text('LAST INSPECTION')),
                 DataColumn(label: Text('ACTION')),
               ],
               rows: plants.map((plant) {
@@ -836,8 +835,9 @@ class _PlantListScreenState extends State<PlantListScreen> {
                       ),
                     ),
                     DataCell(Text(_tagId(plant))),
-                    DataCell(Text(plant['variety']?.toString() ?? '—')),
-                    DataCell(Text(plant['tree_planter']?.toString() ?? '—')),
+                    DataCell(
+                      Text(classification['plant_type']?.toString() ?? '—'),
+                    ),
                     DataCell(
                       Text(
                         _map(

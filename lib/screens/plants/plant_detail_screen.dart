@@ -643,7 +643,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
         ),
       ),
       rows: {
-        'Last Inspected': last == null ? 'Not Inspected' : _formatDate(last),
+        'Last Inspection': last == null ? 'Not Inspected' : _formatDate(last),
         'Next Inspection': next == null ? 'Not Scheduled' : _formatDate(next),
         'Schedule Repeats': 'Every $interval day${interval == 1 ? '' : 's'}',
       },

@@ -49,7 +49,19 @@ class PlantPhotoRules {
       };
 }
 
-class PlantService {
+abstract class PlantClassificationCatalog {
+  Future<List<Map<String, dynamic>>> getClassifications();
+  Future<List<String>> getPlantTypes();
+  Future<String> addPlantType(String name);
+  Future<int> createPlantClassification({
+    required String plantType,
+    required String commonName,
+    required String scientificName,
+    String? variety,
+  });
+}
+
+class PlantService implements PlantClassificationCatalog {
   PlantService({SupabaseClient? client})
     : _supabase = client ?? Supabase.instance.client;
 
@@ -98,10 +110,14 @@ class PlantService {
   // PLANT CLASSIFICATIONS
   // ============================================================
 
+  @override
   Future<List<Map<String, dynamic>>> getClassifications() async {
     final data = await _supabase
         .from('plant_classification')
-        .select('classification_id, plant_type, common_name, scientific_name')
+        .select(
+          'classification_id, plant_type, common_name, scientific_name, '
+          'plant_classification_variety(variety_id, variety_name)',
+        )
         .order('common_name');
 
     return List<Map<String, dynamic>>.from(
@@ -109,18 +125,54 @@ class PlantService {
     ).map(capitalizeLookupNames).toList();
   }
 
-  Future<String> saveMissingScientificName(
-    int classificationId,
-    String name,
-  ) async {
-    return (await _supabase.rpc(
-      'app_save_missing_scientific_name',
+  @override
+  Future<List<String>> getPlantTypes() async {
+    final data = await _supabase
+        .from('plant_type_catalog')
+        .select('plant_type')
+        .order('plant_type');
+    return List<Map<String, dynamic>>.from(data)
+        .map((row) => capitalizeLookupNames(row)['plant_type']?.toString() ?? '')
+        .where((name) => name.isNotEmpty)
+        .toList();
+  }
+
+  @override
+  Future<String> addPlantType(String name) async {
+    final result = await _supabase.rpc(
+      'university_admin_add_plant_type',
       params: {
         'p_session_token': AppSession.requiredToken,
-        'p_classification_id': classificationId,
-        'p_scientific_name': name.trim(),
+        'p_plant_type': name.trim(),
       },
-    )).toString();
+    );
+    if (result is! String || result.trim().isEmpty) {
+      throw StateError('The plant type was not created.');
+    }
+    return capitalizeWords(result);
+  }
+
+  @override
+  Future<int> createPlantClassification({
+    required String plantType,
+    required String commonName,
+    required String scientificName,
+    String? variety,
+  }) async {
+    final result = await _supabase.rpc(
+      'university_admin_create_plant_classification',
+      params: {
+        'p_session_token': AppSession.requiredToken,
+        'p_plant_type': plantType.trim(),
+        'p_common_name': commonName.trim(),
+        'p_scientific_name': scientificName.trim(),
+        'p_variety': variety?.trim(),
+      },
+    );
+    if (result is! int || result <= 0) {
+      throw StateError('The plant classification was not created.');
+    }
+    return result;
   }
 
   // ============================================================
@@ -227,9 +279,7 @@ class PlantService {
   Future<Map<String, dynamic>> registerPlantWithQr({
     required String locationType,
     int? locationCampusId,
-    required int? classificationId,
-    String? newPlantType,
-    String? newCommonName,
+    required int classificationId,
     required int campusId,
     required int collegeId,
     required int townId,
@@ -242,47 +292,18 @@ class PlantService {
     String? datePlanted,
     String? treePlanter,
     String? photoUrl,
-    String? scientificName,
   }) async {
-    final isNewClassification = classificationId == null;
-    final normalizedPlantType = newPlantType?.trim();
-    final normalizedCommonName = newCommonName?.trim().replaceAll(
-      RegExp(r'\s+'),
-      ' ',
-    );
-    if (isNewClassification &&
-        (normalizedPlantType == null ||
-            normalizedPlantType.isEmpty ||
-            normalizedCommonName == null ||
-            normalizedCommonName.isEmpty ||
-            normalizedCommonName.runes.length > 100 ||
-            RegExp(r'[\x00-\x1F\x7F]').hasMatch(normalizedCommonName))) {
-      throw const FormatException(
-        'Enter a plant type and a common name of at most 100 printable characters.',
+    if (classificationId <= 0) {
+      throw ArgumentError.value(
+        classificationId,
+        'classificationId',
+        'Select a university-managed plant classification.',
       );
     }
-    final normalizedScientificName = scientificName?.trim();
-    if (normalizedScientificName != null &&
-        (normalizedScientificName.runes.length > 200 ||
-            RegExp(r'[\x00-\x1F\x7F]').hasMatch(normalizedScientificName))) {
-      throw const FormatException(
-        'Scientific name must contain at most 200 printable characters.',
-      );
-    }
-    final addScientificName = normalizedScientificName?.isNotEmpty ?? false;
     final result = await _supabase.rpc(
-      isNewClassification
-          ? 'register_plant_with_new_classification'
-          : addScientificName
-          ? 'register_plant_with_scientific_name'
-          : 'register_plant_at_location',
+      'register_plant_at_location',
       params: {
-        if (isNewClassification) 'p_plant_type': normalizedPlantType,
-        if (isNewClassification) 'p_common_name': normalizedCommonName,
-        ...?classificationId == null
-            ? null
-            : {'p_classification_id': classificationId},
-        if (addScientificName) 'p_scientific_name': normalizedScientificName,
+        'p_classification_id': classificationId,
         'p_location_type': locationType,
         'p_location_campus_id': locationCampusId,
         'p_campus_id': campusId,

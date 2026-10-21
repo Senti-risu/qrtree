@@ -37,7 +37,7 @@ Widget content(VoidCallback onInspect) => Column(
           child: Chip(label: Text('Upcoming')),
         ),
         rows: const {
-          'Last Inspected': 'Not Inspected',
+          'Last Inspection': 'Not Inspected',
           'Next Inspection': 'Oct 22, 2026',
           'Schedule Repeats': 'Every 7 Days',
         },

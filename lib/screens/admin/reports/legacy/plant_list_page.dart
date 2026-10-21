@@ -107,8 +107,7 @@ class _PlantListPageState extends State<PlantListPage> {
         tag_id,
         common_name,
         scientific_name,
-        variety,
-        planter_name,
+        plant_classification (plant_type),
         growth_stage,
         health_status,
         date_planted,
@@ -477,14 +476,15 @@ class _PlantListPageState extends State<PlantListPage> {
                                     columns: const [
                                       DataColumn(label: Text('Plant Name')),
                                       DataColumn(label: Text('Tag ID')),
-                                      DataColumn(label: Text('Variety')),
-                                      DataColumn(label: Text('Tree Planter')),
+                                      DataColumn(label: Text('Plant Type')),
                                       DataColumn(label: Text('Campus')),
                                       DataColumn(label: Text('College')),
                                       DataColumn(label: Text('Stage')),
                                       DataColumn(label: Text('Health')),
                                       DataColumn(label: Text('Date Planted')),
-                                      DataColumn(label: Text('Last Inspected')),
+                                      DataColumn(
+                                        label: Text('Last Inspection'),
+                                      ),
                                     ],
 
                                     rows: filteredPlants.map((plant) {
@@ -511,14 +511,7 @@ class _PlantListPageState extends State<PlantListPage> {
 
                                           DataCell(
                                             Text(
-                                              plant['variety']?.toString() ??
-                                                  '—',
-                                            ),
-                                          ),
-
-                                          DataCell(
-                                            Text(
-                                              plant['planter_name']
+                                              plant['plant_classification']?['plant_type']
                                                       ?.toString() ??
                                                   '—',
                                             ),
