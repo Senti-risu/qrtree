@@ -82,12 +82,27 @@ void main() {
     expect(await InspectionDraftStore().list(1), [value]);
     expect(await InspectionDraftStore().list(2), isEmpty);
     await InspectionDraftStore().cachePlants(1, [
-      {'plant_id': 8},
+      {
+        'plant_id': 8,
+        'qr_tag_id': 21,
+        'qr_tag': {'qr_code_string': 'ECOTAG-8ABC'},
+      },
     ]);
     expect(await InspectionDraftStore().plants(2), isEmpty);
     expect(await InspectionDraftStore().plants(1), [
-      {'plant_id': 8},
+      {
+        'plant_id': 8,
+        'qr_tag_id': 21,
+        'qr_tag': {'qr_code_string': 'ECOTAG-8ABC'},
+      },
     ]);
+    expect(await InspectionDraftStore().plantForQrCode(1, ' ecotag-8abc '), {
+      'plant_id': 8,
+      'qr_tag_id': 21,
+      'qr_tag': {'qr_code_string': 'ECOTAG-8ABC'},
+    });
+    expect(await InspectionDraftStore().plantForQrCode(1, '21'), isNotNull);
+    expect(await InspectionDraftStore().plantForQrCode(1, 'unknown'), isNull);
   });
 
   test('authorization failure retains evidence without uploading', () async {

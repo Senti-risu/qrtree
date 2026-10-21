@@ -54,6 +54,20 @@ class InspectionDraftStore {
               .toList();
   }
 
+  Future<Map<String, dynamic>?> plantForQrCode(int userId, String code) async {
+    final normalizedCode = code.trim().toLowerCase();
+    if (normalizedCode.isEmpty) return null;
+    for (final plant in await plants(userId)) {
+      final qrTag = plant['qr_tag'];
+      final qrCode = qrTag is Map
+          ? qrTag['qr_code_string']?.toString().trim().toLowerCase()
+          : null;
+      final qrTagId = plant['qr_tag_id']?.toString().trim().toLowerCase();
+      if (qrCode == normalizedCode || qrTagId == normalizedCode) return plant;
+    }
+    return null;
+  }
+
   Future<List<List<Map<String, dynamic>>>?> options(int userId) async {
     final raw = await storage.read(key: 'ecotag_inspection_options_$userId');
     if (raw == null) return null;

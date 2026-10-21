@@ -77,8 +77,6 @@ class AppColors {
   static const Color chartHealthy = Color(0xFF7B9D64);
   static const Color chartAtRisk = Color(0xFFD8BB72);
   static const Color chartDead = Color(0xFFC88D7B);
-  static const Color chartUnknown = Color(0xFFBAC0B0);
-
   static const Color onPrimary = Colors.white;
 
   static const Color cardShadow = Color(0x03213B20);

@@ -8,25 +8,35 @@ import '../models/plant_record_lock.dart';
 
 class InspectionService {
   final SupabaseClient _supabase = Supabase.instance.client;
+  static const _plantDetailsSelect = '''
+    plant_id, variety, date_planted, tree_planter, photo_url, created_at,
+    campus_id, college_id, classification_id, town_id, barangay_id,
+    growth_status_id, health_status_id, qr_tag_id,
+    qr_tag:qr_tag!plant_qr_tag_id_fkey(qr_code_string),
+    last_inspected_on, next_inspection_due_on, inspection_interval_days,
+    archived_at, archive_reason,
+    plant_classification (common_name, scientific_name, plant_type),
+    campus:campus!plant_campus_id_fkey (campus_name), college (college_name),
+    town (town_name), barangay (barangay_name),
+    growth_status (growth_stage), health_status (status_name)
+  ''';
 
   Future<Map<String, dynamic>> getPlant(int plantId) async {
     final row = await _supabase
         .from('plant')
-        .select('''
-      plant_id, variety, date_planted, tree_planter, photo_url, created_at,
-      campus_id, college_id, classification_id, town_id, barangay_id,
-      growth_status_id, health_status_id, qr_tag_id,
-      qr_tag:qr_tag!plant_qr_tag_id_fkey(qr_code_string),
-      last_inspected_on, next_inspection_due_on, inspection_interval_days,
-      archived_at, archive_reason,
-      plant_classification (common_name, scientific_name, plant_type),
-      campus:campus!plant_campus_id_fkey (campus_name), college (college_name),
-      town (town_name), barangay (barangay_name),
-      growth_status (growth_stage), health_status (status_name)
-    ''')
+        .select(_plantDetailsSelect)
         .eq('plant_id', plantId)
         .single();
     return Map<String, dynamic>.from(row);
+  }
+
+  Future<List<Map<String, dynamic>>> getPlants(List<int> plantIds) async {
+    if (plantIds.isEmpty) return const [];
+    final rows = await _supabase
+        .from('plant')
+        .select(_plantDetailsSelect)
+        .inFilter('plant_id', plantIds);
+    return List<Map<String, dynamic>>.from(rows);
   }
 
   Future<List<Map<String, dynamic>>> getInspections(int plantId) async {

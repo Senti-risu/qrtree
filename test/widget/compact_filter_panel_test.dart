@@ -65,22 +65,15 @@ void main() {
                               child: const Text('Reset'),
                             ),
                           ],
-                          choices:
-                              [
-                                    'All',
-                                    'Healthy',
-                                    'Needs Attention',
-                                    'Dead',
-                                    'Unknown',
-                                  ]
-                                  .map(
-                                    (label) => ChoiceChip(
-                                      label: Text(label),
-                                      selected: label == status,
-                                      onSelected: (_) => status = label,
-                                    ),
-                                  )
-                                  .toList(),
+                          choices: ['All', 'Healthy', 'Needs Attention', 'Dead']
+                              .map(
+                                (label) => ChoiceChip(
+                                  label: Text(label),
+                                  selected: label == status,
+                                  onSelected: (_) => status = label,
+                                ),
+                              )
+                              .toList(),
                           resultSummary: '4 of 4 plants shown',
                         ),
                       ),
@@ -107,7 +100,7 @@ void main() {
               await tester.tap(find.text('Filters'));
               expect(filterOpened, isTrue);
             }
-            expect(find.text('Unknown'), findsOneWidget);
+            expect(find.text('Unknown'), findsNothing);
             expect(tester.takeException(), isNull);
           },
         );

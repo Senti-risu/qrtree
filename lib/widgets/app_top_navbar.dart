@@ -14,6 +14,9 @@ class AppTopNavbar extends StatelessWidget {
   final VoidCallback? onLogoutTap;
   final bool showBrand;
   final String? pageTitle;
+  final Widget? leading;
+  final bool compact;
+  final VoidCallback? onScanTap;
 
   const AppTopNavbar({
     super.key,
@@ -24,6 +27,9 @@ class AppTopNavbar extends StatelessWidget {
     this.onLogoutTap,
     this.showBrand = true,
     this.pageTitle,
+    this.leading,
+    this.compact = false,
+    this.onScanTap,
   });
 
   String _initialsOf(String name) {
@@ -49,10 +55,12 @@ class AppTopNavbar extends StatelessWidget {
     final hasIdentity = resolvedName.isNotEmpty || resolvedRole.isNotEmpty;
 
     return Container(
-      height: (MediaQuery.textScalerOf(context).scale(40) + 24).clamp(
-        64.0,
-        160.0,
-      ),
+      height: compact
+          ? 64
+          : (MediaQuery.textScalerOf(context).scale(40) + 24).clamp(
+              64.0,
+              160.0,
+            ),
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
       decoration: const BoxDecoration(
         color: AppColors.surface,
@@ -60,22 +68,33 @@ class AppTopNavbar extends StatelessWidget {
       ),
       child: Row(
         children: [
+          if (leading != null) ...[
+            leading!,
+            const SizedBox(width: AppSpacing.sm),
+          ],
           if (!showBrand) ...[
-            const Icon(
-              Icons.home_outlined,
-              size: 16,
-              color: AppColors.inactiveNav,
-            ),
-            const SizedBox(width: 12),
-            const Text('/', style: TextStyle(color: AppColors.textDisabled)),
-            const SizedBox(width: 12),
+            if (!compact) ...[
+              const Icon(
+                Icons.home_outlined,
+                size: 16,
+                color: AppColors.inactiveNav,
+              ),
+              const SizedBox(width: 12),
+              const Text('/', style: TextStyle(color: AppColors.textDisabled)),
+              const SizedBox(width: 12),
+            ],
             Expanded(
               child: Text(
                 pageTitle ?? 'EcoTag',
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: AppColors.textSecondary,
+                style: TextStyle(
+                  fontSize: compact ? 15 : 12,
+                  fontWeight: compact ? FontWeight.w700 : FontWeight.normal,
+                  color: compact
+                      ? AppColors.darkGreen
+                      : AppColors.textSecondary,
                 ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
           ],
@@ -117,6 +136,15 @@ class AppTopNavbar extends StatelessWidget {
             ),
           ],
           if (showBrand) const Spacer(),
+          if (onScanTap != null)
+            IconButton(
+              tooltip: 'Scan QR Code',
+              onPressed: onScanTap,
+              icon: const Icon(
+                Icons.qr_code_scanner_rounded,
+                color: AppColors.green,
+              ),
+            ),
           if (onNotificationTap != null) ...[
             IconButton(
               tooltip: 'Notifications',
@@ -130,12 +158,31 @@ class AppTopNavbar extends StatelessWidget {
             const SizedBox(width: AppSpacing.md),
           ],
           if (hasIdentity)
-            _ProfileSummary(
-              userName: resolvedName,
-              userRole: resolvedRole,
-              initials: _initialsOf(resolvedName),
-              onTap: onProfileTap,
-            ),
+            compact
+                ? Tooltip(
+                    message: [
+                      if (resolvedName.isNotEmpty) resolvedName,
+                      if (resolvedRole.isNotEmpty) resolvedRole,
+                    ].join(' · '),
+                    child: CircleAvatar(
+                      radius: 16,
+                      backgroundColor: AppColors.green,
+                      child: Text(
+                        _initialsOf(resolvedName),
+                        style: const TextStyle(
+                          color: AppColors.onPrimary,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  )
+                : _ProfileSummary(
+                    userName: resolvedName,
+                    userRole: resolvedRole,
+                    initials: _initialsOf(resolvedName),
+                    onTap: onProfileTap,
+                  ),
           if (hasIdentity) const SizedBox(width: AppSpacing.sm),
           IconButton(
             tooltip: 'Logout',

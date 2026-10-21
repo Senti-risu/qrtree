@@ -82,6 +82,12 @@ class AppSidebar extends StatelessWidget {
               icon: Icons.local_florist_outlined,
               label: 'Plant Catalog',
             ),
+          if (role == 'university_admin')
+            const _NavItemData(
+              route: '/inspection-schedule',
+              icon: Icons.event_repeat_outlined,
+              label: 'Inspection Schedule',
+            ),
           if (_canRegisterPlant)
             const _NavItemData(
               route: '/register-plant',

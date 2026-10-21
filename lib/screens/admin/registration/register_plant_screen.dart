@@ -11,6 +11,7 @@ import '../../../theme/app_colors.dart';
 import '../../../theme/app_layout.dart';
 import '../../../utils/user_facing_error.dart';
 import '../../../utils/word_capitalization.dart';
+import '../../../utils/health_status_label.dart';
 import '../../../widgets/app_card.dart';
 import '../../../widgets/app_error_state.dart';
 import '../../../widgets/app_shell.dart';
@@ -21,7 +22,6 @@ import '../../../widgets/forms/app_searchable_dropdown.dart';
 import '../../../widgets/forms/app_text_field.dart';
 import '../../../widgets/forms/planting_campus_dropdown.dart';
 import '../../../models/plant_record_lock.dart';
-import '../../../widgets/dead_plant_lock.dart';
 import '../../../widgets/forms/locked_plant_assignment.dart';
 import '../../../services/plant_service.dart';
 import 'widgets/plant_image_picker_field.dart';
@@ -327,7 +327,16 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
         ? savedVariety
         : '';
     final growth = row(_growthStatuses, 'growth_status_id', data['growthId']);
-    final health = row(_healthStatuses, 'health_status_id', data['healthId']);
+    final savedHealth = row(
+      _healthStatuses,
+      'health_status_id',
+      data['healthId'],
+    );
+    final health =
+        savedHealth != null &&
+            !PlantRecordLock.isDeadStatus(savedHealth['status_name'])
+        ? savedHealth
+        : _healthyRegistrationStatus;
     final town = row(_towns, 'town_id', data['townId']);
     final barangay = row(_barangays, 'barangay_id', data['barangayId']);
     final planting = data['plantingCampus'];
@@ -453,8 +462,39 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
                 .toLowerCase()
                 .compareTo(b['barangay_name'].toString().trim().toLowerCase()),
           );
-        _growthStatuses = results[5];
-        _healthStatuses = results[6];
+        _growthStatuses = [...results[5]]
+          ..sort((a, b) {
+            const growthOrder = ['seedling', 'young', 'mature', 'old'];
+            final aStage = a['growth_stage']?.toString().trim().toLowerCase();
+            final bStage = b['growth_stage']?.toString().trim().toLowerCase();
+            final aRank = growthOrder.indexOf(aStage ?? '');
+            final bRank = growthOrder.indexOf(bStage ?? '');
+            if (aRank != bRank) {
+              if (aRank < 0) return 1;
+              if (bRank < 0) return -1;
+              return aRank.compareTo(bRank);
+            }
+            return (aStage ?? '').compareTo(bStage ?? '');
+          });
+        _healthStatuses = [...results[6]]
+          ..sort((a, b) {
+            final aIsHealthy =
+                _friendlyHealth(a['status_name']?.toString()) == 'Healthy';
+            final bIsHealthy =
+                _friendlyHealth(b['status_name']?.toString()) == 'Healthy';
+            if (aIsHealthy != bIsHealthy) return aIsHealthy ? -1 : 1;
+            return (a['health_status_id'] as int).compareTo(
+              b['health_status_id'] as int,
+            );
+          });
+
+        final healthyStatus = _healthyRegistrationStatus;
+        if (healthyStatus != null) {
+          _selectedHealthStatusId = healthyStatus['health_status_id'] as int?;
+          _healthStatus = _friendlyHealth(
+            healthyStatus['status_name']?.toString(),
+          );
+        }
 
         // If the logged-in College Admin already has an assigned campus,
         // we can preselect it when the row exists.
@@ -549,11 +589,26 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
   }
 
   List<String> get _healthStatusNames {
-    return _healthStatuses
+    return _registrationHealthStatuses
         .map((row) => _friendlyHealth(row['status_name']?.toString()))
         .where((value) => value.isNotEmpty)
         .toSet()
         .toList();
+  }
+
+  List<Map<String, dynamic>> get _registrationHealthStatuses => _healthStatuses
+      .where(
+        (row) => !PlantRecordLock.isDeadStatus(row['status_name']?.toString()),
+      )
+      .toList();
+
+  Map<String, dynamic>? get _healthyRegistrationStatus {
+    for (final row in _registrationHealthStatuses) {
+      if (_friendlyHealth(row['status_name']?.toString()) == 'Healthy') {
+        return row;
+      }
+    }
+    return null;
   }
 
   // ============================================================
@@ -847,6 +902,8 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
       });
       return;
     }
+
+    if (PlantRecordLock.isDeadStatus(value)) return;
 
     final matches = _healthStatuses.where(
       (row) => _friendlyHealth(row['status_name']?.toString()) == value,
@@ -1169,9 +1226,6 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
     UploadedPlantPhoto? uploadedPhoto;
     var registrationCompleted = false;
     try {
-      if (PlantRecordLock.isDeadStatus(_healthStatus)) {
-        if (!await confirmDeadPlant(context) || !mounted) return;
-      }
       final possibleDuplicates = _selectedClassificationId == null
           ? const <Map<String, dynamic>>[]
           : await _plantService.findPossibleDuplicatePlants(
@@ -2408,18 +2462,7 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
   }
 
   String _friendlyHealth(String? value) {
-    switch (value?.trim().toLowerCase()) {
-      case 'alive':
-      case 'healthy':
-        return 'Healthy';
-      case 'dying':
-      case 'at risk':
-        return 'Needs Attention';
-      case 'dead':
-        return 'Dead';
-      default:
-        return value ?? 'Not Selected';
-    }
+    return value == null ? 'Not Selected' : healthStatusLabel(value);
   }
 
   String? _emptyToNull(String value) {

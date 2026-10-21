@@ -85,14 +85,14 @@ class _MonitoringOutcomesCardState extends State<MonitoringOutcomesCard> {
                     style: TextStyle(fontWeight: FontWeight.bold),
                   ),
                   const Text(
-                    'Batch = planting month. Survival = plants with a known non-Dead status ÷ all registered plants in the batch. Unknown statuses remain in the denominator.',
+                    'Batch = planting month. Survival = plants with a recorded non-Dead status ÷ all registered plants in the batch. Missing or unrecognized statuses are counted as Needs Attention and are not treated as confirmed survivors.',
                   ),
                   _table(
                     [
                       'Planting Month',
                       'Registered',
                       'Alive',
-                      'Unknown',
+                      'Needs Attention',
                       'Survival',
                     ],
                     [
@@ -101,7 +101,7 @@ class _MonitoringOutcomesCardState extends State<MonitoringOutcomesCard> {
                           '${b['batch'] ?? 'Unknown date'}',
                           '${b['total']}',
                           '${b['alive']}',
-                          '${b['unknown']}',
+                          '${b['needs_attention']}',
                           _rate(b['alive'] as num, b['total'] as num),
                         ],
                     ],
@@ -140,7 +140,7 @@ class _MonitoringOutcomesCardState extends State<MonitoringOutcomesCard> {
                       for (final h in data['health'] as List)
                         [
                           '${h['month']}',
-                          '${h['health'] ?? 'Unknown'}',
+                          '${h['health'] ?? 'Needs Attention'}',
                           '${h['observations']}',
                         ],
                     ],

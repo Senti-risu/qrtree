@@ -4,11 +4,19 @@ import '../../services/inspection_sync_service.dart';
 import '../../services/inspection_service.dart';
 import '../../services/plant_service.dart';
 import '../../utils/user_facing_error.dart';
+import '../qr/qr_scanner.dart';
 import 'inspection_form_screen.dart';
 
 class InspectionOutboxScreen extends StatefulWidget {
-  const InspectionOutboxScreen({super.key, required this.userId});
+  const InspectionOutboxScreen({
+    super.key,
+    required this.userId,
+    required this.username,
+    required this.role,
+  });
   final int userId;
+  final String username;
+  final String role;
   @override
   State<InspectionOutboxScreen> createState() => _InspectionOutboxScreenState();
 }
@@ -52,9 +60,23 @@ class _InspectionOutboxScreenState extends State<InspectionOutboxScreen> {
         PlantService().getGrowthStatuses(),
       ]);
       final queue = await service.listInspectionQueue(filter: 'all');
+      final plantIds = queue
+          .map((plant) => plant['plant_id'])
+          .whereType<int>()
+          .toList();
+      final fetchedPlants = await service.getPlants(plantIds);
+      final plantsById = {
+        for (final plant in fetchedPlants) plant['plant_id'] as int: plant,
+      };
       final plants = <Map<String, dynamic>>[];
-      for (final plant in queue) {
-        plants.add(await service.getPlant(plant['plant_id'] as int));
+      for (final plantId in plantIds) {
+        final plant = plantsById[plantId];
+        if (plant == null) {
+          throw StateError(
+            'An assigned plant could not be downloaded. Please try again.',
+          );
+        }
+        plants.add(plant);
       }
       await _store.cacheOptions(widget.userId, options);
       await _store.cachePlants(widget.userId, plants);
@@ -134,7 +156,7 @@ class _InspectionOutboxScreenState extends State<InspectionOutboxScreen> {
       padding: const EdgeInsets.all(16),
       children: [
         const Text(
-          'Drafts and photos stay on this device. Submit pending inspections when you have a connection. Sign in online before going into the field.',
+          'Drafts and photos stay on this device. Download assigned plants while online, then scan a plant QR to start an offline inspection. Submit pending inspections when you have a connection.',
         ),
         if (_error != null)
           Padding(padding: const EdgeInsets.all(12), child: Text(_error!)),
@@ -148,6 +170,26 @@ class _InspectionOutboxScreenState extends State<InspectionOutboxScreen> {
           onPressed: _busy ? null : _prepare,
           icon: const Icon(Icons.download_outlined),
           label: const Text('Download Assigned Plants For Offline Work'),
+        ),
+        OutlinedButton.icon(
+          onPressed: _busy
+              ? null
+              : () async {
+                  await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => QrScannerScreen(
+                        userId: widget.userId,
+                        username: widget.username,
+                        role: widget.role,
+                        offlineInspectionMode: true,
+                      ),
+                    ),
+                  );
+                  await _load();
+                },
+          icon: const Icon(Icons.qr_code_scanner_rounded),
+          label: const Text('Scan QR To Start An Offline Inspection'),
         ),
         if (_drafts.isEmpty)
           const Padding(
@@ -229,31 +271,7 @@ class _InspectionOutboxScreenState extends State<InspectionOutboxScreen> {
             title: Text(
               'Plant #${plant['plant_id']} • ${(plant['plant_classification'] as Map?)?['common_name'] ?? 'Plant'}',
             ),
-            subtitle: const Text(
-              'Start An Inspection Using The Downloaded Profile',
-            ),
-            onTap: _busy
-                ? null
-                : () async {
-                    final existing = _drafts
-                        .where((d) => d['plantId'] == plant['plant_id'])
-                        .firstOrNull;
-                    if (existing?['ready'] == true) {
-                      await _showPending(existing!);
-                      return;
-                    }
-                    await Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => InspectionFormScreen(
-                          plant: plant,
-                          userId: widget.userId,
-                          draft: existing,
-                        ),
-                      ),
-                    );
-                    _load();
-                  },
+            subtitle: const Text('Scan this plant’s QR to start an inspection'),
           ),
       ],
     ),

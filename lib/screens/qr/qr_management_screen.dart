@@ -100,8 +100,6 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
     'available': 'Available',
     'assigned': 'Assigned',
     'damaged': 'Damaged',
-    'replaced': 'Replaced',
-    'retired': 'Retired',
     'all': 'All Statuses',
   };
 
@@ -404,24 +402,6 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
       tagId,
       action: () => _qrService.markDamaged(qrTagId: tagId, reason: reason),
       success: 'QR marked as damaged.',
-    );
-  }
-
-  Future<void> _retireTag(Map<String, dynamic> tag) async {
-    final tagId = _tagId(tag);
-    if (tagId == null) return;
-    final reason = await _askReason(
-      title: 'Retire this unused QR?',
-      message:
-          'A retired QR cannot be assigned to a plant. Its history will remain available for administrators.',
-      actionLabel: 'Retire QR',
-      danger: true,
-    );
-    if (reason == null || !mounted) return;
-    await _runTagAction(
-      tagId,
-      action: () => _qrService.retireTag(qrTagId: tagId, reason: reason),
-      success: 'QR retired.',
     );
   }
 
@@ -1225,7 +1205,6 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
       busy: tagId != null && _updatingTags.contains(tagId),
       onPrint: code.isEmpty ? null : () => _reprintTag(tag, code),
       onMarkDamaged: () => _markDamaged(tag),
-      onRetire: () => _retireTag(tag),
     );
   }
 

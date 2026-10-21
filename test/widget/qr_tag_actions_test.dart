@@ -5,7 +5,7 @@ import 'package:flutter_application_1/widgets/full_width_data_table.dart';
 import 'package:flutter_application_1/widgets/qr_tag_actions.dart';
 
 void main() {
-  const allowed = {'available': 'Retire QR', 'assigned': 'Mark Damaged'};
+  const allowed = {'assigned': 'Mark Damaged'};
   for (final status in [
     'available',
     'assigned',
@@ -26,7 +26,6 @@ void main() {
             body: QrTagActions(
               status: status,
               onPrint: () => prints++,
-              onRetire: () => changes.add('Retire QR'),
               onMarkDamaged: () => changes.add('Mark Damaged'),
             ),
           ),
@@ -47,13 +46,10 @@ void main() {
         await tester.tap(find.text(allowed[status]!));
         expect(changes, [allowed[status]]);
       } else {
-        expect(
-          find.byIcon(Icons.lock_outline_rounded),
-          status == 'damaged' ? findsNothing : findsOneWidget,
-        );
         expect(find.text('Replace label'), findsNothing);
         expect(changes, isEmpty);
       }
+      expect(find.byIcon(Icons.lock_outline_rounded), findsNothing);
     });
   }
 
@@ -70,7 +66,6 @@ void main() {
               status: status,
               busy: true,
               onPrint: () => presses++,
-              onRetire: () => presses++,
               onMarkDamaged: () => presses++,
             ),
           ),
@@ -92,7 +87,6 @@ void main() {
           body: QrTagActions(
             status: 'available',
             onPrint: null,
-            onRetire: () {},
             onMarkDamaged: () {},
           ),
         ),
@@ -113,12 +107,8 @@ void main() {
         tester.view.devicePixelRatio = 1;
         addTearDown(tester.view.resetPhysicalSize);
         addTearDown(tester.view.resetDevicePixelRatio);
-        Widget actions(String status) => QrTagActions(
-          status: status,
-          onPrint: () {},
-          onRetire: () {},
-          onMarkDamaged: () {},
-        );
+        Widget actions(String status) =>
+            QrTagActions(status: status, onPrint: () {}, onMarkDamaged: () {});
         await tester.pumpWidget(
           MaterialApp(
             theme: AppTheme.light,

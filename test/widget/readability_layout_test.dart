@@ -16,7 +16,6 @@ const values = [
   ('Healthy', 120, AppColors.green),
   ('Needs Attention', 32, AppColors.warningAccent),
   ('Dead', 4, AppColors.danger),
-  ('Unknown', 12, AppColors.textSecondary),
 ];
 
 Widget sample(double width) => AppCard(

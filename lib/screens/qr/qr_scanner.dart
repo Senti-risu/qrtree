@@ -4,10 +4,12 @@ import 'package:flutter/services.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
 import '../../services/qr_service.dart';
+import '../../services/inspection_draft_store.dart';
 import '../../models/app_role.dart';
 import '../../theme/app_colors.dart';
 import '../../utils/user_facing_error.dart';
 import '../admin/registration/register_plant_screen.dart';
+import '../inspections/inspection_form_screen.dart';
 import '../plants/plant_detail_screen.dart';
 
 enum _ScanMessageType { neutral, progress, success, error }
@@ -18,6 +20,7 @@ class QrScannerScreen extends StatefulWidget {
   final String role;
   final int? campusId;
   final int? collegeId;
+  final bool offlineInspectionMode;
 
   const QrScannerScreen({
     super.key,
@@ -26,6 +29,7 @@ class QrScannerScreen extends StatefulWidget {
     required this.role,
     this.campusId,
     this.collegeId,
+    this.offlineInspectionMode = false,
   });
 
   @override
@@ -53,6 +57,10 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
     }
     _lastCode = code;
     _lastScanAt = now;
+    if (widget.offlineInspectionMode) {
+      await _handleOfflineInspectionCode(code);
+      return;
+    }
     setState(() {
       _handling = true;
       _message = 'Checking this EcoTag…';
@@ -139,6 +147,7 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
               userId: widget.userId,
               username: widget.username,
               role: widget.role,
+              openedFromQr: true,
             ),
           ),
         );
@@ -198,6 +207,72 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
         _message = userFacingError(
           error,
           fallback: 'The QR could not be checked. Please try again.',
+        );
+        _messageType = _ScanMessageType.error;
+      });
+    }
+  }
+
+  Future<void> _handleOfflineInspectionCode(String code) async {
+    setState(() {
+      _handling = true;
+      _message = 'Checking downloaded plant profiles…';
+      _messageType = _ScanMessageType.progress;
+    });
+    try {
+      final store = InspectionDraftStore();
+      final plant = await store.plantForQrCode(widget.userId, code);
+      if (!mounted) return;
+      if (plant == null) {
+        setState(() {
+          _handling = false;
+          _message =
+              'This QR is not in the downloaded plant profiles. Connect to the internet and download assigned plants before scanning offline.';
+          _messageType = _ScanMessageType.error;
+        });
+        return;
+      }
+      final drafts = await store.list(widget.userId);
+      final plantId = plant['plant_id'];
+      final existing = drafts
+          .where((draft) => draft['plantId'] == plantId)
+          .firstOrNull;
+      if (existing?['ready'] == true) {
+        setState(() {
+          _handling = false;
+          _message =
+              'This plant already has a pending inspection. Upload it when you have a connection before starting another.';
+          _messageType = _ScanMessageType.neutral;
+        });
+        return;
+      }
+      await _controller.stop();
+      if (!mounted) return;
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => InspectionFormScreen(
+            plant: plant,
+            userId: widget.userId,
+            draft: existing,
+          ),
+        ),
+      );
+      if (!mounted) return;
+      await _controller.start();
+      setState(() {
+        _handling = false;
+        _message = 'Ready to scan another EcoTag QR.';
+        _messageType = _ScanMessageType.success;
+        _lastCode = null;
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _handling = false;
+        _message = userFacingError(
+          error,
+          fallback: 'The downloaded plant could not be opened.',
         );
         _messageType = _ScanMessageType.error;
       });
@@ -283,7 +358,11 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
     return Scaffold(
       backgroundColor: AppColors.scannerBackground,
       appBar: AppBar(
-        title: const Text('Scan EcoTag'),
+        title: Text(
+          widget.offlineInspectionMode
+              ? 'Scan QR For Offline Inspection'
+              : 'Scan EcoTag',
+        ),
         foregroundColor: Colors.white,
         backgroundColor: AppColors.scannerBackground,
         actions: [
@@ -327,7 +406,9 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
                       right: 20,
                       bottom: 16,
                       child: Text(
-                        'Hold your phone steady and keep the whole code visible.',
+                        widget.offlineInspectionMode
+                            ? 'Scan a plant QR that was included in your downloaded profiles.'
+                            : 'Hold your phone steady and keep the whole code visible.',
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           color: Colors.white.withValues(alpha: .92),

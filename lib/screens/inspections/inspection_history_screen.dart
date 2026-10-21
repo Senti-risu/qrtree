@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../../utils/search_match.dart';
 import '../../widgets/app_workspace_page.dart';
 import '../../theme/app_typography.dart';
-import '../../models/plant_record_lock.dart';
 import '../../widgets/plant_details_presentation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -15,11 +14,9 @@ import '../../utils/health_status_label.dart';
 import '../../widgets/app_card.dart';
 import '../../widgets/app_page_header.dart';
 import '../../widgets/inspection_queue_layout.dart';
-import '../../widgets/app_filter_sheet.dart';
 import '../../widgets/app_error_state.dart';
 import '../../widgets/app_shell.dart';
 import '../plants/plant_detail_screen.dart';
-import 'inspection_form_screen.dart';
 
 class InspectionHistoryScreen extends StatefulWidget {
   final int userId;
@@ -45,6 +42,7 @@ class InspectionHistoryScreen extends StatefulWidget {
 }
 
 class _InspectionHistoryScreenState extends State<InspectionHistoryScreen> {
+  static const _historyPageSize = 250;
   final _supabase = Supabase.instance.client;
   final _inspectionService = InspectionService();
   final _searchController = TextEditingController();
@@ -54,10 +52,12 @@ class _InspectionHistoryScreenState extends State<InspectionHistoryScreen> {
   bool _queueLoading = true;
   String? _error;
   String? _queueError;
+  bool _historyHasMore = false;
+  bool _historyLoadingMore = false;
+  int _historyFetchedCount = 0;
   String _healthFilter = 'all';
   String _growthFilter = 'all';
   String _queueFilter = 'action';
-  int? _openingInspectionPlantId;
   int _loadRequestId = 0;
   int _queueRequestId = 0;
 
@@ -93,9 +93,9 @@ class _InspectionHistoryScreenState extends State<InspectionHistoryScreen> {
     return _inspections.where((inspection) {
       final plant = _map(inspection['plant']);
       final classification = _map(plant['plant_classification']);
-      final health =
-          _map(inspection['health_status'])['status_name']?.toString().trim() ??
-          'Unknown';
+      final health = healthStatusLabel(
+        _map(inspection['health_status'])['status_name'],
+      );
       final growth =
           _map(
             inspection['growth_status'],
@@ -118,13 +118,32 @@ class _InspectionHistoryScreenState extends State<InspectionHistoryScreen> {
 
   List<String> _filterOptions(String relationKey, String valueKey) {
     final values = <String>{};
-    for (final inspection in _inspections) {
-      final value = _map(inspection[relationKey])[valueKey]?.toString().trim();
-      if (value != null && value.isNotEmpty) values.add(value);
+    for (final records in [_inspections, _queue]) {
+      for (final record in records) {
+        final value = _recordFilterValue(record, relationKey, valueKey);
+        if (value != null && value.isNotEmpty) values.add(value);
+      }
     }
     return values.toList()..sort(
       (left, right) => left.toLowerCase().compareTo(right.toLowerCase()),
     );
+  }
+
+  String? _recordFilterValue(
+    Map<String, dynamic> record,
+    String relationKey,
+    String valueKey,
+  ) {
+    final actualRelationKey =
+        relationKey == 'growth_stage' && record.containsKey('growth_status')
+        ? 'growth_status'
+        : relationKey;
+    final relation = record[actualRelationKey];
+    final value = relation is Map ? relation[valueKey] : relation;
+    if (value == null) return null;
+    return relationKey == 'health_status'
+        ? healthStatusLabel(value).trim()
+        : value.toString().trim();
   }
 
   String _normalizedFilter(
@@ -134,10 +153,12 @@ class _InspectionHistoryScreenState extends State<InspectionHistoryScreen> {
     String valueKey,
   ) {
     if (current == 'all') return current;
-    final exists = inspections.any(
-      (inspection) =>
-          _map(inspection[relationKey])[valueKey]?.toString().trim() == current,
-    );
+    final exists = inspections.any((inspection) {
+      final value = _map(inspection[relationKey])[valueKey];
+      return relationKey == 'health_status'
+          ? healthStatusLabel(value) == current
+          : value?.toString().trim() == current;
+    });
     return exists ? current : 'all';
   }
 
@@ -145,9 +166,6 @@ class _InspectionHistoryScreenState extends State<InspectionHistoryScreen> {
       _searchController.text.trim().isNotEmpty ||
       _healthFilter != 'all' ||
       _growthFilter != 'all';
-
-  int get _activeFilterCount =>
-      (_healthFilter == 'all' ? 0 : 1) + (_growthFilter == 'all' ? 0 : 1);
 
   void _resetFilters() {
     _searchController.clear();
@@ -157,132 +175,38 @@ class _InspectionHistoryScreenState extends State<InspectionHistoryScreen> {
     });
   }
 
-  Future<void> _openMobileFilters() async {
-    var draftHealth = _healthFilter;
-    var draftGrowth = _growthFilter;
-    final healthOptions = _filterOptions('health_status', 'status_name');
-    final growthOptions = _filterOptions('growth_status', 'growth_stage');
-    final selected = await showModalBottomSheet<(String, String)>(
-      context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      showDragHandle: true,
-      builder: (sheetContext) => StatefulBuilder(
-        builder: (context, setSheetState) => AppFilterSheet(
-          title: 'Filter Inspections',
-          applyLabel:
-              'Apply · ${_matchingInspections(draftHealth, draftGrowth).length} results',
-          onReset: () => setSheetState(() {
-            draftHealth = 'all';
-            draftGrowth = 'all';
-          }),
-          onApply: () =>
-              Navigator.pop(sheetContext, (draftHealth, draftGrowth)),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _sheetFilterChoices(
-                label: 'Health Status',
-                allLabel: 'All Health',
-                value: draftHealth,
-                options: healthOptions,
-                onChanged: (value) => setSheetState(() => draftHealth = value),
-              ),
-              const SizedBox(height: AppSpacing.lg),
-              _sheetFilterChoices(
-                label: 'Growth Stage',
-                allLabel: 'All Stages',
-                value: draftGrowth,
-                options: growthOptions,
-                onChanged: (value) => setSheetState(() => draftGrowth = value),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-
-    if (selected == null || !mounted) return;
-    final (health, growth) = selected;
-    if (health == _healthFilter && growth == _growthFilter) return;
-    setState(() {
-      _healthFilter = health;
-      _growthFilter = growth;
-    });
-  }
-
-  Widget _sheetFilterChoices({
-    required String label,
-    required String allLabel,
-    required String value,
-    required List<String> options,
-    required ValueChanged<String> onChanged,
-  }) => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Text(
-        label,
-        style: const TextStyle(
-          fontSize: AppTypography.caption,
-          fontWeight: FontWeight.w800,
-          color: AppColors.textSecondary,
-        ),
-      ),
-      const SizedBox(height: 10),
-      Wrap(
-        spacing: 8,
-        runSpacing: 8,
-        children:
-            [
-              ('all', allLabel),
-              ...options.map((option) => (option, option)),
-            ].map((option) {
-              final selected = value == option.$1;
-              return ChoiceChip(
-                selected: selected,
-                showCheckmark: false,
-                avatar: selected
-                    ? const Icon(
-                        Icons.check_rounded,
-                        size: 17,
-                        color: AppColors.green,
-                      )
-                    : null,
-                label: Text(healthStatusLabel(option.$2)),
-                labelStyle: TextStyle(
-                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                  color: selected ? AppColors.darkGreen : AppColors.textPrimary,
-                ),
-                selectedColor: AppColors.primaryContainer,
-                backgroundColor: AppColors.background,
-                side: BorderSide(
-                  color: selected ? AppColors.green : AppColors.border,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                onSelected: (_) => onChanged(option.$1),
-              );
-            }).toList(),
-      ),
-    ],
-  );
-
-  Future<void> _loadHistory() async {
+  Future<void> _loadHistory({bool loadMore = false}) async {
+    if (loadMore && (!_historyHasMore || _historyLoadingMore)) return;
     final requestId = ++_loadRequestId;
     setState(() {
-      _loading = true;
-      _error = null;
+      _loading = !loadMore;
+      _historyLoadingMore = loadMore;
+      if (!loadMore) {
+        _error = null;
+        _historyFetchedCount = 0;
+      }
     });
     try {
-      final query = _supabase.from('inspection').select('''
-        *,
-        plant (plant_id, college_id, campus_id, variety, plant_classification (common_name)),
+      var query = _supabase.from('inspection').select('''
+        inspected_at, last_inspection_date, observation, photo_url,
+        plant:plant!inner (plant_id, college_id, campus_id, variety, plant_classification (common_name)),
         health_status (status_name), growth_status (growth_stage), users (username)
       ''');
+      if ((widget.role == 'inspection_team' ||
+              widget.role == 'college_admin') &&
+          widget.collegeId != null) {
+        query = query.eq('plant.college_id', widget.collegeId!);
+      } else if (widget.role == 'campus_admin' && widget.campusId != null) {
+        query = query.eq('plant.campus_id', widget.campusId!);
+      }
 
       final rows = List<Map<String, dynamic>>.from(
-        await query.order('inspected_at', ascending: false),
+        await query
+            .order('inspected_at', ascending: false)
+            .range(
+              loadMore ? _historyFetchedCount : 0,
+              (loadMore ? _historyFetchedCount : 0) + _historyPageSize - 1,
+            ),
       );
       final visible = rows.where((inspection) {
         final plant = _map(inspection['plant']);
@@ -298,28 +222,34 @@ class _InspectionHistoryScreenState extends State<InspectionHistoryScreen> {
       }).toList();
 
       if (!mounted || requestId != _loadRequestId) return;
+      final allVisible = loadMore ? [..._inspections, ...visible] : visible;
       final normalizedHealth = _normalizedFilter(
         _healthFilter,
-        visible,
+        allVisible,
         'health_status',
         'status_name',
       );
       final normalizedGrowth = _normalizedFilter(
         _growthFilter,
-        visible,
+        allVisible,
         'growth_status',
         'growth_stage',
       );
       setState(() {
-        _inspections = visible;
+        _inspections = allVisible;
+        _historyFetchedCount =
+            (loadMore ? _historyFetchedCount : 0) + rows.length;
+        _historyHasMore = rows.length == _historyPageSize;
         _healthFilter = normalizedHealth;
         _growthFilter = normalizedGrowth;
         _loading = false;
+        _historyLoadingMore = false;
       });
     } catch (e) {
       if (mounted && requestId == _loadRequestId) {
         setState(() {
           _loading = false;
+          _historyLoadingMore = false;
           _error = e.toString();
         });
       }
@@ -389,7 +319,7 @@ class _InspectionHistoryScreenState extends State<InspectionHistoryScreen> {
       filters: InspectionQueueFilters(
         selected: _queueFilter,
         onSelected: _selectQueueFilter,
-        search: _inspectionSearchField(),
+        search: _inspectionSearchTools(),
       ),
       body: _queueFilter == 'history' ? _content() : _queueContent(),
     ),
@@ -397,8 +327,18 @@ class _InspectionHistoryScreenState extends State<InspectionHistoryScreen> {
 
   List<Map<String, dynamic>> get _visibleQueue {
     final term = _searchController.text.trim().toLowerCase();
-    if (term.isEmpty) return _queue;
     return _queue.where((item) {
+      if (_healthFilter != 'all' &&
+          _recordFilterValue(item, 'health_status', 'status_name') !=
+              _healthFilter) {
+        return false;
+      }
+      if (_growthFilter != 'all' &&
+          _recordFilterValue(item, 'growth_stage', 'growth_stage') !=
+              _growthFilter) {
+        return false;
+      }
+      if (term.isEmpty) return true;
       final classification = _map(item['plant_classification']);
       final campus = _map(item['campus']);
       return matchesWordPrefixes([
@@ -438,19 +378,16 @@ class _InspectionHistoryScreenState extends State<InspectionHistoryScreen> {
         ),
       );
     }
-    if (_queue.isEmpty) return _emptyQueue();
     final visibleQueue = _visibleQueue;
+    if (_queue.isEmpty && !_hasActiveFilters) return _emptyQueue();
     if (visibleQueue.isEmpty) {
       return AppEmptyState(
         title: 'No Matching Inspections',
-        message: 'Try another search in this queue.',
+        message: 'Try a different search, health status, or growth stage.',
         icon: Icons.search_off_rounded,
         action: TextButton(
-          onPressed: () {
-            _searchController.clear();
-            setState(() {});
-          },
-          child: const Text('Clear Search'),
+          onPressed: _resetFilters,
+          child: const Text('Reset Filters'),
         ),
       );
     }
@@ -489,8 +426,6 @@ class _InspectionHistoryScreenState extends State<InspectionHistoryScreen> {
       item['last_inspected_on'] ?? item['last_inspection_date'],
     );
     final status = _scheduleStatus(item, due: due, last: last);
-    final busy = plantId != null && _openingInspectionPlantId == plantId;
-
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: AppCard(
@@ -582,27 +517,6 @@ class _InspectionHistoryScreenState extends State<InspectionHistoryScreen> {
                   icon: const Icon(Icons.visibility_outlined, size: 18),
                   label: const Text('View Plant'),
                 ),
-                if (widget.role == 'inspection_team' &&
-                    !PlantRecordLock.isDead(item))
-                  FilledButton.icon(
-                    onPressed: plantId == null || busy
-                        ? null
-                        : () => _inspectQueuePlant(plantId),
-                    style: FilledButton.styleFrom(
-                      backgroundColor: AppColors.green,
-                    ),
-                    icon: busy
-                        ? const SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
-                          )
-                        : const Icon(Icons.fact_check_outlined, size: 18),
-                    label: Text(busy ? 'Opening…' : 'Start inspection'),
-                  ),
               ],
             );
 
@@ -782,42 +696,6 @@ class _InspectionHistoryScreenState extends State<InspectionHistoryScreen> {
     if (mounted) await _refreshAll();
   }
 
-  Future<void> _inspectQueuePlant(int plantId) async {
-    if (_openingInspectionPlantId != null) return;
-    setState(() => _openingInspectionPlantId = plantId);
-    try {
-      final plant = await _inspectionService.getPlant(plantId);
-      if (!mounted) return;
-      final saved = await Navigator.push<bool>(
-        context,
-        MaterialPageRoute(
-          builder: (_) =>
-              InspectionFormScreen(plant: plant, userId: widget.userId),
-        ),
-      );
-      if (!mounted) return;
-      if (saved == true) await _refreshAll();
-    } catch (error) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(
-          SnackBar(
-            content: Text(
-              userFacingError(
-                error,
-                fallback:
-                    'This inspection could not be opened. Please try again.',
-              ),
-            ),
-            backgroundColor: AppColors.danger,
-          ),
-        );
-    } finally {
-      if (mounted) setState(() => _openingInspectionPlantId = null);
-    }
-  }
-
   Widget _content() {
     if (_loading) {
       return const AppCard(
@@ -871,115 +749,131 @@ class _InspectionHistoryScreenState extends State<InspectionHistoryScreen> {
     final visibleInspections = _visibleInspections;
     return Column(
       children: [
-        _filterBar(),
-        const SizedBox(height: AppSpacing.lg),
         if (visibleInspections.isEmpty)
           Expanded(child: _noMatchingInspections())
         else
           Expanded(
             child: ListView.builder(
               keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-              itemCount: visibleInspections.length,
-              itemBuilder: (_, index) =>
-                  _inspectionCard(visibleInspections[index]),
+              itemCount: visibleInspections.length + (_historyHasMore ? 1 : 0),
+              itemBuilder: (_, index) {
+                if (index == visibleInspections.length) {
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: Center(
+                      child: TextButton.icon(
+                        onPressed: _historyLoadingMore
+                            ? null
+                            : () => _loadHistory(loadMore: true),
+                        icon: _historyLoadingMore
+                            ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Icon(Icons.expand_more_rounded),
+                        label: Text(
+                          _historyLoadingMore
+                              ? 'Loading…'
+                              : 'Load Older Inspections',
+                        ),
+                      ),
+                    ),
+                  );
+                }
+                return _inspectionCard(visibleInspections[index]);
+              },
             ),
           ),
       ],
     );
   }
 
-  Widget _filterBar() => AppCard(
-    padding: const EdgeInsets.all(16),
-    child: LayoutBuilder(
-      builder: (_, constraints) {
-        final healthOptions = _filterOptions('health_status', 'status_name');
-        final growthOptions = _filterOptions('growth_status', 'growth_stage');
-
-        if (!AppBreakpoints.isDesktop(constraints.maxWidth)) {
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                children: [
-                  Expanded(child: _mobileFilterButton()),
-                  const SizedBox(width: 8),
-                  OutlinedButton(
-                    onPressed: _hasActiveFilters ? _resetFilters : null,
-                    style: OutlinedButton.styleFrom(
-                      minimumSize: const Size(82, 48),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: const Text('Reset'),
-                  ),
-                ],
-              ),
-              if (_activeFilterCount > 0) ...[
-                const SizedBox(height: 10),
-                Wrap(
-                  spacing: 7,
-                  runSpacing: 7,
-                  children: [
-                    if (_healthFilter != 'all')
-                      _appliedFilterChip(
-                        healthStatusLabel(_healthFilter),
-                        () => setState(() => _healthFilter = 'all'),
-                      ),
-                    if (_growthFilter != 'all')
-                      _appliedFilterChip(
-                        _growthFilter,
-                        () => setState(() => _growthFilter = 'all'),
-                      ),
-                  ],
-                ),
-              ],
-              const SizedBox(height: 10),
-              _resultSummary(),
-            ],
-          );
-        }
-
-        return Column(
-          children: [
-            Row(
-              children: [
-                _filterDropdown(
-                  label: 'Health',
-                  allLabel: 'All Health Statuses',
-                  value: _healthFilter,
-                  options: healthOptions,
-                  onChanged: (value) => setState(() => _healthFilter = value),
-                ),
-                const SizedBox(width: 10),
-                _filterDropdown(
-                  label: 'Growth',
-                  allLabel: 'All Growth Stages',
-                  value: _growthFilter,
-                  options: growthOptions,
-                  onChanged: (value) => setState(() => _growthFilter = value),
-                ),
-              ],
+  Widget _inspectionSearchTools() => LayoutBuilder(
+    builder: (context, constraints) {
+      final healthOptions = _filterOptions('health_status', 'status_name');
+      final growthOptions = _filterOptions('growth_stage', 'growth_stage');
+      final isWide = constraints.maxWidth >= 980;
+      final filters = Row(
+        children: [
+          Expanded(
+            child: _filterDropdown(
+              label: 'Health',
+              allLabel: 'All Health',
+              value: _healthFilter,
+              options: healthOptions,
+              onChanged: (value) => setState(() => _healthFilter = value),
+              width: null,
             ),
-            const SizedBox(height: 10),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: _filterDropdown(
+              label: 'Growth',
+              allLabel: 'All Growth',
+              value: _growthFilter,
+              options: growthOptions,
+              onChanged: (value) => setState(() => _growthFilter = value),
+              width: null,
+            ),
+          ),
+          const SizedBox(width: 8),
+        ],
+      );
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (isWide)
             Row(
               children: [
-                Expanded(child: _resultSummary()),
-                if (_activeFilterCount > 0) ...[
-                  _activeFilterPill(),
-                  const SizedBox(width: 6),
-                ],
-                TextButton.icon(
+                Expanded(flex: 3, child: _inspectionSearchField()),
+                const SizedBox(width: 12),
+                SizedBox(width: 430, child: filters),
+                const SizedBox(width: 4),
+                IconButton(
+                  tooltip: 'Reset search and filters',
                   onPressed: _hasActiveFilters ? _resetFilters : null,
-                  icon: const Icon(Icons.filter_alt_off_outlined, size: 17),
-                  label: const Text('Reset'),
+                  icon: const Icon(Icons.filter_alt_off_outlined),
                 ),
               ],
+            )
+          else ...[
+            _inspectionSearchField(),
+            const SizedBox(height: 10),
+            filters,
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton.icon(
+                onPressed: _hasActiveFilters ? _resetFilters : null,
+                icon: const Icon(Icons.filter_alt_off_outlined, size: 17),
+                label: const Text('Reset filters'),
+              ),
             ),
           ],
-        );
-      },
-    ),
+          Row(
+            children: [
+              const Icon(
+                Icons.inventory_2_outlined,
+                size: 16,
+                color: AppColors.textSecondary,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                _queueFilter == 'history'
+                    ? '${_visibleInspections.length} of ${_inspections.length} records'
+                    : '${_visibleQueue.length} of ${_queue.length} plants',
+                style: const TextStyle(
+                  fontSize: AppTypography.caption,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ],
+          ),
+        ],
+      );
+    },
   );
 
   Widget _inspectionSearchField() => AppSearchField(
@@ -1040,109 +934,6 @@ class _InspectionHistoryScreenState extends State<InspectionHistoryScreen> {
     ),
   );
 
-  Widget _mobileFilterButton() => OutlinedButton(
-    onPressed: _openMobileFilters,
-    style: OutlinedButton.styleFrom(
-      minimumSize: const Size.fromHeight(48),
-      foregroundColor: AppColors.darkGreen,
-      backgroundColor: _activeFilterCount > 0
-          ? AppColors.primaryContainer
-          : AppColors.surface,
-      side: BorderSide(
-        color: _activeFilterCount > 0 ? AppColors.green : AppColors.border,
-      ),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-    ),
-    child: Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        const Icon(Icons.tune_rounded, size: 20),
-        const SizedBox(width: 7),
-        const Text('Filters', style: TextStyle(fontWeight: FontWeight.w700)),
-        if (_activeFilterCount > 0) ...[
-          const SizedBox(width: 7),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-            decoration: BoxDecoration(
-              color: AppColors.green,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text(
-              '$_activeFilterCount',
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: AppTypography.caption,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-          ),
-        ],
-      ],
-    ),
-  );
-
-  Widget _resultSummary() => Row(
-    children: [
-      const Icon(
-        Icons.inventory_2_outlined,
-        size: 16,
-        color: AppColors.textSecondary,
-      ),
-      const SizedBox(width: 6),
-      Flexible(
-        child: Text(
-          '${_visibleInspections.length} of ${_inspections.length} records',
-          overflow: TextOverflow.ellipsis,
-          style: const TextStyle(
-            fontSize: AppTypography.caption,
-            color: AppColors.textSecondary,
-          ),
-        ),
-      ),
-    ],
-  );
-
-  Widget _activeFilterPill() => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-    decoration: BoxDecoration(
-      color: AppColors.primaryContainer,
-      borderRadius: BorderRadius.circular(20),
-      border: Border.all(color: AppColors.green.withValues(alpha: .35)),
-    ),
-    child: Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        const Icon(Icons.tune_rounded, size: 15, color: AppColors.green),
-        const SizedBox(width: 5),
-        Text(
-          '$_activeFilterCount active',
-          style: const TextStyle(
-            fontSize: AppTypography.caption,
-            fontWeight: FontWeight.w700,
-            color: AppColors.darkGreen,
-          ),
-        ),
-      ],
-    ),
-  );
-
-  Widget _appliedFilterChip(String label, VoidCallback onDeleted) => InputChip(
-    label: Text(label),
-    onDeleted: onDeleted,
-    deleteIcon: const Icon(Icons.close_rounded, size: 16),
-    deleteIconColor: AppColors.green,
-    labelStyle: const TextStyle(
-      fontSize: AppTypography.caption,
-      fontWeight: FontWeight.w700,
-      color: AppColors.darkGreen,
-    ),
-    backgroundColor: AppColors.primaryContainer,
-    side: BorderSide(color: AppColors.green.withValues(alpha: .3)),
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-    visualDensity: VisualDensity.compact,
-  );
-
   Widget _filterDropdown({
     required String label,
     required String allLabel,
@@ -1195,7 +986,7 @@ class _InspectionHistoryScreenState extends State<InspectionHistoryScreen> {
             (option) => DropdownMenuItem(
               value: option,
               child: Text(
-                healthStatusLabel(option),
+                label == 'Health' ? healthStatusLabel(option) : option,
                 overflow: TextOverflow.ellipsis,
               ),
             ),
@@ -1240,6 +1031,14 @@ class _InspectionHistoryScreenState extends State<InspectionHistoryScreen> {
               icon: const Icon(Icons.filter_alt_off_outlined),
               label: const Text('Reset Filters'),
             ),
+            if (_historyHasMore)
+              TextButton.icon(
+                onPressed: _historyLoadingMore
+                    ? null
+                    : () => _loadHistory(loadMore: true),
+                icon: const Icon(Icons.expand_more_rounded),
+                label: const Text('Load Older Inspections'),
+              ),
           ],
         ),
       ),

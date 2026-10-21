@@ -239,7 +239,42 @@ class _DashboardScreenState extends State<DashboardScreen> {
         healthQuery = healthQuery.eq('college_id', _currentCollegeId!);
       }
 
-      final healthRows = await healthQuery;
+      var recentQuery = _supabase
+          .from('plant')
+          .select('''
+        plant_id,
+        campus_id,
+        college_id,
+        variety,
+        date_planted,
+        created_at,
+        tree_planter,
+        last_inspected_on,
+        qr_tag:qr_tag!plant_qr_tag_id_fkey(qr_code_string),
+        plant_classification (common_name, plant_type),
+        campus:campus!plant_campus_id_fkey (campus_name),
+        growth_status (growth_stage),
+        health_status (status_name)
+      ''')
+          .isFilter('archived_at', null);
+
+      if (_role == 'campus_admin') {
+        recentQuery = recentQuery.eq('campus_id', _currentCampusId!);
+      }
+      if (_role == 'college_admin' || _role == 'inspection_team') {
+        recentQuery = recentQuery.eq('college_id', _currentCollegeId!);
+      }
+
+      final dashboardRows = await Future.wait<dynamic>([
+        healthQuery,
+        recentQuery.order('created_at', ascending: false).limit(5),
+      ]);
+      final healthRows = List<Map<String, dynamic>>.from(
+        dashboardRows[0] as List,
+      );
+      final recentRows = List<Map<String, dynamic>>.from(
+        dashboardRows[1] as List,
+      );
 
       final now = DateTime.now();
       final today = DateTime(now.year, now.month, now.day);
@@ -297,54 +332,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
           dead++;
         }
       }
-
-      // ========================================================
-      // RECENT PLANTS
-      // ========================================================
-
-      var recentQuery = _supabase
-          .from('plant')
-          .select('''
-        plant_id,
-        campus_id,
-        college_id,
-        variety,
-        date_planted,
-        created_at,
-        tree_planter,
-        last_inspected_on,
-        qr_tag:qr_tag!plant_qr_tag_id_fkey(qr_code_string),
-
-        plant_classification (
-          common_name,
-          plant_type
-        ),
-
-        campus:campus!plant_campus_id_fkey (
-          campus_name
-        ),
-
-        growth_status (
-          growth_stage
-        ),
-
-        health_status (
-          status_name
-        )
-      ''')
-          .isFilter('archived_at', null);
-
-      if (_role == 'campus_admin') {
-        recentQuery = recentQuery.eq('campus_id', _currentCampusId!);
-      }
-
-      if (_role == 'college_admin' || _role == 'inspection_team') {
-        recentQuery = recentQuery.eq('college_id', _currentCollegeId!);
-      }
-
-      final recentRows = await recentQuery
-          .order('created_at', ascending: false)
-          .limit(5);
 
       if (!mounted) return;
 
@@ -457,8 +444,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   onPressed: () => Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) =>
-                          InspectionOutboxScreen(userId: widget.userId),
+                      builder: (_) => InspectionOutboxScreen(
+                        userId: widget.userId,
+                        username: _userName,
+                        role: _role,
+                      ),
                     ),
                   ),
                   icon: const Icon(Icons.offline_pin_outlined),

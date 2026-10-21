@@ -40,9 +40,10 @@ another person. The full queue remains accessible after dismissal.
 ## Report definitions
 
 - Planting batch: planting calendar month; missing dates are shown separately.
-- Survival: known non-Dead plants divided by all records in that batch. Unknown
-  health remains in the denominator. Archived records remain included so
-  archiving losses cannot improve the rate.
+- Survival: plants with a recorded non-Dead health status divided by all records
+  in that batch. Missing or unrecognized health statuses count as Needs
+  Attention and remain in the denominator, but are not confirmed survivors.
+  Archived records remain included so archiving losses cannot improve the rate.
 - Coverage: active non-Dead plants inspected within the last 30 Philippine
   calendar days divided by active non-Dead plants. Empty denominators show N/A.
   This measures coverage, not inspection punctuality.

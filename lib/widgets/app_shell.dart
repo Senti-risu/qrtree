@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import '../theme/app_typography.dart';
 
@@ -42,6 +43,7 @@ class AppShell extends StatelessWidget {
 
   final EdgeInsetsGeometry desktopPadding;
   final EdgeInsetsGeometry mobilePadding;
+  final bool? platformIsWeb;
 
   const AppShell({
     super.key,
@@ -76,6 +78,7 @@ class AppShell extends StatelessWidget {
       AppSpacing.lg,
       AppSpacing.lg,
     ),
+    this.platformIsWeb,
   });
 
   // ============================================================
@@ -101,14 +104,101 @@ class AppShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bool isDesktop =
-        MediaQuery.sizeOf(context).width >= AppBreakpoints.desktop;
+    final width = MediaQuery.sizeOf(context).width;
+    final isWeb = platformIsWeb ?? kIsWeb;
+    final isDesktop = width >= AppBreakpoints.desktop;
 
+    if (isWeb && !isDesktop) {
+      return _responsiveWebLayout(context);
+    }
     if (isDesktop) {
       return _desktopLayout(context);
     }
 
     return _mobileLayout(context);
+  }
+
+  Widget _responsiveWebLayout(BuildContext context) {
+    final compactPadding = EdgeInsets.all(
+      AppBreakpoints.isPhone(MediaQuery.sizeOf(context).width)
+          ? AppSpacing.md
+          : AppSpacing.lg,
+    );
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      drawer: Drawer(
+        width: 272,
+        child: SafeArea(
+          child: AppSidebar(
+            showBrand: true,
+            activeRoute: activeRoute,
+            userId: userId,
+            username: username,
+            role: role,
+            campusId: campusId,
+            collegeId: collegeId,
+          ),
+        ),
+      ),
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(64),
+        child: AppTopNavbar(
+          compact: true,
+          showBrand: false,
+          pageTitle: mobileTitle,
+          userName: _displayUserName,
+          userRole: _displayUserRole,
+          onScanTap: _canScanQr
+              ? onQrPressed ??
+                    () => Navigator.pushNamed(
+                      context,
+                      '/qr-scanner',
+                      arguments: _userArguments,
+                    )
+              : null,
+          leading: Builder(
+            builder: (context) => IconButton(
+              tooltip: 'Open navigation',
+              onPressed: () => Scaffold.of(context).openDrawer(),
+              icon: const Icon(Icons.menu_rounded),
+            ),
+          ),
+        ),
+      ),
+      body: SafeArea(
+        top: false,
+        child: LayoutBuilder(
+          builder: (context, constraints) => Padding(
+            padding: compactPadding,
+            child: Align(
+              alignment: Alignment.topCenter,
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxWidth: AppLayout.maxContentWidth,
+                  minHeight: constraints.maxHeight,
+                  maxHeight: constraints.maxHeight,
+                ),
+                child: SizedBox(width: double.infinity, child: child),
+              ),
+            ),
+          ),
+        ),
+      ),
+      bottomNavigationBar: bottomAction == null
+          ? null
+          : SafeArea(
+              top: false,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.lg,
+                  AppSpacing.sm,
+                  AppSpacing.lg,
+                  AppSpacing.sm,
+                ),
+                child: bottomAction,
+              ),
+            ),
+    );
   }
 
   // ============================================================

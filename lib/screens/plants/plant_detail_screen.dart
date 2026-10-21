@@ -26,6 +26,7 @@ class PlantDetailScreen extends StatefulWidget {
   final int userId;
   final String username;
   final String role;
+  final bool openedFromQr;
 
   const PlantDetailScreen({
     super.key,
@@ -33,6 +34,7 @@ class PlantDetailScreen extends StatefulWidget {
     required this.userId,
     required this.username,
     required this.role,
+    this.openedFromQr = false,
   });
 
   @override
@@ -69,21 +71,33 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
       _error = null;
     });
     try {
-      final plant = await _service.getPlant(widget.plantId);
-      try {
-        _physicalLocation = await PlantLocationService().get(widget.plantId);
-        _locationError = null;
-      } catch (e) {
-        _physicalLocation = {};
-        _locationError = userFacingError(e);
-      }
-      List<Map<String, dynamic>> history = [];
-      try {
-        history = await _service.getInspections(widget.plantId);
-      } catch (_) {}
+      final results = await Future.wait<Object>([
+        _service.getPlant(widget.plantId),
+        () async {
+          try {
+            final location = await PlantLocationService().get(widget.plantId);
+            _locationError = null;
+            return location;
+          } catch (error) {
+            _locationError = userFacingError(error);
+            return <String, dynamic>{};
+          }
+        }(),
+        () async {
+          try {
+            return await _service.getInspections(widget.plantId);
+          } catch (_) {
+            return <Map<String, dynamic>>[];
+          }
+        }(),
+      ]);
+      final plant = results[0] as Map<String, dynamic>;
+      final physicalLocation = results[1] as Map<String, dynamic>;
+      final history = results[2] as List<Map<String, dynamic>>;
       if (!mounted) return;
       setState(() {
         _plant = plant;
+        _physicalLocation = physicalLocation;
         _history = history;
         _loading = false;
       });
@@ -230,7 +244,26 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
             PlantDetailActions(
               singleColumn: true,
               children: [
-                if (canInspect && editable)
+                if (canInspect && editable && !widget.openedFromQr)
+                  const Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(
+                        Icons.qr_code_scanner_rounded,
+                        color: AppColors.green,
+                      ),
+                      SizedBox(width: 10),
+                      Expanded(
+                        child: Padding(
+                          padding: EdgeInsets.only(top: 2),
+                          child: Text(
+                            'To start an inspection, scan this plant’s QR code.',
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                if (canInspect && editable && widget.openedFromQr)
                   Padding(
                     padding: EdgeInsets.zero,
                     child: FilledButton.icon(

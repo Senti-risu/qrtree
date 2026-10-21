@@ -10,6 +10,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../services/plant_service.dart';
 import '../../theme/app_colors.dart';
 import '../../utils/user_facing_error.dart';
+import '../../utils/health_status_label.dart';
 import '../../widgets/app_error_state.dart';
 import '../../models/plant_record_lock.dart';
 import '../../widgets/dead_plant_lock.dart';
@@ -612,9 +613,7 @@ class _InspectionFormScreenState extends State<InspectionFormScreen> {
     runSpacing: 8,
     children: _health.map((row) {
       final id = row['health_status_id'] as int;
-      final label = _friendlyHealth(
-        row['status_name']?.toString() ?? 'Unknown',
-      );
+      final label = _friendlyHealth(row['status_name']?.toString());
       final selected = _healthId == id;
       return ChoiceChip(
         selected: selected,
@@ -671,20 +670,7 @@ class _InspectionFormScreenState extends State<InspectionFormScreen> {
     return 'Not Recorded';
   }
 
-  String _friendlyHealth(String value) {
-    switch (value.trim().toLowerCase()) {
-      case 'alive':
-      case 'healthy':
-        return 'Healthy';
-      case 'dying':
-      case 'at risk':
-        return 'Needs Attention';
-      case 'dead':
-        return 'Dead';
-      default:
-        return 'Not Recorded';
-    }
-  }
+  String _friendlyHealth(String? value) => healthStatusLabel(value);
 
   IconData _healthIcon(String label) => label == 'Healthy'
       ? Icons.eco_outlined

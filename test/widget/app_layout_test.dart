@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:flutter_application_1/theme/app_layout.dart';
 import 'package:flutter_application_1/theme/app_theme.dart';
+import 'package:flutter_application_1/widgets/app_mobile_navbar.dart';
 import 'package:flutter_application_1/widgets/app_shell.dart';
 
 void main() {
@@ -44,6 +45,7 @@ void main() {
       WidgetTester tester, {
       required Size size,
       required Key contentKey,
+      bool platformIsWeb = false,
     }) async {
       tester.view.physicalSize = size;
       tester.view.devicePixelRatio = 1;
@@ -60,6 +62,7 @@ void main() {
             campusId: 1,
             collegeId: 1,
             showQrButton: false,
+            platformIsWeb: platformIsWeb,
             child: SizedBox.expand(key: contentKey),
           ),
         ),
@@ -110,6 +113,27 @@ void main() {
         ),
         findsNothing,
       );
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('responsive web uses a drawer instead of app navigation', (
+      tester,
+    ) async {
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await pumpShell(
+        tester,
+        size: const Size(390, 844),
+        contentKey: const Key('web-page-content'),
+        platformIsWeb: true,
+      );
+
+      expect(find.byType(AppMobileNavbar), findsNothing);
+      expect(find.byTooltip('Open navigation'), findsOneWidget);
+      await tester.tap(find.byTooltip('Open navigation'));
+      await tester.pumpAndSettle();
+      expect(find.byType(Drawer), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
   });

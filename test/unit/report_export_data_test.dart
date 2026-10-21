@@ -153,28 +153,31 @@ void main() {
       expect(csv, contains('"\'\t=bad"'));
     },
   );
-  test('health percentages include unknowns and handle zero totals', () {
-    final data = report(
-      ReportKind.health,
-      plants: [
-        plant(1),
-        plant(2, health: 'Other'),
-      ],
-    );
-    expect(data.sections.first.rows.first, ['Healthy', '1', '50.0%']);
-    expect(data.sections.first.rows.last, ['Unknown', '1', '50.0%']);
-    expect(
-      report(ReportKind.health, plants: []).sections.first.rows.first.last,
-      'N/A',
-    );
-  });
+  test(
+    'health percentages flag unrecognized status and handle zero totals',
+    () {
+      final data = report(
+        ReportKind.health,
+        plants: [
+          plant(1),
+          plant(2, health: 'Other'),
+        ],
+      );
+      expect(data.sections.first.rows.first, ['Healthy', '1', '50.0%']);
+      expect(data.sections.first.rows[1], ['Needs Attention', '1', '50.0%']);
+      expect(
+        report(ReportKind.health, plants: []).sections.first.rows.first.last,
+        'N/A',
+      );
+    },
+  );
   test('outcomes keep full-scope and coverage definitions', () {
     final data = report(
       ReportKind.outcomes,
       outcomes: {
         'generated_on': '2026-10-19',
         'batches': [
-          {'batch': '2026-09', 'total': 4, 'alive': 3, 'unknown': 1},
+          {'batch': '2026-09', 'total': 4, 'alive': 3, 'needs_attention': 1},
         ],
         'colleges': [
           {'college_name': 'CICS', 'total': 2, 'completed': 0},
@@ -192,7 +195,18 @@ void main() {
     expect(data.sections[1].rows.single.last, '0.0%');
     expect(data.sections[1].note, contains('not on-time'));
     expect(data.sections[2].note, contains('not unique plants'));
+    expect(data.sections[0].headers, contains('Needs Attention'));
+    expect(data.sections[0].headers, isNot(contains('Unknown')));
+    expect(data.sections[0].rows.single[3], '1');
     expect(() => report(ReportKind.outcomes), throwsStateError);
+  });
+  test('monitoring outcomes report missing health as Needs Attention', () {
+    final sql = File(
+      'supabase/migrations/202610220007_health_unknowns_to_needs_attention.sql',
+    ).readAsStringSync();
+    expect(sql, contains('as needs_attention'));
+    expect(sql, contains("else 'Needs Attention'"));
+    expect(sql, isNot(contains("'unknown'")));
   });
   test('long PDF notes remain intact across continuation rows', () {
     final text = List.filled(500, 'Long observation. ').join();
@@ -246,7 +260,7 @@ void main() {
     final outcomes = {
       'generated_on': '2026-10-19',
       'batches': [
-        {'batch': '2026-09', 'total': 35, 'alive': 35, 'unknown': 0},
+        {'batch': '2026-09', 'total': 35, 'alive': 35, 'needs_attention': 0},
       ],
       'colleges': [
         {'college_name': 'CICS', 'total': 35, 'completed': 20},

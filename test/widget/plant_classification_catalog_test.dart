@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_application_1/screens/admin/plant_classification_catalog_screen.dart';
 import 'package:flutter_application_1/services/plant_service.dart';
 import 'package:flutter_application_1/theme/app_theme.dart';
+import 'package:flutter_application_1/widgets/app_page_header.dart';
 
 class FakePlantCatalog implements PlantClassificationCatalog {
   final entries = <Map<String, dynamic>>[];
@@ -31,6 +32,22 @@ class FakePlantCatalog implements PlantClassificationCatalog {
     return plantTypes.firstWhere(
       (type) => type.toLowerCase() == normalized.toLowerCase(),
     );
+  }
+
+  @override
+  Future<String> updatePlantType({
+    required String currentName,
+    required String updatedName,
+  }) async {
+    final index = plantTypes.indexOf(currentName);
+    if (index < 0) throw StateError('Plant type not found.');
+    plantTypes[index] = updatedName;
+    for (final entry in entries) {
+      if (entry['plant_type'] == currentName) {
+        entry['plant_type'] = updatedName;
+      }
+    }
+    return updatedName;
   }
 
   @override
@@ -128,6 +145,17 @@ void main() {
     );
   });
 
+  test('editing a plant type updates saved classifications safely', () {
+    final sql = File(
+      'supabase/migrations/202610220011_edit_plant_types.sql',
+    ).readAsStringSync();
+    expect(sql, contains('public.university_admin_update_plant_type'));
+    expect(sql, contains("actor.role is distinct from 'university_admin'"));
+    expect(sql, contains('A plant type with this name already exists'));
+    expect(sql, contains('update public.plant_classification'));
+    expect(sql, contains("'plant_type.updated'"));
+  });
+
   testWidgets(
     'plant type dropdown supports adding types and excludes variety',
     (tester) async {
@@ -148,6 +176,10 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
+      expect(find.byType(AppPageHeader), findsOneWidget);
+      final pageHeader = tester.getRect(find.text('University Plant Catalog'));
+      final createForm = tester.getRect(find.text('Create Catalog Entry'));
+      expect(createForm.top, greaterThan(pageHeader.bottom));
 
       await tester.tap(find.text('Add type'));
       await tester.pumpAndSettle();
@@ -163,13 +195,27 @@ void main() {
             .initialValue,
         'Fern',
       );
+      await tester.tap(find.text('Edit type'));
+      await tester.pumpAndSettle();
+      await tester.enterText(field('Plant Type'), 'Fern Tree');
+      await tester.tap(find.text('Save Plant Type'));
+      await tester.pumpAndSettle();
+      expect(catalog.plantTypes, contains('Fern Tree'));
+      expect(
+        tester
+            .widget<DropdownButtonFormField<String>>(
+              find.byType(DropdownButtonFormField<String>).first,
+            )
+            .initialValue,
+        'Fern Tree',
+      );
       await tester.enterText(field('Common Name'), 'Narra');
       await tester.enterText(field('Scientific Name'), 'Pterocarpus indicus');
       await tester.tap(find.text('Add To Catalog'));
       await tester.pumpAndSettle();
 
       expect(catalog.creates, 1);
-      expect(catalog.entries.single['plant_type'], 'Fern');
+      expect(catalog.entries.single['plant_type'], 'Fern Tree');
       expect(catalog.entries.single['common_name'], 'Narra');
       expect(catalog.entries.single['scientific_name'], 'Pterocarpus indicus');
       expect(catalog.entries.single['plant_classification_variety'], isEmpty);
@@ -177,6 +223,7 @@ void main() {
       expect(find.text('Variety (Optional)'), findsNothing);
       expect(find.text('VARIETIES'), findsNothing);
       expect(find.text('Plant Classifications'), findsOneWidget);
+      expect(find.byType(DataTable), findsOneWidget);
       expect(find.byTooltip('Edit Narra'), findsOneWidget);
       expect(find.byType(GridView), findsNothing);
 
@@ -269,6 +316,40 @@ void main() {
     expect(find.text('Mango'), findsOneWidget);
     expect(find.text('Basil'), findsNothing);
     expect(find.text('All types'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('catalog content adapts to a narrow screen', (tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final catalog = FakePlantCatalog()
+      ..entries.add({
+        'classification_id': 1,
+        'plant_type': 'Tree',
+        'common_name': 'Mango',
+        'scientific_name': 'Mangifera indica',
+        'plant_classification_variety': [],
+      });
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: PlantClassificationCatalogScreen(
+          userId: 5,
+          username: 'University Admin',
+          role: 'university_admin',
+          catalog: catalog,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Create Catalog Entry'), findsOneWidget);
+    expect(find.text('Mango'), findsOneWidget);
+    expect(find.byTooltip('Edit Mango'), findsOneWidget);
+    expect(find.byTooltip('Delete Mango'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }

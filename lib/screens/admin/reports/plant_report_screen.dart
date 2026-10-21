@@ -13,6 +13,7 @@ import '../../../services/report_export_data.dart';
 import '../../../services/report_export_service.dart';
 import '../../../widgets/report_export_dialog.dart';
 import '../../../utils/user_facing_error.dart';
+import '../../../utils/health_status_label.dart';
 import '../../../models/app_role.dart';
 import 'package:printing/printing.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -222,11 +223,7 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
   }
 
   String _health(Map<String, dynamic> plant) {
-    final value = _related(plant, 'health_status', 'status_name').toLowerCase();
-    if (value == 'alive' || value == 'healthy') return 'Healthy';
-    if (value == 'dying' || value == 'at risk') return 'Needs Attention';
-    if (value == 'dead') return 'Dead';
-    return 'Unknown';
+    return healthStatusLabel(_map(plant['health_status'])['status_name']);
   }
 
   DateTime? _createdAt(Map<String, dynamic> plant) =>
@@ -730,17 +727,24 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
   }
 
   Widget _dropdown(
-    String label,
     String value,
     List<String> options,
     ValueChanged<String> onChanged,
   ) => DropdownButtonFormField<String>(
-    key: ValueKey(Object.hashAll([label, value, ...options])),
+    key: ValueKey(Object.hashAll([value, ...options])),
     initialValue: options.contains(value) ? value : 'All',
     isExpanded: true,
-    decoration: _inputDecoration(label, null),
+    decoration: _inputDecoration(null),
     items: options
-        .map((item) => DropdownMenuItem<String>(value: item, child: Text(item)))
+        .map(
+          (item) => DropdownMenuItem<String>(
+            value: item,
+            child: Text(
+              item,
+              style: const TextStyle(fontSize: AppTypography.body),
+            ),
+          ),
+        )
         .toList(),
     onChanged: (item) => item == null ? null : onChanged(item),
   );
@@ -750,15 +754,12 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
     'Healthy',
     'Needs Attention',
     'Dead',
-    'Unknown',
   ];
 
   Color _reportHealthColor(String value) => value == 'Needs Attention'
       ? AppColors.warningAccent
       : value == 'Dead'
       ? AppColors.danger
-      : value == 'Unknown'
-      ? AppColors.textSecondary
       : AppColors.green;
 
   IconData _reportHealthIcon(String value) => value == 'All'
@@ -767,9 +768,7 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
       ? Icons.eco_rounded
       : value == 'Needs Attention'
       ? Icons.warning_amber_rounded
-      : value == 'Dead'
-      ? Icons.local_florist_outlined
-      : Icons.help_outline_rounded;
+      : Icons.local_florist_outlined;
 
   Widget _reportHealthChoice(
     String value,
@@ -853,10 +852,7 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
     },
     borderRadius: BorderRadius.circular(12),
     child: InputDecorator(
-      decoration: _inputDecoration(
-        'Registration date',
-        Icons.date_range_outlined,
-      ),
+      decoration: _inputDecoration(Icons.date_range_outlined),
       child: Row(
         children: [
           Expanded(
@@ -968,85 +964,96 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
                             letterSpacing: .8,
                           ),
                         ),
-                        const SizedBox(height: 10),
-                        _stagedDateField(
-                          sheetContext,
-                          pendingDate,
-                          (value) => updateSheet(() => pendingDate = value),
+                        const SizedBox(height: 14),
+                        _labeledFilterField(
+                          'Registration Date',
+                          _stagedDateField(
+                            sheetContext,
+                            pendingDate,
+                            (value) => updateSheet(() => pendingDate = value),
+                          ),
                         ),
                         if (_universityScope) ...[
-                          const SizedBox(height: 10),
-                          _dropdown(
+                          const SizedBox(height: 14),
+                          _labeledFilterField(
                             'Campus',
-                            pendingCampus,
-                            _options(
-                              (plant) =>
-                                  _related(plant, 'campus', 'campus_name'),
+                            _dropdown(
+                              pendingCampus,
+                              _options(
+                                (plant) =>
+                                    _related(plant, 'campus', 'campus_name'),
+                              ),
+                              (value) => updateSheet(() {
+                                pendingCampus = value;
+                                pendingCollege = 'All';
+                              }),
                             ),
-                            (value) => updateSheet(() {
-                              pendingCampus = value;
-                              pendingCollege = 'All';
-                            }),
                           ),
                         ],
                         if (widget.role != 'college_admin') ...[
-                          const SizedBox(height: 10),
-                          _dropdown(
+                          const SizedBox(height: 14),
+                          _labeledFilterField(
                             'College',
-                            pendingCollege,
-                            _collegeOptionsFor(pendingCampus),
-                            (value) =>
-                                updateSheet(() => pendingCollege = value),
+                            _dropdown(
+                              pendingCollege,
+                              _collegeOptionsFor(pendingCampus),
+                              (value) =>
+                                  updateSheet(() => pendingCollege = value),
+                            ),
                           ),
                         ],
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 28),
                         const Text(
                           'PLANT DETAILS',
                           style: TextStyle(
-                            fontSize: AppTypography.caption,
+                            fontSize: AppTypography.label,
                             fontWeight: FontWeight.w800,
                             color: AppColors.textSecondary,
-                            letterSpacing: .8,
+                            letterSpacing: 1,
                           ),
                         ),
-                        const SizedBox(height: 10),
-                        _dropdown(
+                        const SizedBox(height: 14),
+                        _labeledFilterField(
                           'Plant Type',
-                          pendingPlantType,
-                          _options(
-                            (plant) => _related(
-                              plant,
-                              'plant_classification',
-                              'plant_type',
+                          _dropdown(
+                            pendingPlantType,
+                            _options(
+                              (plant) => _related(
+                                plant,
+                                'plant_classification',
+                                'plant_type',
+                              ),
                             ),
+                            (value) =>
+                                updateSheet(() => pendingPlantType = value),
                           ),
-                          (value) =>
-                              updateSheet(() => pendingPlantType = value),
                         ),
-                        const SizedBox(height: 10),
-                        _dropdown(
+                        const SizedBox(height: 14),
+                        _labeledFilterField(
                           'Growth Stage',
-                          pendingGrowth,
-                          _options(
-                            (plant) => _related(
-                              plant,
-                              'growth_status',
-                              'growth_stage',
+                          _dropdown(
+                            pendingGrowth,
+                            _options(
+                              (plant) => _related(
+                                plant,
+                                'growth_status',
+                                'growth_stage',
+                              ),
                             ),
+                            (value) => updateSheet(() => pendingGrowth = value),
                           ),
-                          (value) => updateSheet(() => pendingGrowth = value),
                         ),
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 28),
                         const Text(
                           'HEALTH STATUS',
                           style: TextStyle(
-                            fontSize: AppTypography.caption,
+                            fontSize: AppTypography.label,
                             fontWeight: FontWeight.w800,
                             color: AppColors.textSecondary,
-                            letterSpacing: .8,
+                            letterSpacing: 1,
                           ),
                         ),
-                        const SizedBox(height: 10),
+                        const SizedBox(height: 14),
                         Wrap(
                           spacing: 8,
                           runSpacing: 8,
@@ -1123,30 +1130,43 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
     );
   }
 
-  InputDecoration _inputDecoration(String label, IconData? icon) =>
-      InputDecoration(
-        labelText: label,
-        prefixIcon: icon == null ? null : Icon(icon, size: 19),
-        filled: true,
-        fillColor: AppColors.background,
-        isDense: true,
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 12,
-          vertical: 13,
+  Widget _labeledFilterField(String label, Widget field) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Padding(
+        padding: const EdgeInsets.only(left: 2, bottom: 7),
+        child: Text(
+          label,
+          style: const TextStyle(
+            fontSize: AppTypography.label,
+            fontWeight: FontWeight.w600,
+            color: AppColors.darkGreen,
+          ),
         ),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.border),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.border),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.green, width: 1.4),
-        ),
-      );
+      ),
+      field,
+    ],
+  );
+
+  InputDecoration _inputDecoration(IconData? icon) => InputDecoration(
+    prefixIcon: icon == null ? null : Icon(icon, size: 19),
+    filled: true,
+    fillColor: AppColors.background,
+    isDense: false,
+    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: const BorderSide(color: AppColors.border),
+    ),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: const BorderSide(color: AppColors.border),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: const BorderSide(color: AppColors.green, width: 1.4),
+    ),
+  );
 
   void _resetAdvancedFilters() => setState(() {
     _dateRange = null;
@@ -1345,7 +1365,6 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
       ('Healthy', _count('Healthy'), AppColors.green),
       ('Needs Attention', _count('Needs Attention'), AppColors.warningAccent),
       ('Dead', _count('Dead'), AppColors.danger),
-      ('Unknown', _count('Unknown'), AppColors.textSecondary),
     ];
     final total = values.fold<int>(0, (sum, item) => sum + item.$2);
     return _chartCard(
@@ -1775,11 +1794,7 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
       return true;
     }).toList();
 
-    final counts =
-        <
-          int,
-          ({int healthy, int attention, int dead, int unknown, int total})
-        >{};
+    final counts = <int, ({int healthy, int attention, int dead, int total})>{};
     for (final campus in campuses) {
       final id = int.tryParse(campus['campus_id']?.toString() ?? '');
       if (id == null) continue;
@@ -1790,7 +1805,6 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
             .where((plant) => _health(plant) == 'Needs Attention')
             .length,
         dead: plants.where((plant) => _health(plant) == 'Dead').length,
-        unknown: plants.where((plant) => _health(plant) == 'Unknown').length,
         total: plants.length,
       );
     }
@@ -1806,10 +1820,6 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
     final deadTotal = counts.values.fold<int>(
       0,
       (sum, value) => sum + value.dead,
-    );
-    final unknownTotal = counts.values.fold<int>(
-      0,
-      (sum, value) => sum + value.unknown,
     );
     final plantTotal = counts.values.fold<int>(
       0,
@@ -1902,7 +1912,6 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
                         AppColors.warningAccent,
                       ),
                       _campusHealthColumn('DEAD', AppColors.danger),
-                      _campusHealthColumn('UNKNOWN', AppColors.textSecondary),
                       const DataColumn(
                         numeric: true,
                         label: Text(
@@ -1959,13 +1968,6 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
                               ),
                               DataCell(
                                 _campusHealthValue(
-                                  counts[id]?.unknown ?? 0,
-                                  AppColors.textSecondary,
-                                  AppColors.surfaceVariant,
-                                ),
-                              ),
-                              DataCell(
-                                _campusHealthValue(
                                   counts[id]?.total ?? 0,
                                   AppColors.darkGreen,
                                   AppColors.primaryContainer,
@@ -2008,14 +2010,6 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
                             _campusHealthValue(
                               deadTotal,
                               AppColors.danger,
-                              Colors.white,
-                              emphasize: true,
-                            ),
-                          ),
-                          DataCell(
-                            _campusHealthValue(
-                              unknownTotal,
-                              AppColors.textSecondary,
                               Colors.white,
                               emphasize: true,
                             ),

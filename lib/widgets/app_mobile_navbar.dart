@@ -130,7 +130,10 @@ class AppMobileNavbar extends StatelessWidget {
     }.contains(role)) {
       return activeRoute == '/activity-log' ||
           (role == 'university_admin' &&
-              activeRoute == '/plant-classifications');
+              const {
+                '/plant-classifications',
+                '/inspection-schedule',
+              }.contains(activeRoute));
     }
     return false;
   }
@@ -285,6 +288,9 @@ class AppMobileNavbar extends StatelessWidget {
         return;
       case AppMobileMoreAction.plantClassifications:
         _navigate(context, '/plant-classifications');
+        return;
+      case AppMobileMoreAction.inspectionSchedule:
+        _navigate(context, '/inspection-schedule');
         return;
       case AppMobileMoreAction.registerPlant:
         _navigate(context, '/register-plant');

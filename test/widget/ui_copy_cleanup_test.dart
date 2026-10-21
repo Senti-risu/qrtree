@@ -88,11 +88,16 @@ void main() {
       expect(tiles.every((tile) => tile.subtitle == null), isTrue);
       expect(find.text('Profile'), findsOneWidget);
       expect(find.text('View your account and access details'), findsNothing);
+      if (role == 'university_admin') {
+        expect(find.text('Inspection Schedule'), findsOneWidget);
+      }
       await tester.scrollUntilVisible(
         find.text('Sign Out'),
         200,
         scrollable: find.byType(Scrollable).last,
       );
+      await tester.ensureVisible(find.text('Sign Out'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Sign Out'));
       await tester.pumpAndSettle();
       expect(result, AppMobileMoreAction.logout);

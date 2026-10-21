@@ -10,6 +10,7 @@ import '../../models/app_role.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_layout.dart';
 import '../../utils/user_facing_error.dart';
+import '../../utils/health_status_label.dart';
 import '../../widgets/app_card.dart';
 import '../../widgets/compact_filter_panel.dart';
 import '../../widgets/app_filter_sheet.dart';
@@ -43,6 +44,7 @@ class PlantListScreen extends StatefulWidget {
 }
 
 class _PlantListScreenState extends State<PlantListScreen> {
+  static const _desktopPageSize = 25;
   final _supabase = Supabase.instance.client;
   final _plantService = PlantService();
   final _searchController = TextEditingController();
@@ -50,6 +52,7 @@ class _PlantListScreenState extends State<PlantListScreen> {
   List<Map<String, dynamic>> _campuses = [];
   bool _loading = true;
   String? _error;
+  int _desktopPage = 0;
   String _healthFilter = 'All';
   int? _campusFilter;
   String _recordFilter = 'active';
@@ -83,6 +86,7 @@ class _PlantListScreenState extends State<PlantListScreen> {
           .from('plant')
           .select('''
         plant_id, variety, date_planted, tree_planter, photo_url, created_at, campus_id, college_id,
+        last_inspected_on,
         archived_at, archive_reason,
         planting_location_type,
         planting_campus:campus!plant_planting_campus_id_fkey(campus_name),
@@ -99,34 +103,18 @@ class _PlantListScreenState extends State<PlantListScreen> {
           widget.collegeId != null) {
         query = query.eq('college_id', widget.collegeId!);
       }
+      final campusesFuture = _canFilterCampus
+          ? _plantService.getCampuses()
+          : Future.value(<Map<String, dynamic>>[]);
       final rows = List<Map<String, dynamic>>.from(
         await query.order('created_at', ascending: false),
       );
-      final campuses = _canFilterCampus
-          ? await _plantService.getCampuses()
-          : <Map<String, dynamic>>[];
-      try {
-        final plantIds = rows.map((row) => row['plant_id'] as int).toList();
-        if (plantIds.isNotEmpty) {
-          final inspections = await _supabase
-              .from('inspection')
-              .select('plant_id, inspected_at, last_inspection_date')
-              .inFilter('plant_id', plantIds);
-          for (final plant in rows) {
-            plant['plant_inspection'] = inspections
-                .where((item) => item['plant_id'] == plant['plant_id'])
-                .toList();
-          }
-        }
-      } catch (_) {
-        for (final plant in rows) {
-          plant['plant_inspection'] = <Map<String, dynamic>>[];
-        }
-      }
+      final campuses = await campusesFuture;
       if (!mounted) return;
       setState(() {
         _plants = rows;
         _campuses = campuses;
+        _desktopPage = 0;
         _loading = false;
       });
     } catch (e) {
@@ -142,13 +130,7 @@ class _PlantListScreenState extends State<PlantListScreen> {
       value is Map ? Map<String, dynamic>.from(value) : {};
 
   String _health(Map<String, dynamic> plant) {
-    final value =
-        _map(plant['health_status'])['status_name']?.toString().toLowerCase() ??
-        '';
-    if (value == 'alive' || value == 'healthy') return 'Healthy';
-    if (value == 'dying' || value == 'at risk') return 'Needs Attention';
-    if (value == 'dead') return 'Dead';
-    return 'Unknown';
+    return healthStatusLabel(_map(plant['health_status'])['status_name']);
   }
 
   List<Map<String, dynamic>> get _searchMatchedPlants {
@@ -234,6 +216,7 @@ class _PlantListScreenState extends State<PlantListScreen> {
   void _clearFilters() {
     _searchController.clear();
     setState(() {
+      _desktopPage = 0;
       _healthFilter = 'All';
       _campusFilter = null;
       _recordFilter = 'active';
@@ -258,6 +241,7 @@ class _PlantListScreenState extends State<PlantListScreen> {
     final isDesktop = AppBreakpoints.isDesktop(
       MediaQuery.sizeOf(context).width,
     );
+    final visiblePlants = _visiblePlants;
     return AppShell(
       activeRoute: '/plant-list',
       mobileTitle: 'Plant Records',
@@ -297,13 +281,12 @@ class _PlantListScreenState extends State<PlantListScreen> {
                 const SliverToBoxAdapter(
                   child: SizedBox(height: AppSpacing.lg),
                 ),
-                if (_loading || _error != null || _visiblePlants.isEmpty)
+                if (_loading || _error != null || visiblePlants.isEmpty)
                   SliverToBoxAdapter(child: _content())
                 else
                   SliverList.builder(
-                    itemCount: _visiblePlants.length,
-                    itemBuilder: (_, index) =>
-                        _plantCard(_visiblePlants[index]),
+                    itemCount: visiblePlants.length,
+                    itemBuilder: (_, index) => _plantCard(visiblePlants[index]),
                   ),
               ],
             ),
@@ -352,7 +335,10 @@ class _PlantListScreenState extends State<PlantListScreen> {
             value,
             _healthCount(value, plants),
             _healthFilter,
-            (selected) => setState(() => _healthFilter = selected),
+            (selected) => setState(() {
+              _desktopPage = 0;
+              _healthFilter = selected;
+            }),
           ),
         if (_hasActiveFilters) _activeBadge(_activeFilterCount),
       ],
@@ -415,7 +401,10 @@ class _PlantListScreenState extends State<PlantListScreen> {
             size: 17,
             color: _healthColor(_healthFilter),
           ),
-          onDeleted: () => setState(() => _healthFilter = 'All'),
+          onDeleted: () => setState(() {
+            _desktopPage = 0;
+            _healthFilter = 'All';
+          }),
           deleteIconColor: AppColors.textSecondary,
           backgroundColor: AppColors.primaryContainer,
           side: const BorderSide(color: AppColors.borderStrong),
@@ -429,7 +418,10 @@ class _PlantListScreenState extends State<PlantListScreen> {
         const SizedBox(height: AppSpacing.sm),
         InputChip(
           label: Text('Campus: ${_campusName(_campusFilter!)}'),
-          onDeleted: () => setState(() => _campusFilter = null),
+          onDeleted: () => setState(() {
+            _desktopPage = 0;
+            _campusFilter = null;
+          }),
           deleteIconColor: AppColors.textSecondary,
           backgroundColor: AppColors.primaryContainer,
           side: const BorderSide(color: AppColors.borderStrong),
@@ -457,7 +449,7 @@ class _PlantListScreenState extends State<PlantListScreen> {
         )
         .whereType<Object>()
         .map((value) => value.toString()),
-    onChanged: (_) => setState(() {}),
+    onChanged: (_) => setState(() => _desktopPage = 0),
     textInputAction: TextInputAction.search,
     decoration: InputDecoration(
       hintText: 'Search name, tag, variety…',
@@ -468,7 +460,7 @@ class _PlantListScreenState extends State<PlantListScreen> {
               tooltip: 'Clear Search',
               onPressed: () {
                 _searchController.clear();
-                setState(() {});
+                setState(() => _desktopPage = 0);
               },
               icon: const Icon(Icons.close_rounded),
             ),
@@ -523,13 +515,7 @@ class _PlantListScreenState extends State<PlantListScreen> {
     ],
   );
 
-  static const _healthOptions = [
-    'All',
-    'Healthy',
-    'Needs Attention',
-    'Dead',
-    'Unknown',
-  ];
+  static const _healthOptions = ['All', 'Healthy', 'Needs Attention', 'Dead'];
 
   Widget _recordSelector({bool compact = false}) => Container(
     padding: const EdgeInsets.all(4),
@@ -558,6 +544,7 @@ class _PlantListScreenState extends State<PlantListScreen> {
     return InkWell(
       borderRadius: BorderRadius.circular(9),
       onTap: () => setState(() {
+        _desktopPage = 0;
         _recordFilter = value;
         _healthFilter = 'All';
       }),
@@ -608,8 +595,6 @@ class _PlantListScreenState extends State<PlantListScreen> {
       ? AppColors.warningAccent
       : value == 'Dead'
       ? AppColors.danger
-      : value == 'Unknown'
-      ? AppColors.textSecondary
       : AppColors.green;
 
   IconData _healthIcon(String value) => value == 'All'
@@ -618,9 +603,7 @@ class _PlantListScreenState extends State<PlantListScreen> {
       ? Icons.eco_rounded
       : value == 'Needs Attention'
       ? Icons.warning_amber_rounded
-      : value == 'Dead'
-      ? Icons.cancel_outlined
-      : Icons.help_outline_rounded;
+      : Icons.cancel_outlined;
 
   Widget _healthChoice(
     String value,
@@ -722,7 +705,11 @@ class _PlantListScreenState extends State<PlantListScreen> {
           ),
         ],
         onChanged:
-            onChanged ?? (value) => setState(() => _campusFilter = value),
+            onChanged ??
+            (value) => setState(() {
+              _desktopPage = 0;
+              _campusFilter = value;
+            }),
       ),
     );
   }
@@ -763,6 +750,7 @@ class _PlantListScreenState extends State<PlantListScreen> {
           }),
           onApply: () {
             setState(() {
+              _desktopPage = 0;
               _healthFilter = pendingHealth;
               _campusFilter = pendingCampus;
             });
@@ -927,120 +915,155 @@ class _PlantListScreenState extends State<PlantListScreen> {
     );
   }
 
-  Widget _plantTable(List<Map<String, dynamic>> plants) => AppCard(
-    padding: const EdgeInsets.all(AppSpacing.lg),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          _recordFilter == 'archived'
-              ? 'Archived Plants'
-              : _healthFilter == 'All'
-              ? 'All Plants'
-              : '$_healthFilter Plants',
-          style: const TextStyle(
-            fontSize: AppTypography.sectionTitle,
-            fontWeight: FontWeight.w800,
-            color: AppColors.darkGreen,
-          ),
-        ),
-        const SizedBox(height: 8),
-        const Divider(),
-        SizedBox(
-          width: double.infinity,
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: DataTable(
-              showCheckboxColumn: false,
-              headingRowColor: const WidgetStatePropertyAll(
-                AppColors.background,
-              ),
-              columnSpacing: 28,
-              columns: const [
-                DataColumn(label: Text('PLANT NAME')),
-                DataColumn(label: Text('TAG ID')),
-                DataColumn(label: Text('PLANT TYPE')),
-                DataColumn(label: Text('CAMPUS')),
-                DataColumn(label: Text('STAGE')),
-                DataColumn(label: Text('HEALTH')),
-                DataColumn(label: Text('DATE PLANTED')),
-                DataColumn(label: Text('LAST INSPECTION')),
-                DataColumn(label: Text('ACTION')),
-              ],
-              rows: plants.map((plant) {
-                final classification = _map(plant['plant_classification']);
-                return DataRow(
-                  onSelectChanged: (_) => _openPlant(plant),
-                  cells: [
-                    DataCell(
-                      Row(
-                        children: [
-                          _plantAvatar(plant, 38),
-                          const SizedBox(width: 10),
-                          SizedBox(
-                            width: 130,
-                            child: Text(
-                              classification['common_name']?.toString() ??
-                                  'Unnamed plant',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    DataCell(Text(_tagId(plant))),
-                    DataCell(
-                      Text(classification['plant_type']?.toString() ?? '—'),
-                    ),
-                    DataCell(
-                      Text(
-                        _map(plant['campus'])['campus_name']?.toString() ?? '—',
-                      ),
-                    ),
-                    DataCell(
-                      Text(
-                        _map(
-                              plant['growth_status'],
-                            )['growth_stage']?.toString() ??
-                            '—',
-                      ),
-                    ),
-                    DataCell(_statusChip(_health(plant))),
-                    DataCell(Text(_date(plant['date_planted']))),
-                    DataCell(Text(_lastInspected(plant))),
-                    DataCell(
-                      plant['archived_at'] != null &&
-                              _capabilities.canRestorePlants
-                          ? OutlinedButton.icon(
-                              onPressed: () => _restorePlant(plant),
-                              icon: const Icon(
-                                Icons.unarchive_outlined,
-                                size: 18,
-                              ),
-                              label: const Text('Restore'),
-                            )
-                          : TextButton.icon(
-                              onPressed: () => _openPlant(plant),
-                              icon: const Icon(
-                                Icons.visibility_outlined,
-                                size: 18,
-                              ),
-                              label: const Text('View'),
-                            ),
-                    ),
-                  ],
-                );
-              }).toList(),
+  Widget _plantTable(List<Map<String, dynamic>> plants) {
+    final pageCount = (plants.length / _desktopPageSize).ceil();
+    final page = _desktopPage.clamp(0, pageCount - 1);
+    final firstIndex = page * _desktopPageSize;
+    final pagePlants = plants.skip(firstIndex).take(_desktopPageSize).toList();
+    return AppCard(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            _recordFilter == 'archived'
+                ? 'Archived Plants'
+                : _healthFilter == 'All'
+                ? 'All Plants'
+                : '$_healthFilter Plants',
+            style: const TextStyle(
+              fontSize: AppTypography.sectionTitle,
+              fontWeight: FontWeight.w800,
+              color: AppColors.darkGreen,
             ),
           ),
-        ),
-      ],
-    ),
-  );
+          const SizedBox(height: 8),
+          const Divider(),
+          SizedBox(
+            width: double.infinity,
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: DataTable(
+                showCheckboxColumn: false,
+                headingRowColor: const WidgetStatePropertyAll(
+                  AppColors.background,
+                ),
+                columnSpacing: 28,
+                columns: const [
+                  DataColumn(label: Text('PLANT NAME')),
+                  DataColumn(label: Text('TAG ID')),
+                  DataColumn(label: Text('PLANT TYPE')),
+                  DataColumn(label: Text('CAMPUS')),
+                  DataColumn(label: Text('STAGE')),
+                  DataColumn(label: Text('HEALTH')),
+                  DataColumn(label: Text('DATE PLANTED')),
+                  DataColumn(label: Text('LAST INSPECTION')),
+                  DataColumn(label: Text('ACTION')),
+                ],
+                rows: pagePlants.map((plant) {
+                  final classification = _map(plant['plant_classification']);
+                  return DataRow(
+                    onSelectChanged: (_) => _openPlant(plant),
+                    cells: [
+                      DataCell(
+                        Row(
+                          children: [
+                            _plantAvatar(plant, 38),
+                            const SizedBox(width: 10),
+                            SizedBox(
+                              width: 130,
+                              child: Text(
+                                classification['common_name']?.toString() ??
+                                    'Unnamed plant',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      DataCell(Text(_tagId(plant))),
+                      DataCell(
+                        Text(classification['plant_type']?.toString() ?? '—'),
+                      ),
+                      DataCell(
+                        Text(
+                          _map(plant['campus'])['campus_name']?.toString() ??
+                              '—',
+                        ),
+                      ),
+                      DataCell(
+                        Text(
+                          _map(
+                                plant['growth_status'],
+                              )['growth_stage']?.toString() ??
+                              '—',
+                        ),
+                      ),
+                      DataCell(_statusChip(_health(plant))),
+                      DataCell(Text(_date(plant['date_planted']))),
+                      DataCell(Text(_lastInspected(plant))),
+                      DataCell(
+                        plant['archived_at'] != null &&
+                                _capabilities.canRestorePlants
+                            ? OutlinedButton.icon(
+                                onPressed: () => _restorePlant(plant),
+                                icon: const Icon(
+                                  Icons.unarchive_outlined,
+                                  size: 18,
+                                ),
+                                label: const Text('Restore'),
+                              )
+                            : TextButton.icon(
+                                onPressed: () => _openPlant(plant),
+                                icon: const Icon(
+                                  Icons.visibility_outlined,
+                                  size: 18,
+                                ),
+                                label: const Text('View'),
+                              ),
+                      ),
+                    ],
+                  );
+                }).toList(),
+              ),
+            ),
+          ),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  '${firstIndex + 1}–${firstIndex + pagePlants.length} of ${plants.length} plants',
+                  style: const TextStyle(
+                    fontSize: AppTypography.caption,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ),
+              IconButton(
+                tooltip: 'Previous page',
+                onPressed: page > 0
+                    ? () => setState(() => _desktopPage = page - 1)
+                    : null,
+                icon: const Icon(Icons.chevron_left_rounded),
+              ),
+              Text('${page + 1} / $pageCount'),
+              IconButton(
+                tooltip: 'Next page',
+                onPressed: page + 1 < pageCount
+                    ? () => setState(() => _desktopPage = page + 1)
+                    : null,
+                icon: const Icon(Icons.chevron_right_rounded),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
 
   String _tagId(Map<String, dynamic> plant) {
     final raw = _map(plant['qr_tag'])['qr_code_string']?.toString();
@@ -1069,24 +1092,22 @@ class _PlantListScreenState extends State<PlantListScreen> {
   }
 
   String _lastInspected(Map<String, dynamic> plant) {
+    final latestInspection = plant['last_inspected_on'];
+    if (latestInspection != null) return _date(latestInspection);
     final inspections = plant['plant_inspection'];
     if (inspections is! List || inspections.isEmpty) return 'Not Inspected';
-    final dates =
-        inspections
-            .map((row) {
-              final item = _map(row);
-              return DateTime.tryParse(
-                (item['inspected_at'] ?? item['last_inspection_date'])
-                        ?.toString() ??
-                    '',
-              );
-            })
-            .whereType<DateTime>()
-            .toList()
-          ..sort((a, b) => b.compareTo(a));
-    return dates.isEmpty
-        ? 'Not Inspected'
-        : _date(dates.first.toIso8601String());
+    DateTime? latest;
+    for (final row in inspections) {
+      final item = _map(row);
+      final date = DateTime.tryParse(
+        (item['inspected_at'] ?? item['last_inspection_date'])?.toString() ??
+            '',
+      );
+      if (date != null && (latest == null || date.isAfter(latest))) {
+        latest = date;
+      }
+    }
+    return latest == null ? 'Not Inspected' : _date(latest.toIso8601String());
   }
 
   Future<void> _openPlant(Map<String, dynamic> plant) async {
@@ -1154,6 +1175,7 @@ class _PlantListScreenState extends State<PlantListScreen> {
 
   Widget _plantAvatar(Map<String, dynamic> plant, double size) {
     final url = plant['photo_url']?.toString() ?? '';
+    final pixelSize = (size * MediaQuery.devicePixelRatioOf(context)).round();
     return ClipRRect(
       borderRadius: BorderRadius.circular(10),
       child: Container(
@@ -1165,6 +1187,9 @@ class _PlantListScreenState extends State<PlantListScreen> {
             : Image.network(
                 url,
                 fit: BoxFit.cover,
+                cacheWidth: pixelSize,
+                cacheHeight: pixelSize,
+                gaplessPlayback: true,
                 errorBuilder: (_, _, _) => const Icon(
                   Icons.local_florist_rounded,
                   color: AppColors.green,

@@ -9,7 +9,6 @@ class QrTagActions extends StatelessWidget {
   final bool busy;
   final VoidCallback? onPrint;
   final VoidCallback onMarkDamaged;
-  final VoidCallback onRetire;
   final VoidCallback? onView;
 
   const QrTagActions({
@@ -17,7 +16,6 @@ class QrTagActions extends StatelessWidget {
     required this.status,
     required this.onPrint,
     required this.onMarkDamaged,
-    required this.onRetire,
     this.onView,
     this.busy = false,
   });
@@ -31,12 +29,6 @@ class QrTagActions extends StatelessWidget {
         'Mark Damaged',
         onMarkDamaged,
         AppColors.warning,
-      ),
-      'available' => (
-        Icons.archive_outlined,
-        'Retire QR',
-        onRetire,
-        AppColors.danger,
       ),
       _ => null,
     };
@@ -71,15 +63,6 @@ class QrTagActions extends StatelessWidget {
                   )
                 : Icon(action.$1, size: 19),
             label: Text(action.$2),
-          )
-        else if (value != 'damaged')
-          const Tooltip(
-            message: 'This QR has reached a final lifecycle state',
-            child: Icon(
-              Icons.lock_outline_rounded,
-              size: 20,
-              color: AppColors.textSecondary,
-            ),
           ),
       ],
     );

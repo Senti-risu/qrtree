@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -62,10 +64,16 @@ class LookupService extends PlantService {
   ];
   @override
   Future<List<Map<String, dynamic>>> getGrowthStatuses() async => [
+    {'growth_status_id': 1, 'growth_stage': 'old'},
+    {'growth_status_id': 2, 'growth_stage': 'mature'},
+    {'growth_status_id': 3, 'growth_stage': 'young'},
     {'growth_status_id': 5, 'growth_stage': 'seedling'},
   ];
   @override
   Future<List<Map<String, dynamic>>> getHealthStatuses() async => [
+    {'health_status_id': 7, 'status_name': 'Dead'},
+    {'health_status_id': 8, 'status_name': 'Deceased'},
+    {'health_status_id': 9, 'status_name': 'Needs Attention'},
     {'health_status_id': 6, 'status_name': 'alive'},
   ];
 }
@@ -129,6 +137,89 @@ void main() {
     }
     await tester.pumpAndSettle();
   }
+
+  test('registration database guard blocks dead status only on insert', () {
+    final migration = File(
+      'supabase/migrations/202610220006_registration_non_dead_health_status.sql',
+    ).readAsStringSync();
+    expect(migration, contains('before insert on public.plant'));
+    expect(
+      migration,
+      contains('public.is_dead_plant_status(new.health_status_id)'),
+    );
+    expect(migration.toLowerCase(), isNot(contains('before update')));
+  });
+
+  testWidgets('registration excludes Dead and Deceased health statuses', (
+    tester,
+  ) async {
+    await open(tester, MemoryDrafts(), width: 1440);
+    final health = tester.widget<AppSearchableDropdown>(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is AppSearchableDropdown && widget.label == 'Health Status',
+      ),
+    );
+    expect(health.items, ['Healthy', 'Needs Attention']);
+    expect(health.value, 'Healthy');
+    expect(find.text('Dead'), findsNothing);
+    expect(find.text('Deceased'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('registration dropdowns follow health and growth hierarchy', (
+    tester,
+  ) async {
+    await open(tester, MemoryDrafts(), width: 1440);
+
+    final health = tester.widget<AppSearchableDropdown>(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is AppSearchableDropdown && widget.label == 'Health Status',
+      ),
+    );
+    final growth = tester.widget<AppSearchableDropdown>(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is AppSearchableDropdown && widget.label == 'Growth Stage',
+      ),
+    );
+
+    expect(health.items, ['Healthy', 'Needs Attention']);
+    expect(health.value, 'Healthy');
+    expect(growth.items, ['Seedling', 'Young', 'Mature', 'Old']);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('saved Dead status is discarded when resuming registration', (
+    tester,
+  ) async {
+    final drafts = MemoryDrafts()
+      ..value = {
+        'healthId': 7,
+        'growthId': 5,
+        'townId': 3,
+        'barangayId': 4,
+        'plantingCampus': '1',
+        'datePlanted': '2026-01-01',
+      };
+    await open(tester, drafts, width: 1440);
+    await tester.tap(find.text('Resume'));
+    await tester.pumpAndSettle();
+    final health = tester.widget<AppSearchableDropdown>(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is AppSearchableDropdown && widget.label == 'Health Status',
+      ),
+    );
+    expect(health.value, 'Healthy');
+    final save = find.byKey(const Key('save-registration-draft'));
+    await tester.ensureVisible(save);
+    await tester.tap(save);
+    await tester.pumpAndSettle();
+    expect(drafts.value?['healthId'], 6);
+    expect(tester.takeException(), isNull);
+  });
 
   testWidgets(
     'required plant and location fields block the next step until selected',
@@ -206,7 +297,18 @@ void main() {
           .widgetList<AppSearchableDropdown>(find.byType(AppSearchableDropdown))
           .where((field) => field.isRequired);
       expect(requiredFields.length, 6);
-      expect(requiredFields.every((field) => field.errorText != null), isTrue);
+      expect(
+        requiredFields
+            .where((field) => field.label != 'Health Status')
+            .every((field) => field.errorText != null),
+        isTrue,
+      );
+      expect(
+        requiredFields
+            .singleWhere((field) => field.label == 'Health Status')
+            .errorText,
+        isNull,
+      );
       expect(
         tester
             .widget<PlantingCampusDropdown>(find.byType(PlantingCampusDropdown))

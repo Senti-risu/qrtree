@@ -104,10 +104,7 @@ class ReportExportData {
   }
 
   static String health(Map<String, dynamic> p) {
-    final value = healthStatusLabel(map(p['health_status'])['status_name']);
-    return ['Healthy', 'Needs Attention', 'Dead'].contains(value)
-        ? value
-        : 'Unknown';
+    return healthStatusLabel(map(p['health_status'])['status_name']);
   }
 
   static String tag(Map<String, dynamic> p) =>
@@ -183,12 +180,7 @@ class ReportExportData {
             ['Metric', 'Plants'],
             [
               ['Total Plants', '${plants.length}'],
-              for (final status in [
-                'Healthy',
-                'Needs Attention',
-                'Dead',
-                'Unknown',
-              ])
+              for (final status in ['Healthy', 'Needs Attention', 'Dead'])
                 [status, '${plants.where((p) => health(p) == status).length}'],
               [
                 'Inspected At Least Once',
@@ -354,12 +346,7 @@ class ReportExportData {
             'Health Distribution',
             ['Health', 'Plants', 'Percentage'],
             [
-              for (final status in [
-                'Healthy',
-                'Needs Attention',
-                'Dead',
-                'Unknown',
-              ])
+              for (final status in ['Healthy', 'Needs Attention', 'Dead'])
                 [
                   status,
                   '${plants.where((p) => health(p) == status).length}',
@@ -458,19 +445,25 @@ class ReportExportData {
         sections.add(
           ReportSection(
             'Survival by Planting Month',
-            ['Planting Month', 'Registered', 'Alive', 'Unknown', 'Survival'],
+            [
+              'Planting Month',
+              'Registered',
+              'Alive',
+              'Needs Attention',
+              'Survival',
+            ],
             [
               for (final b in outcomes['batches'] as List)
                 [
                   text(b['batch']),
                   text(b['total']),
                   text(b['alive']),
-                  text(b['unknown']),
+                  text(b['needs_attention']),
                   rate(b['alive'], b['total']),
                 ],
             ],
             note:
-                'Known non-dead plants / all registered plants in the planting batch. Unknown statuses remain in the denominator.',
+                'Known non-dead plants / all registered plants in the planting batch. Missing or unrecognized health statuses are counted as Needs Attention and are not treated as confirmed survivors.',
           ),
         );
         sections.add(

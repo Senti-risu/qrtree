@@ -53,6 +53,10 @@ abstract class PlantClassificationCatalog {
   Future<List<Map<String, dynamic>>> getClassifications();
   Future<List<String>> getPlantTypes();
   Future<String> addPlantType(String name);
+  Future<String> updatePlantType({
+    required String currentName,
+    required String updatedName,
+  });
   Future<int> createPlantClassification({
     required String plantType,
     required String commonName,
@@ -158,6 +162,25 @@ class PlantService implements PlantClassificationCatalog {
     );
     if (result is! String || result.trim().isEmpty) {
       throw StateError('The plant type was not created.');
+    }
+    return capitalizeWords(result);
+  }
+
+  @override
+  Future<String> updatePlantType({
+    required String currentName,
+    required String updatedName,
+  }) async {
+    final result = await _supabase.rpc(
+      'university_admin_update_plant_type',
+      params: {
+        'p_session_token': AppSession.requiredToken,
+        'p_current_plant_type': currentName.trim(),
+        'p_plant_type': updatedName.trim(),
+      },
+    );
+    if (result is! String || result.trim().isEmpty) {
+      throw StateError('The plant type was not updated.');
     }
     return capitalizeWords(result);
   }
