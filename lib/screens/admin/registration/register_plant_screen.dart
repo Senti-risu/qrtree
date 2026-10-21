@@ -102,6 +102,7 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
 
   String? _plantType;
   String? _commonName;
+  String _commonNameSearchText = '';
   String? _growthStage;
   String? _healthStatus;
 
@@ -189,7 +190,9 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
 
   Map<String, dynamic> _draftData() => {
     'classificationId': _selectedClassificationId,
-    'commonName': _commonName?.trim() ?? '',
+    'commonName': capitalizeWords(
+      (_commonName ?? _commonNameSearchText).trim(),
+    ),
     'scientificName': _scientificNameController.text.trim(),
     'plantType': _plantType,
     'growthId': _selectedGrowthStatusId,
@@ -338,6 +341,8 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
       _commonName = classificationHasScientificName
           ? classification['common_name']?.toString()
           : null;
+      _commonNameSearchText =
+          _commonName ?? text('commonName', _maxCommonNameLength);
       _scientificNameController.text = classificationHasScientificName
           ? classification['scientific_name'].toString()
           : '';
@@ -609,6 +614,7 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
       _plantType = value;
 
       _commonName = null;
+      _commonNameSearchText = '';
       _selectedClassificationId = null;
 
       _scientificNameController.clear();
@@ -634,6 +640,7 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
 
     setState(() {
       _hasUnsavedChanges = true;
+      if (value != null) _commonNameSearchText = selectedName;
       _commonName = match?['common_name']?.toString();
       _selectedClassificationId = match?['classification_id'] as int?;
       if (match != null) {
@@ -2054,12 +2061,20 @@ class _RegisterPlantScreenState extends State<RegisterPlantScreen> {
               label: 'Common Name',
               isRequired: true,
               value: _commonName,
+              searchText: _commonNameSearchText,
               items: _commonNameOptions,
               enabled: _plantType != null && !_saving,
               errorText: _showPlantErrors && _commonName == null
                   ? 'Please select a common name.'
                   : null,
               onChanged: _onCommonNameChanged,
+              onSearchTextChanged: (value) {
+                if (_commonNameSearchText == value) return;
+                setState(() {
+                  _hasUnsavedChanges = true;
+                  _commonNameSearchText = value;
+                });
+              },
               hintText: 'Select a university catalog entry',
             ),
           ),

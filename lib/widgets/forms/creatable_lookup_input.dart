@@ -11,6 +11,8 @@ class CreatableLookupInput extends StatefulWidget {
     required this.value,
     required this.items,
     required this.onChanged,
+    this.searchText,
+    this.onSearchTextChanged,
     this.onCreate,
     this.hintText = 'Type or select',
     this.enabled = true,
@@ -23,6 +25,8 @@ class CreatableLookupInput extends StatefulWidget {
   final List<String> items;
   final Set<String> disabledItems;
   final ValueChanged<String?> onChanged;
+  final String? searchText;
+  final ValueChanged<String>? onSearchTextChanged;
   final Future<String?> Function(String)? onCreate;
   final String hintText;
   final bool enabled;
@@ -43,7 +47,7 @@ class _CreatableLookupInputState extends State<CreatableLookupInput> {
   void initState() {
     super.initState();
     _controller = TextEditingController(
-      text: capitalizeWords(widget.value ?? ''),
+      text: capitalizeWords(widget.value ?? widget.searchText ?? ''),
     )..addListener(_changed);
   }
 
@@ -51,6 +55,7 @@ class _CreatableLookupInputState extends State<CreatableLookupInput> {
     if (!_syncing && mounted) {
       _editing = true;
       setState(() => _error = null);
+      widget.onSearchTextChanged?.call(_controller.text);
       if (widget.allowCustomValue) {
         widget.onChanged(
           _controller.text.trim().isEmpty ? null : _controller.text,
@@ -68,12 +73,15 @@ class _CreatableLookupInputState extends State<CreatableLookupInput> {
   void didUpdateWidget(covariant CreatableLookupInput oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.value != widget.value ||
-        oldWidget.enabled != widget.enabled) {
+        oldWidget.enabled != widget.enabled ||
+        oldWidget.searchText != widget.searchText) {
       _syncing = true;
       if ((!widget.allowCustomValue && widget.value != null) ||
           !_editing ||
           oldWidget.enabled != widget.enabled) {
-        _controller.text = capitalizeWords(widget.value ?? '');
+        _controller.text = capitalizeWords(
+          widget.value ?? widget.searchText ?? '',
+        );
         _editing = false;
       }
       _syncing = false;
@@ -170,6 +178,7 @@ class _CreatableLookupInputState extends State<CreatableLookupInput> {
             onSelected: (value) {
               if (value != null && !widget.disabledItems.contains(value)) {
                 _editing = false;
+                widget.onSearchTextChanged?.call(value);
                 widget.onChanged(value);
               }
             },

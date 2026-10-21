@@ -115,31 +115,38 @@ void main() {
   });
 
   testWidgets(
-    'registration capitalizes typed variety and planter and saves formatted drafts',
+    'registration saves catalog variety and capitalizes planter drafts',
     (tester) async {
       final drafts = fixture.MemoryDrafts();
       await fixture.open(tester, drafts, width: 1600);
-      Future<void> enter(String label, String text) async {
-        final field = find.descendant(
-          of: find.byWidgetPredicate(
-            (w) => w is AppTextField && w.label == label,
-          ),
-          matching: find.byType(TextFormField),
-        );
-        await tester.ensureVisible(field);
-        await tester.enterText(field, text);
-        await tester.pumpAndSettle();
-      }
-
-      await enter('Variety (Optional)', 'indian mango');
-      await enter('Tree Planter (Optional)', 'juan dela cruz');
-      expect(find.text('Indian Mango'), findsOneWidget);
+      AppSearchableDropdown dropdown(String label) =>
+          tester.widget<AppSearchableDropdown>(
+            find.byWidgetPredicate(
+              (w) => w is AppSearchableDropdown && w.label == label,
+            ),
+          );
+      dropdown('Plant Type').onChanged('Tree');
+      await tester.pumpAndSettle();
+      dropdown('Common Name').onChanged('Mango');
+      await tester.pumpAndSettle();
+      dropdown('Variety (Optional)').onChanged('Native');
+      await tester.pumpAndSettle();
+      final planter = find.descendant(
+        of: find.byWidgetPredicate(
+          (w) => w is AppTextField && w.label == 'Tree Planter (Optional)',
+        ),
+        matching: find.byType(TextFormField),
+      );
+      await tester.ensureVisible(planter);
+      await tester.enterText(planter, 'juan dela cruz');
+      await tester.pumpAndSettle();
+      expect(find.text('Native'), findsOneWidget);
       expect(find.text('Juan Dela Cruz'), findsOneWidget);
       final save = find.byKey(const Key('save-registration-draft'));
       await tester.ensureVisible(save);
       await tester.tap(save);
       await tester.pumpAndSettle();
-      expect(drafts.value?['variety'], 'Indian Mango');
+      expect(drafts.value?['variety'], 'Native');
       expect(drafts.value?['planter'], 'Juan Dela Cruz');
       expect(tester.takeException(), isNull);
     },

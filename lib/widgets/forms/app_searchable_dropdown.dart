@@ -10,6 +10,8 @@ class AppSearchableDropdown extends StatelessWidget {
   final String? value;
   final List<String> items;
   final ValueChanged<String?> onChanged;
+  final String? searchText;
+  final ValueChanged<String>? onSearchTextChanged;
   final bool enabled;
   final String hintText;
   final String? errorText;
@@ -24,6 +26,8 @@ class AppSearchableDropdown extends StatelessWidget {
     required this.value,
     required this.items,
     required this.onChanged,
+    this.searchText,
+    this.onSearchTextChanged,
     this.enabled = true,
     this.hintText = 'Type or select',
     this.errorText,
@@ -54,6 +58,8 @@ class AppSearchableDropdown extends StatelessWidget {
           value: validValue,
           items: items,
           enabled: enabled,
+          searchText: searchText,
+          onSearchTextChanged: onSearchTextChanged,
           errorText: errorText,
           onChanged: onChanged,
           onCreate: onCreate,
