@@ -882,7 +882,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
       if (_role == 'university_admin') ...[
-        CampusOverviewCard(counts: _campusPlantCounts),
+        CampusOverviewCard(counts: _campusPlantCounts, onTap: _openPlantList),
         const SizedBox(height: AppSpacing.lg),
       ],
       _buildResponsiveRecentPlants(contentWidth),
@@ -894,109 +894,123 @@ class _DashboardScreenState extends State<DashboardScreen> {
   // ============================================================
 
   Widget _buildHealthChartCard() {
-    return AppCard(
-      padding: const EdgeInsets.all(AppSpacing.lg),
-
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-
-        children: [
-          const Text(
-            'Plant Health Overview',
-
-            style: TextStyle(
-              fontSize: AppTypography.sectionTitle,
-              fontWeight: FontWeight.w700,
-              color: AppColors.darkGreen,
-            ),
-          ),
-
-          const SizedBox(height: 2),
-
-          const Text(
-            'Distribution Of Plant Health Status',
-
-            style: TextStyle(
-              fontSize: AppTypography.caption,
-              color: AppColors.green,
-            ),
-          ),
-
-          const SizedBox(height: AppSpacing.md),
-
-          SizedBox(
-            height: 180,
-
-            child: Stack(
-              alignment: Alignment.center,
-
+    return Semantics(
+      button: true,
+      label: 'Plant Health Overview. Open plant records.',
+      child: AppCard(
+        padding: EdgeInsets.zero,
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: _openPlantList,
+          borderRadius: AppRadii.large,
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                PieChart(
-                  PieChartData(
-                    startDegreeOffset: -90,
+                const Text(
+                  'Plant Health Overview',
 
-                    sectionsSpace: 2,
-
-                    centerSpaceRadius: 50,
-
-                    sections: _buildPieSections(),
+                  style: TextStyle(
+                    fontSize: AppTypography.sectionTitle,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.darkGreen,
                   ),
                 ),
 
-                Column(
-                  mainAxisSize: MainAxisSize.min,
+                const SizedBox(height: 2),
 
-                  children: [
-                    Text(
-                      '$_totalPlants',
+                const Text(
+                  'Distribution Of Plant Health Status',
 
-                      style: const TextStyle(
-                        color: AppColors.darkGreen,
+                  style: TextStyle(
+                    fontSize: AppTypography.caption,
+                    color: AppColors.green,
+                  ),
+                ),
 
-                        fontSize: AppTypography.metric,
+                const SizedBox(height: AppSpacing.md),
 
-                        fontWeight: FontWeight.w700,
+                SizedBox(
+                  height: 180,
+
+                  child: Stack(
+                    alignment: Alignment.center,
+
+                    children: [
+                      PieChart(
+                        PieChartData(
+                          startDegreeOffset: -90,
+
+                          sectionsSpace: 2,
+
+                          centerSpaceRadius: 50,
+
+                          sections: _buildPieSections(),
+                        ),
                       ),
-                    ),
 
-                    const Text(
-                      'Total Plants',
+                      Column(
+                        mainAxisSize: MainAxisSize.min,
 
-                      style: TextStyle(
-                        color: AppColors.green,
-                        fontSize: AppTypography.caption,
+                        children: [
+                          Text(
+                            '$_totalPlants',
+
+                            style: const TextStyle(
+                              color: AppColors.darkGreen,
+
+                              fontSize: AppTypography.metric,
+
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+
+                          const Text(
+                            'Total Plants',
+
+                            style: TextStyle(
+                              color: AppColors.green,
+                              fontSize: AppTypography.caption,
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 6),
+
+                Center(
+                  child: Wrap(
+                    alignment: WrapAlignment.center,
+
+                    spacing: 14,
+
+                    runSpacing: 8,
+
+                    children: [
+                      _buildLegend(
+                        AppColors.chartHealthy,
+                        'Healthy',
+                        _healthyCount,
+                      ),
+
+                      _buildLegend(
+                        AppColors.chartAtRisk,
+                        'Needs Attention',
+                        _dyingCount,
+                      ),
+
+                      _buildLegend(AppColors.chartDead, 'Dead', _deadCount),
+                    ],
+                  ),
                 ),
               ],
             ),
           ),
-
-          const SizedBox(height: 6),
-
-          Center(
-            child: Wrap(
-              alignment: WrapAlignment.center,
-
-              spacing: 14,
-
-              runSpacing: 8,
-
-              children: [
-                _buildLegend(AppColors.chartHealthy, 'Healthy', _healthyCount),
-
-                _buildLegend(
-                  AppColors.chartAtRisk,
-                  'Needs Attention',
-                  _dyingCount,
-                ),
-
-                _buildLegend(AppColors.chartDead, 'Dead', _deadCount),
-              ],
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }

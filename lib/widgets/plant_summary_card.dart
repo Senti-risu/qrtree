@@ -6,10 +6,12 @@ import 'app_card.dart';
 
 class PlantSummaryCard extends StatelessWidget {
   final String name;
+  final String plantType;
   final String scientificName;
   final String plantedAt;
-  final String managedBy;
-  final String lastInspected;
+  final String role;
+  final String? campus;
+  final String? college;
   final Widget photo;
   final Widget status;
   final Widget? trailing;
@@ -18,15 +20,34 @@ class PlantSummaryCard extends StatelessWidget {
   const PlantSummaryCard({
     super.key,
     required this.name,
+    required this.plantType,
     required this.scientificName,
     required this.plantedAt,
-    required this.managedBy,
-    required this.lastInspected,
+    required this.role,
+    this.campus,
+    this.college,
     required this.photo,
     required this.status,
     required this.onTap,
     this.trailing,
   });
+
+  String? get _managementLabel => switch (role) {
+    'campus_admin' => 'Managed By College',
+    'university_admin' => 'Managed By Campus',
+    'college_admin' || 'inspection_team' => null,
+    _ => 'Managed By',
+  };
+
+  String? get _managementValue => switch (role) {
+    'campus_admin' => college,
+    'university_admin' => campus,
+    'college_admin' || 'inspection_team' => null,
+    _ => [
+      college,
+      campus,
+    ].whereType<String>().where((name) => name.isNotEmpty).join(' · '),
+  };
 
   @override
   Widget build(BuildContext context) => Padding(
@@ -60,11 +81,11 @@ class PlantSummaryCard extends StatelessWidget {
                         ),
                         Text(
                           scientificName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: Theme.of(context).textTheme.bodySmall
                               ?.copyWith(fontStyle: FontStyle.italic),
                         ),
-                        const SizedBox(height: AppSpacing.xs),
-                        status,
                       ],
                     ),
                   ),
@@ -72,22 +93,64 @@ class PlantSummaryCard extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: AppSpacing.sm),
+              Wrap(
+                spacing: AppSpacing.sm,
+                runSpacing: AppSpacing.xs,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  _badge(
+                    context,
+                    plantType,
+                    AppColors.primaryContainer,
+                    AppColors.darkGreen,
+                  ),
+                  status,
+                ],
+              ),
+              const SizedBox(height: AppSpacing.xs),
               _detail(
                 context,
                 Icons.location_on_outlined,
                 'Planted At',
                 plantedAt,
               ),
-              _detail(context, Icons.school_outlined, 'Managed By', managedBy),
-              _detail(
-                context,
-                Icons.fact_check_outlined,
-                'Last Inspected',
-                lastInspected,
-              ),
+              if (_managementLabel != null &&
+                  _managementValue != null &&
+                  _managementValue!.isNotEmpty)
+                _detail(
+                  context,
+                  Icons.school_outlined,
+                  _managementLabel!,
+                  _managementValue!,
+                ),
             ],
           ),
         ),
+      ),
+    ),
+  );
+
+  Widget _badge(
+    BuildContext context,
+    String label,
+    Color background,
+    Color foreground,
+  ) => Container(
+    padding: const EdgeInsets.symmetric(
+      horizontal: AppSpacing.sm,
+      vertical: AppSpacing.xs,
+    ),
+    decoration: BoxDecoration(
+      color: background,
+      borderRadius: AppRadii.fullyRounded,
+    ),
+    child: Text(
+      label,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+        color: foreground,
+        fontWeight: FontWeight.w700,
       ),
     ),
   );

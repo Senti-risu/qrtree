@@ -190,7 +190,7 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
                     )
                     .toList(),
               ),
-              const SizedBox(height: AppSpacing.md),
+              const SizedBox(height: AppSpacing.lg),
               const Text(
                 'Apply to load matching tags. Your search text is kept.',
                 style: TextStyle(color: AppColors.textSecondary),
@@ -570,10 +570,14 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
       padding: const EdgeInsets.all(AppSpacing.lg),
       child: LayoutBuilder(
         builder: (_, constraints) {
+          final textScale = MediaQuery.textScalerOf(context).scale(1);
           final actions = <Widget>[
             FilledButton.icon(
               onPressed: _generating ? null : _openGenerateDialog,
-              style: FilledButton.styleFrom(backgroundColor: AppColors.green),
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.green,
+                minimumSize: const Size.fromHeight(48),
+              ),
               icon: _generating
                   ? const SizedBox(
                       width: 16,
@@ -588,6 +592,11 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
             ),
             OutlinedButton.icon(
               onPressed: _canPrintBatch ? _printBatch : null,
+              style: OutlinedButton.styleFrom(
+                minimumSize: const Size.fromHeight(48),
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+                visualDensity: VisualDensity.compact,
+              ),
               icon: const Icon(Icons.print_outlined),
               label: Text(_printingBatch ? 'Preparing...' : 'Print Batch'),
             ),
@@ -596,6 +605,11 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
                 context,
                 '/qr-scanner',
                 arguments: _userArguments,
+              ),
+              style: OutlinedButton.styleFrom(
+                minimumSize: const Size.fromHeight(48),
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+                visualDensity: VisualDensity.compact,
               ),
               icon: const Icon(Icons.qr_code_scanner),
               label: const Text('Scan QR'),
@@ -607,8 +621,7 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
               children: [
                 actions.first,
                 const SizedBox(height: AppSpacing.sm),
-                if (constraints.maxWidth >= 340 &&
-                    MediaQuery.textScalerOf(context).scale(1) <= 1.1)
+                if (constraints.maxWidth >= 288 && textScale <= 1.4)
                   Row(
                     children: [
                       Expanded(child: actions[1]),
@@ -746,7 +759,7 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
         children: [
           ..._visibleTags.map(_desktopTagCard),
           if (_hasMore) ...[
-            const SizedBox(height: AppSpacing.lg),
+            const SizedBox(height: AppSpacing.md),
             Center(
               child: OutlinedButton.icon(
                 onPressed: _loadingMore ? null : () => _loadTags(more: true),
@@ -799,7 +812,7 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
       fillColor: AppColors.background,
       contentPadding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.lg,
-        vertical: AppSpacing.lg,
+        vertical: AppSpacing.md,
       ),
       enabledBorder: const OutlineInputBorder(
         borderRadius: AppRadii.medium,
@@ -812,10 +825,11 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
     ),
   );
 
-  Widget _mobileFilterButton() => OutlinedButton(
+  Widget _mobileFilterButton() => IconButton(
     onPressed: _openMobileFilters,
-    style: OutlinedButton.styleFrom(
-      minimumSize: const Size.fromHeight(48),
+    tooltip: 'Filters',
+    style: IconButton.styleFrom(
+      minimumSize: const Size(48, 48),
       foregroundColor: AppColors.darkGreen,
       backgroundColor: _activeFilterCount > 0
           ? AppColors.primaryContainer
@@ -825,32 +839,10 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
       ),
       shape: const RoundedRectangleBorder(borderRadius: AppRadii.medium),
     ),
-    child: Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        const Icon(Icons.tune_rounded, size: 20),
-        const SizedBox(width: 7),
-        const Text('Filters', style: TextStyle(fontWeight: FontWeight.w700)),
-        if (_activeFilterCount > 0) ...[
-          const SizedBox(width: 7),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-            decoration: BoxDecoration(
-              color: AppColors.green,
-              borderRadius: AppRadii.fullyRounded,
-            ),
-            child: Text(
-              '$_activeFilterCount',
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 11,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-          ),
-        ],
-      ],
+    icon: Badge(
+      isLabelVisible: _activeFilterCount > 0,
+      label: Text('$_activeFilterCount'),
+      child: const Icon(Icons.tune_rounded),
     ),
   );
 
@@ -946,24 +938,12 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             title,
-            const SizedBox(height: AppSpacing.lg),
+            const SizedBox(height: AppSpacing.md),
             _searchField(),
             const SizedBox(height: AppSpacing.sm),
-            Row(
-              children: [
-                Expanded(child: _mobileFilterButton()),
-                const SizedBox(width: AppSpacing.sm),
-                OutlinedButton(
-                  onPressed: _hasActiveFilters ? _resetFilters : null,
-                  style: OutlinedButton.styleFrom(
-                    minimumSize: const Size(82, 48),
-                    shape: const RoundedRectangleBorder(
-                      borderRadius: AppRadii.medium,
-                    ),
-                  ),
-                  child: const Text('Reset'),
-                ),
-              ],
+            Align(
+              alignment: Alignment.centerRight,
+              child: _mobileFilterButton(),
             ),
             if (_activeFilterCount > 0) ...[
               const SizedBox(height: AppSpacing.sm),
@@ -985,10 +965,10 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
             label: const Text('QR Problem Reports'),
           ),
           if (_hasActiveFilters)
-            TextButton.icon(
+            IconButton(
               onPressed: _resetFilters,
-              icon: const Icon(Icons.filter_alt_off_outlined, size: 18),
-              label: const Text('Reset'),
+              tooltip: 'Clear filters and search',
+              icon: const Icon(Icons.filter_alt_off_outlined),
             ),
         ],
         choices: [if (_activeFilterCount > 0) _activeFilterPill()],

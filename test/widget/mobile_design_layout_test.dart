@@ -112,11 +112,10 @@ void main() {
                     const SizedBox(height: 12),
                     PlantSummaryCard(
                       name: 'Philippine Mango',
+                      plantType: 'Fruit Tree',
+                      role: 'college_admin',
                       scientificName: 'Mangifera indica',
                       plantedAt: 'Outside campus, Centro 2, Tuguegarao',
-                      managedBy:
-                          'College of Information Technology · CSU Lasam',
-                      lastInspected: 'Oct 15, 2026',
                       photo: const Icon(Icons.eco, size: 52),
                       status: const Chip(label: Text('Needs Attention')),
                       onTap: () {},
@@ -130,14 +129,15 @@ void main() {
       );
       expect(find.text('Step 3 of 4 · Photo'), findsOneWidget);
       expect(find.textContaining('Planted At:'), findsOneWidget);
-      expect(find.textContaining('Managed By:'), findsOneWidget);
-      expect(find.textContaining('Last Inspected:'), findsOneWidget);
+      expect(find.text('Fruit Tree'), findsOneWidget);
+      expect(find.textContaining('Managed By'), findsNothing);
+      expect(find.textContaining('Last Inspected:'), findsNothing);
       expect(tester.takeException(), isNull);
     });
   }
 
   testWidgets(
-    'filter footer remains reachable on short landscape with large text',
+    'floating filter panel footer remains reachable on short landscape',
     (tester) async {
       viewport(tester, const Size(844, 390));
       var applied = false;
@@ -153,16 +153,18 @@ void main() {
           home: Scaffold(
             body: Builder(
               builder: (context) => TextButton(
-                onPressed: () => showModalBottomSheet<void>(
+                onPressed: () => showDialog<void>(
                   context: context,
-                  isScrollControlled: true,
-                  builder: (_) => AppFilterSheet(
-                    title: 'Filter Plants',
-                    applyLabel: 'Apply · 18 plants',
-                    onReset: () {},
-                    onApply: () => applied = true,
-                    child: Column(
-                      children: List.generate(20, (i) => Text('Status $i')),
+                  builder: (_) => Dialog(
+                    insetPadding: const EdgeInsets.all(16),
+                    child: AppFilterSheet(
+                      title: 'Filter Plants',
+                      applyLabel: 'Apply · 18 plants',
+                      onReset: () {},
+                      onApply: () => applied = true,
+                      child: Column(
+                        children: List.generate(20, (i) => Text('Status $i')),
+                      ),
                     ),
                   ),
                 ),
@@ -174,6 +176,7 @@ void main() {
       );
       await tester.tap(find.text('Open filters'));
       await tester.pumpAndSettle();
+      expect(find.byType(Dialog), findsOneWidget);
       expect(find.text('Apply · 18 plants').hitTestable(), findsOneWidget);
       await tester.tap(find.text('Apply · 18 plants'));
       expect(applied, isTrue);
@@ -394,10 +397,11 @@ void main() {
                   const SizedBox(height: 16),
                   PlantSummaryCard(
                     name: 'Mango',
+                    plantType: 'Fruit Tree',
+                    role: 'university_admin',
                     scientificName: 'Mangifera indica',
                     plantedAt: 'Outside campus, Centro 2, Lasam',
-                    managedBy: 'College of Information Technology · CSU Lasam',
-                    lastInspected: 'Oct 15, 2026',
+                    campus: 'CSU Lasam',
                     photo: const Icon(Icons.eco, color: Colors.green, size: 52),
                     status: const Chip(label: Text('Healthy')),
                     onTap: () {},

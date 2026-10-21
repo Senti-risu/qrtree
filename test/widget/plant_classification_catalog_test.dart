@@ -352,4 +352,39 @@ void main() {
     expect(find.byTooltip('Delete Mango'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
+
+  for (final width in [320.0, 390.0]) {
+    testWidgets('mobile catalog form actions align at $width', (tester) async {
+      tester.view.physicalSize = Size(width, 844);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.light,
+          home: PlantClassificationCatalogScreen(
+            userId: 5,
+            username: 'University Admin',
+            role: 'university_admin',
+            catalog: FakePlantCatalog(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final addType = find.widgetWithText(OutlinedButton, 'Add type');
+      final editType = find.widgetWithText(OutlinedButton, 'Edit type');
+      final addToCatalog = find.widgetWithText(FilledButton, 'Add To Catalog');
+      await tester.ensureVisible(addToCatalog);
+
+      final addTypeRect = tester.getRect(addType);
+      final editTypeRect = tester.getRect(editType);
+      final submitRect = tester.getRect(addToCatalog);
+      expect(addTypeRect.top, editTypeRect.top);
+      expect(addTypeRect.width, closeTo(editTypeRect.width, 1));
+      expect(addTypeRect.left, lessThan(editTypeRect.left));
+      expect(submitRect.width, greaterThan(addTypeRect.width));
+      expect(tester.takeException(), isNull);
+    });
+  }
 }

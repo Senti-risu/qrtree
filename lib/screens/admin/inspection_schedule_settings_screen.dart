@@ -314,10 +314,7 @@ class _InspectionScheduleSettingsScreenState
               children: [
                 for (final preset in [7, 14, 30]) ...[
                   Expanded(
-                    child: _presetCard(
-                      preset,
-                      selected: days == preset,
-                    ),
+                    child: _presetCard(preset, selected: days == preset),
                   ),
                   if (preset != 30) const SizedBox(width: AppSpacing.md),
                 ],
@@ -430,8 +427,7 @@ class _InspectionScheduleSettingsScreenState
                 style: const TextStyle(fontWeight: FontWeight.w700),
               ),
             ),
-            if (selected)
-              const Icon(Icons.check_circle_rounded, size: 18),
+            if (selected) const Icon(Icons.check_circle_rounded, size: 18),
           ],
         ),
         const SizedBox(height: AppSpacing.xs),

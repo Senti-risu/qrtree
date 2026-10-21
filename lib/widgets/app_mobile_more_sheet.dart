@@ -299,7 +299,9 @@ class _MobileProfileSheetState extends State<_MobileProfileSheet> {
   @override
   void initState() {
     super.initState();
-    _scopeNames = widget.loadScopeNames();
+    _scopeNames = widget.role == 'university_admin'
+        ? Future.value(const AccountScopeNames())
+        : widget.loadScopeNames();
   }
 
   void _retry() {
@@ -381,57 +383,58 @@ class _MobileProfileSheetState extends State<_MobileProfileSheet> {
                   label: 'Role',
                   value: widget.displayRole,
                 ),
-                FutureBuilder<AccountScopeNames>(
-                  future: _scopeNames,
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const _ProfileLoadingCard();
-                    }
+                if (widget.role != 'university_admin')
+                  FutureBuilder<AccountScopeNames>(
+                    future: _scopeNames,
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const _ProfileLoadingCard();
+                      }
 
-                    if (snapshot.hasError) {
+                      if (snapshot.hasError) {
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            const _ProfileField(
+                              icon: Icons.location_city_outlined,
+                              label: 'Campus',
+                              value: 'Unable to load',
+                            ),
+                            const _ProfileField(
+                              icon: Icons.school_outlined,
+                              label: 'College',
+                              value: 'Unable to load',
+                            ),
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: TextButton.icon(
+                                onPressed: _retry,
+                                icon: const Icon(Icons.refresh_rounded),
+                                label: const Text('Try Again'),
+                              ),
+                            ),
+                            const SizedBox(height: AppSpacing.xs),
+                          ],
+                        );
+                      }
+
+                      final names = snapshot.data ?? const AccountScopeNames();
                       return Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          const _ProfileField(
+                          _ProfileField(
                             icon: Icons.location_city_outlined,
                             label: 'Campus',
-                            value: 'Unable to load',
+                            value: _campusValue(names),
                           ),
-                          const _ProfileField(
+                          _ProfileField(
                             icon: Icons.school_outlined,
                             label: 'College',
-                            value: 'Unable to load',
+                            value: _collegeValue(names),
                           ),
-                          Align(
-                            alignment: Alignment.centerRight,
-                            child: TextButton.icon(
-                              onPressed: _retry,
-                              icon: const Icon(Icons.refresh_rounded),
-                              label: const Text('Try Again'),
-                            ),
-                          ),
-                          const SizedBox(height: AppSpacing.xs),
                         ],
                       );
-                    }
-
-                    final names = snapshot.data ?? const AccountScopeNames();
-                    return Column(
-                      children: [
-                        _ProfileField(
-                          icon: Icons.location_city_outlined,
-                          label: 'Campus',
-                          value: _campusValue(names),
-                        ),
-                        _ProfileField(
-                          icon: Icons.school_outlined,
-                          label: 'College',
-                          value: _collegeValue(names),
-                        ),
-                      ],
-                    );
-                  },
-                ),
+                    },
+                  ),
                 const SizedBox(height: AppSpacing.sm),
                 FilledButton(
                   onPressed: () => Navigator.pop(context),

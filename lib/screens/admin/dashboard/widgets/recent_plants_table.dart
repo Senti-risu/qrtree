@@ -57,95 +57,106 @@ class RecentPlantsTable extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) => AppCard(
-    width: double.infinity,
-    padding: EdgeInsets.zero,
-    clipBehavior: Clip.antiAlias,
-    boxShadow: const [],
-    child: LayoutBuilder(
-      builder: (context, constraints) {
-        final table =
-            constraints.maxWidth >= 900 &&
-            MediaQuery.textScalerOf(context).scale(1) < 1.4;
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(24),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Recent Plants',
-                          style: TextStyle(
-                            fontSize: AppTypography.sectionTitle,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.textPrimary,
-                          ),
+  Widget build(BuildContext context) => Semantics(
+    button: true,
+    label: 'Recent Plants. Open all plant records.',
+    child: AppCard(
+      width: double.infinity,
+      padding: EdgeInsets.zero,
+      clipBehavior: Clip.antiAlias,
+      boxShadow: const [],
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final table =
+              constraints.maxWidth >= 900 &&
+              MediaQuery.textScalerOf(context).scale(1) < 1.4;
+          return InkWell(
+            onTap: onViewAll,
+            borderRadius: AppRadii.large,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Recent Plants',
+                              style: TextStyle(
+                                fontSize: AppTypography.sectionTitle,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                            SizedBox(height: 6),
+                            Text(
+                              'Keep an eye on your newest campus plants',
+                              style: TextStyle(
+                                fontSize: AppTypography.caption,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                          ],
                         ),
-                        SizedBox(height: 6),
-                        Text(
-                          'Keep an eye on your newest campus plants',
-                          style: TextStyle(
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        '${plants.length} plants',
+                        style: const TextStyle(
+                          fontSize: AppTypography.caption,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (plants.isEmpty)
+                  const Padding(
+                    padding: EdgeInsets.all(24),
+                    child: Text(
+                      'No plants registered yet.',
+                      textAlign: TextAlign.center,
+                    ),
+                  )
+                else if (table)
+                  _table(context)
+                else
+                  for (final plant in plants) _mobileRow(plant),
+                const Divider(height: 1),
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 12,
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'Showing ${plants.length} recent ${plants.length == 1 ? "plant" : "plants"}',
+                          style: const TextStyle(
                             fontSize: AppTypography.caption,
                             color: AppColors.textSecondary,
                           ),
                         ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Text(
-                    '${plants.length} plants',
-                    style: const TextStyle(
-                      fontSize: AppTypography.caption,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            if (plants.isEmpty)
-              const Padding(
-                padding: EdgeInsets.all(24),
-                child: Text(
-                  'No plants registered yet.',
-                  textAlign: TextAlign.center,
-                ),
-              )
-            else if (table)
-              _table(context)
-            else
-              for (final plant in plants) _mobileRow(plant),
-            const Divider(height: 1),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      'Showing ${plants.length} recent ${plants.length == 1 ? "plant" : "plants"}',
-                      style: const TextStyle(
-                        fontSize: AppTypography.caption,
-                        color: AppColors.textSecondary,
                       ),
-                    ),
+                      const SizedBox(width: 8),
+                      TextButton(
+                        onPressed: onViewAll,
+                        child: const Text('View All'),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 8),
-                  TextButton(
-                    onPressed: onViewAll,
-                    child: const Text('View All'),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
-        );
-      },
+          );
+        },
+      ),
     ),
   );
 
@@ -232,10 +243,17 @@ class RecentPlantsTable extends StatelessWidget {
     ),
   );
 
-  Widget _cell(Widget child, {bool heading = false}) => Padding(
-    padding: EdgeInsets.symmetric(horizontal: 18, vertical: heading ? 16 : 22),
-    child: child,
-  );
+  Widget _cell(Widget child, {bool heading = false, VoidCallback? onTap}) =>
+      InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: 18,
+            vertical: heading ? 16 : 22,
+          ),
+          child: child,
+        ),
+      );
 
   Widget _table(BuildContext context) => Table(
     columnWidths: const {
@@ -279,7 +297,10 @@ class RecentPlantsTable extends StatelessWidget {
       for (final plant in plants)
         TableRow(
           children: [
-            _cell(_identity(plant)),
+            _cell(
+              _identity(plant),
+              onTap: onViewPlant == null ? null : () => onViewPlant!(plant),
+            ),
             _cell(
               SelectableText(
                 _tag(plant),
@@ -289,6 +310,7 @@ class RecentPlantsTable extends StatelessWidget {
                   color: AppColors.textSecondary,
                 ),
               ),
+              onTap: onViewPlant == null ? null : () => onViewPlant!(plant),
             ),
             _cell(
               Column(
@@ -308,8 +330,12 @@ class RecentPlantsTable extends StatelessWidget {
                   ),
                 ],
               ),
+              onTap: onViewPlant == null ? null : () => onViewPlant!(plant),
             ),
-            _cell(_badge(plant)),
+            _cell(
+              _badge(plant),
+              onTap: onViewPlant == null ? null : () => onViewPlant!(plant),
+            ),
             _cell(
               Text(
                 _inspection(plant),
@@ -318,57 +344,68 @@ class RecentPlantsTable extends StatelessWidget {
                   color: AppColors.textSecondary,
                 ),
               ),
+              onTap: onViewPlant == null ? null : () => onViewPlant!(plant),
             ),
-            _cell(_view(plant)),
+            _cell(
+              _view(plant),
+              onTap: onViewPlant == null ? null : () => onViewPlant!(plant),
+            ),
           ],
         ),
     ],
   );
 
-  Widget _mobileRow(Map<String, dynamic> plant) => DecoratedBox(
-    decoration: const BoxDecoration(
-      border: Border(top: BorderSide(color: AppColors.border)),
-    ),
-    child: Padding(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _identity(plant),
-          const SizedBox(height: 12),
-          SelectableText(
-            _tag(plant),
-            style: const TextStyle(
-              fontFeatures: [FontFeature.tabularFigures()],
-              fontSize: AppTypography.caption,
-              color: AppColors.textSecondary,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 20,
-            runSpacing: 10,
+  Widget _mobileRow(Map<String, dynamic> plant) => Semantics(
+    button: true,
+    label: 'Open ${_name(plant)} plant record',
+    child: InkWell(
+      onTap: () => onViewPlant == null ? onViewAll() : onViewPlant!(plant),
+      child: DecoratedBox(
+        decoration: const BoxDecoration(
+          border: Border(top: BorderSide(color: AppColors.border)),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(_value(plant['variety'], 'Not Specified')),
-              Text(
-                _stage(plant),
-                style: const TextStyle(color: AppColors.textSecondary),
+              _identity(plant),
+              const SizedBox(height: 12),
+              SelectableText(
+                _tag(plant),
+                style: const TextStyle(
+                  fontFeatures: [FontFeature.tabularFigures()],
+                  fontSize: AppTypography.caption,
+                  color: AppColors.textSecondary,
+                ),
               ),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 20,
+                runSpacing: 10,
+                children: [
+                  Text(_value(plant['variety'], 'Not Specified')),
+                  Text(
+                    _stage(plant),
+                    style: const TextStyle(color: AppColors.textSecondary),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              _badge(plant),
+              const SizedBox(height: 12),
+              Text(
+                'Last Inspection: ${_inspection(plant)}',
+                style: const TextStyle(
+                  fontSize: AppTypography.caption,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Align(alignment: Alignment.centerLeft, child: _view(plant)),
             ],
           ),
-          const SizedBox(height: 12),
-          _badge(plant),
-          const SizedBox(height: 12),
-          Text(
-            'Last Inspection: ${_inspection(plant)}',
-            style: const TextStyle(
-              fontSize: AppTypography.caption,
-              color: AppColors.textSecondary,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Align(alignment: Alignment.centerLeft, child: _view(plant)),
-        ],
+        ),
       ),
     ),
   );

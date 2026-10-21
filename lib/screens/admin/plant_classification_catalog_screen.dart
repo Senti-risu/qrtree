@@ -656,24 +656,17 @@ class _PlantClassificationCatalogScreenState
                         validator: (value) =>
                             value == null ? 'Select a plant type.' : null,
                       );
-                      final typeActions = Wrap(
-                        spacing: AppSpacing.sm,
-                        runSpacing: AppSpacing.xs,
-                        alignment: WrapAlignment.end,
-                        children: [
-                          OutlinedButton.icon(
-                            onPressed: _saving ? null : _addPlantType,
-                            icon: const Icon(Icons.add),
-                            label: const Text('Add type'),
-                          ),
-                          OutlinedButton.icon(
-                            onPressed: _saving || _plantType == null
-                                ? null
-                                : _editPlantType,
-                            icon: const Icon(Icons.edit_outlined),
-                            label: const Text('Edit type'),
-                          ),
-                        ],
+                      final addTypeButton = OutlinedButton.icon(
+                        onPressed: _saving ? null : _addPlantType,
+                        icon: const Icon(Icons.add),
+                        label: const Text('Add type'),
+                      );
+                      final editTypeButton = OutlinedButton.icon(
+                        onPressed: _saving || _plantType == null
+                            ? null
+                            : _editPlantType,
+                        icon: const Icon(Icons.edit_outlined),
+                        label: const Text('Edit type'),
                       );
                       if (constraints.maxWidth >= 520) {
                         return Row(
@@ -685,7 +678,10 @@ class _PlantClassificationCatalogScreenState
                               padding: const EdgeInsets.only(
                                 top: AppSpacing.xs,
                               ),
-                              child: typeActions,
+                              child: Wrap(
+                                spacing: AppSpacing.sm,
+                                children: [addTypeButton, editTypeButton],
+                              ),
                             ),
                           ],
                         );
@@ -694,9 +690,13 @@ class _PlantClassificationCatalogScreenState
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           typeDropdown,
-                          Align(
-                            alignment: Alignment.centerLeft,
-                            child: typeActions,
+                          const SizedBox(height: AppSpacing.sm),
+                          Row(
+                            children: [
+                              Expanded(child: addTypeButton),
+                              const SizedBox(width: AppSpacing.sm),
+                              Expanded(child: editTypeButton),
+                            ],
                           ),
                         ],
                       );
@@ -776,22 +776,31 @@ class _PlantClassificationCatalogScreenState
                     ),
                   ],
                   const SizedBox(height: AppSpacing.md),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: FilledButton.icon(
-                      onPressed: _saving ? null : _createClassification,
-                      icon: _saving
-                          ? const SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Icon(Icons.add),
-                      label: Text(_saving ? 'Saving...' : 'Add To Catalog'),
-                      style: FilledButton.styleFrom(
-                        minimumSize: const Size(180, 48),
-                        shape: const RoundedRectangleBorder(
-                          borderRadius: AppRadii.medium,
+                  LayoutBuilder(
+                    builder: (context, constraints) => Align(
+                      alignment: Alignment.centerRight,
+                      child: SizedBox(
+                        width: constraints.maxWidth < 520
+                            ? double.infinity
+                            : null,
+                        child: FilledButton.icon(
+                          onPressed: _saving ? null : _createClassification,
+                          icon: _saving
+                              ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Icon(Icons.add),
+                          label: Text(_saving ? 'Saving...' : 'Add To Catalog'),
+                          style: FilledButton.styleFrom(
+                            minimumSize: const Size(180, 48),
+                            shape: const RoundedRectangleBorder(
+                              borderRadius: AppRadii.medium,
+                            ),
+                          ),
                         ),
                       ),
                     ),

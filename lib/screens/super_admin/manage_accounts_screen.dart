@@ -893,7 +893,7 @@ class _ManageAccountsScreenState extends State<ManageAccountsScreen> {
                 ],
               ),
             ),
-            if (_hasActiveFilters)
+            if (_hasActiveFilters && !isMobile)
               TextButton.icon(
                 onPressed: _resetFilters,
                 icon: const Icon(Icons.restart_alt_rounded, size: 17),
@@ -914,11 +914,11 @@ class _ManageAccountsScreenState extends State<ManageAccountsScreen> {
                 children: [
                   Expanded(child: search),
                   const SizedBox(width: 10),
-                  OutlinedButton.icon(
+                  IconButton(
                     onPressed: _showMobileFilters,
-                    style: OutlinedButton.styleFrom(
-                      minimumSize: const Size(104, 50),
-                      padding: const EdgeInsets.symmetric(horizontal: 13),
+                    tooltip: 'Filters',
+                    style: IconButton.styleFrom(
+                      minimumSize: const Size(50, 50),
                       foregroundColor: AppColors.darkGreen,
                       backgroundColor: _appliedFilterCount > 0
                           ? AppColors.primaryContainer
@@ -932,32 +932,10 @@ class _ManageAccountsScreenState extends State<ManageAccountsScreen> {
                         borderRadius: BorderRadius.circular(14),
                       ),
                     ),
-                    icon: const Icon(Icons.tune_rounded, size: 20),
-                    label: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Text('Filter'),
-                        if (_appliedFilterCount > 0) ...[
-                          const SizedBox(width: 6),
-                          Container(
-                            width: 20,
-                            height: 20,
-                            alignment: Alignment.center,
-                            decoration: const BoxDecoration(
-                              color: AppColors.green,
-                              shape: BoxShape.circle,
-                            ),
-                            child: Text(
-                              '$_appliedFilterCount',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 11,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ],
+                    icon: Badge(
+                      isLabelVisible: _appliedFilterCount > 0,
+                      label: Text('$_appliedFilterCount'),
+                      child: const Icon(Icons.tune_rounded),
                     ),
                   ),
                 ],

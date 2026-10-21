@@ -552,37 +552,25 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
         children: [
           Expanded(child: _reportSearchField()),
           const SizedBox(width: 8),
-          SizedBox(
-            height: 48,
-            child: OutlinedButton(
-              onPressed: _showReportFilterSheet,
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.darkGreen,
-                side: BorderSide(
-                  color: _advancedFilterCount > 0
-                      ? AppColors.green
-                      : AppColors.border,
-                ),
-                padding: const EdgeInsets.symmetric(horizontal: 13),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
+          IconButton(
+            onPressed: _showReportFilterSheet,
+            tooltip: 'Filters',
+            style: IconButton.styleFrom(
+              minimumSize: const Size(48, 48),
+              foregroundColor: AppColors.darkGreen,
+              side: BorderSide(
+                color: _advancedFilterCount > 0
+                    ? AppColors.green
+                    : AppColors.border,
               ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.tune_rounded, size: 19),
-                  const SizedBox(width: 6),
-                  const Text(
-                    'Filter',
-                    style: TextStyle(fontWeight: FontWeight.w700),
-                  ),
-                  if (_advancedFilterCount > 0) ...[
-                    const SizedBox(width: 6),
-                    _reportCountBadge(_advancedFilterCount),
-                  ],
-                ],
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
               ),
+            ),
+            icon: Badge(
+              isLabelVisible: _advancedFilterCount > 0,
+              label: Text('$_advancedFilterCount'),
+              child: const Icon(Icons.tune_rounded),
             ),
           ),
         ],
@@ -814,24 +802,6 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
         fontSize: AppTypography.caption,
         fontWeight: FontWeight.w800,
         color: AppColors.warning,
-      ),
-    ),
-  );
-
-  Widget _reportCountBadge(int count) => Container(
-    constraints: const BoxConstraints(minWidth: 20, minHeight: 20),
-    alignment: Alignment.center,
-    padding: const EdgeInsets.symmetric(horizontal: 5),
-    decoration: const BoxDecoration(
-      color: AppColors.warningAccent,
-      shape: BoxShape.circle,
-    ),
-    child: Text(
-      count.toString(),
-      style: const TextStyle(
-        fontSize: AppTypography.caption,
-        fontWeight: FontWeight.w800,
-        color: Colors.white,
       ),
     ),
   );

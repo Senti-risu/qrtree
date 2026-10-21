@@ -127,11 +127,7 @@ Finder input(String label) => find.byWidgetPredicate(
   (widget) => widget is TextField && widget.decoration?.labelText == label,
 );
 
-Finder varietyDropdown() => find.byWidgetPredicate(
-  (widget) =>
-      widget is DropdownButtonFormField<String> &&
-      widget.decoration.labelText == 'Variety (Optional)',
-);
+Finder varietyField() => input('Variety (Optional)');
 
 void main() {
   testWidgets('missing scientific name remains managed by University Admin', (
@@ -156,6 +152,26 @@ void main() {
     expect(tester.widget<TextField>(field).readOnly, isTrue);
   });
 
+  testWidgets('variety suggestions can be selected on mobile', (tester) async {
+    final repo = FakeEditorRepository();
+    await openEditor(tester, repo);
+    final variety = varietyField();
+    await tester.ensureVisible(variety);
+    await tester.tap(variety);
+    await tester.enterText(variety, 'Improved');
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Improved variety').last);
+    await tester.pumpAndSettle();
+    expect(
+      tester.widget<TextField>(variety).controller?.text,
+      'Improved variety',
+    );
+    await tester.tap(find.text('Save Changes'));
+    await tester.pumpAndSettle();
+    expect(repo.saved?.variety, 'Improved variety');
+    expect(tester.takeException(), isNull);
+  });
+
   for (final width in [320.0, 600.0, 1080.0]) {
     for (final scale in [1.0, 2.0]) {
       testWidgets('editor fits $width / $scale and saves more than location', (
@@ -172,12 +188,9 @@ void main() {
         );
         expect(find.text('Update Plant Details'), findsOneWidget);
         expect(find.text('Native'), findsOneWidget);
-        final variety = varietyDropdown();
+        final variety = varietyField();
         await tester.ensureVisible(variety);
-        await tester.tap(variety);
-        await tester.pumpAndSettle();
-        await tester.tap(find.text('Improved variety').last);
-        await tester.pumpAndSettle();
+        await tester.enterText(variety, 'Improved variety');
         await tester.tap(find.text('Save Changes'));
         await tester.pumpAndSettle();
         expect(repo.saved?.variety, 'Improved variety');
@@ -193,16 +206,16 @@ void main() {
   testWidgets('failed save preserves entries and allows retry', (tester) async {
     final repo = FakeEditorRepository()..failSave = true;
     await openEditor(tester, repo);
-    final variety = varietyDropdown();
+    final variety = varietyField();
     await tester.ensureVisible(variety);
-    await tester.tap(variety);
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Improved variety').last);
-    await tester.pumpAndSettle();
+    await tester.enterText(variety, 'Improved variety');
     await tester.tap(find.text('Save Changes'));
     await tester.pumpAndSettle();
     expect(find.byType(PlantDetailsEditor), findsOneWidget);
-    expect(find.text('Improved variety'), findsOneWidget);
+    expect(
+      tester.widget<TextField>(variety).controller?.text,
+      'Improved variety',
+    );
     repo.failSave = false;
     await tester.tap(find.text('Save Changes'));
     await tester.pumpAndSettle();
@@ -225,6 +238,10 @@ void main() {
       await tester.tap(find.text('Mango').last);
       await tester.pumpAndSettle();
       expect(find.text('Mangifera indica'), findsOneWidget);
+      expect(
+        tester.widget<TextField>(varietyField()).controller?.text,
+        isEmpty,
+      );
       await tester.tap(find.text('Save Changes'));
       await tester.pumpAndSettle();
       expect(repo.saved?.classificationId, 2);
@@ -260,18 +277,18 @@ void main() {
     tester,
   ) async {
     await openEditor(tester, FakeEditorRepository());
-    final variety = varietyDropdown();
+    final variety = varietyField();
     await tester.ensureVisible(variety);
-    await tester.tap(variety);
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Improved variety').last);
-    await tester.pumpAndSettle();
+    await tester.enterText(variety, 'Improved variety');
     await tester.tap(find.text('Cancel'));
     await tester.pumpAndSettle();
     expect(find.text('Discard changes?'), findsOneWidget);
     await tester.tap(find.text('Keep Editing'));
     await tester.pumpAndSettle();
-    expect(find.text('Improved variety'), findsOneWidget);
+    expect(
+      tester.widget<TextField>(variety).controller?.text,
+      'Improved variety',
+    );
     await tester.tap(find.text('Cancel'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Discard'));

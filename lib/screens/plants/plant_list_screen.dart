@@ -265,13 +265,16 @@ class _PlantListScreenState extends State<PlantListScreen> {
                 SliverToBoxAdapter(child: _filters()),
                 if (_capabilities.canRegisterPlants)
                   SliverPadding(
-                    padding: const EdgeInsets.only(top: AppSpacing.md),
+                    padding: const EdgeInsets.only(top: AppSpacing.lg),
                     sliver: SliverToBoxAdapter(
                       child: FilledButton.icon(
                         onPressed: () => Navigator.pushNamed(
                           context,
                           '/register-plant',
                           arguments: _arguments,
+                        ),
+                        style: FilledButton.styleFrom(
+                          minimumSize: const Size.fromHeight(56),
                         ),
                         icon: const Icon(Icons.add_rounded),
                         label: const Text('Register A Plant'),
@@ -314,7 +317,12 @@ class _PlantListScreenState extends State<PlantListScreen> {
     child: LayoutBuilder(
       builder: (context, constraints) {
         final mobile = !AppBreakpoints.isDesktop(constraints.maxWidth);
-        return mobile ? _mobileFilters() : _desktopFilters();
+        return mobile
+            ? Padding(
+                padding: const EdgeInsets.all(AppSpacing.xs),
+                child: _mobileFilters(),
+              )
+            : _desktopFilters();
       },
     ),
   );
@@ -356,38 +364,29 @@ class _PlantListScreenState extends State<PlantListScreen> {
       Row(
         children: [
           Expanded(child: _searchField()),
-          const SizedBox(width: AppSpacing.sm),
-          ConstrainedBox(
-            constraints: const BoxConstraints(minHeight: 48),
-            child: OutlinedButton(
-              onPressed: _showHealthFilters,
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.darkGreen,
-                side: BorderSide(
-                  color: _hiddenFilterCount > 0
-                      ? AppColors.green
-                      : AppColors.border,
-                ),
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-                shape: const RoundedRectangleBorder(
-                  borderRadius: AppRadii.medium,
-                ),
+          const SizedBox(width: AppSpacing.md),
+          IconButton(
+            onPressed: _showHealthFilters,
+            tooltip: 'Filters',
+            style: IconButton.styleFrom(
+              minimumSize: const Size(56, 56),
+              foregroundColor: AppColors.darkGreen,
+              backgroundColor: _hiddenFilterCount > 0
+                  ? AppColors.primaryContainer
+                  : AppColors.surface,
+              side: BorderSide(
+                color: _hiddenFilterCount > 0
+                    ? AppColors.green
+                    : AppColors.border,
               ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.tune_rounded, size: 19),
-                  const SizedBox(width: 6),
-                  const Text(
-                    'Filter',
-                    style: TextStyle(fontWeight: FontWeight.w700),
-                  ),
-                  if (_hiddenFilterCount > 0) ...[
-                    const SizedBox(width: 6),
-                    _countBadge(_hiddenFilterCount),
-                  ],
-                ],
+              shape: const RoundedRectangleBorder(
+                borderRadius: AppRadii.medium,
               ),
+            ),
+            icon: Badge(
+              isLabelVisible: _hiddenFilterCount > 0,
+              label: Text('$_hiddenFilterCount'),
+              child: const Icon(Icons.tune_rounded),
             ),
           ),
         ],
@@ -469,7 +468,7 @@ class _PlantListScreenState extends State<PlantListScreen> {
       isDense: true,
       contentPadding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.lg,
-        vertical: AppSpacing.lg,
+        vertical: AppSpacing.xl,
       ),
       border: const OutlineInputBorder(
         borderRadius: AppRadii.medium,
@@ -654,24 +653,6 @@ class _PlantListScreenState extends State<PlantListScreen> {
     ),
   );
 
-  Widget _countBadge(int count) => Container(
-    constraints: const BoxConstraints(minWidth: 20, minHeight: 20),
-    alignment: Alignment.center,
-    padding: const EdgeInsets.symmetric(horizontal: 5),
-    decoration: const BoxDecoration(
-      color: AppColors.filterAccent,
-      shape: BoxShape.circle,
-    ),
-    child: Text(
-      count.toString(),
-      style: const TextStyle(
-        fontSize: 10,
-        fontWeight: FontWeight.w800,
-        color: Colors.white,
-      ),
-    ),
-  );
-
   Widget _campusSelector({
     int? selectedCampus,
     bool useSelectedCampus = false,
@@ -735,81 +716,90 @@ class _PlantListScreenState extends State<PlantListScreen> {
                 .toList();
     }
 
-    await showModalBottomSheet<void>(
+    await showDialog<void>(
       context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      showDragHandle: true,
-      builder: (sheetContext) => StatefulBuilder(
-        builder: (context, updateSheet) => AppFilterSheet(
-          title: 'Filter Plants',
-          applyLabel: 'Apply · ${filteredPlants().length} plants',
-          onReset: () => updateSheet(() {
-            pendingHealth = 'All';
-            pendingCampus = null;
-          }),
-          onApply: () {
-            setState(() {
-              _desktopPage = 0;
-              _healthFilter = pendingHealth;
-              _campusFilter = pendingCampus;
-            });
-            Navigator.pop(sheetContext);
-          },
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (_canFilterCampus) ...[
-                const Text('Campus'),
-                const SizedBox(height: AppSpacing.sm),
-                _campusSelector(
-                  selectedCampus: pendingCampus,
-                  useSelectedCampus: true,
-                  onChanged: (selected) =>
-                      updateSheet(() => pendingCampus = selected),
-                ),
-                const SizedBox(height: AppSpacing.lg),
-              ],
-              const Text('Health Status'),
-              const SizedBox(height: AppSpacing.sm),
-              Wrap(
-                spacing: AppSpacing.sm,
-                runSpacing: AppSpacing.sm,
-                children: _healthOptions
-                    .map(
-                      (value) => _healthChoice(
-                        value,
-                        pendingCampus == null
-                            ? _healthCount(value, plants)
-                            : value == 'All'
-                            ? plants
-                                  .where(
-                                    (plant) =>
-                                        int.tryParse(
-                                          plant['campus_id']?.toString() ?? '',
-                                        ) ==
-                                        pendingCampus,
-                                  )
-                                  .length
-                            : plants
-                                  .where(
-                                    (plant) =>
-                                        int.tryParse(
+      builder: (dialogContext) => Dialog(
+        insetPadding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.lg,
+          vertical: AppSpacing.lg,
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 520),
+          child: StatefulBuilder(
+            builder: (context, updateSheet) => AppFilterSheet(
+              title: 'Filter Plants',
+              applyLabel: 'Apply · ${filteredPlants().length} plants',
+              onReset: () => updateSheet(() {
+                pendingHealth = 'All';
+                pendingCampus = null;
+              }),
+              onApply: () {
+                setState(() {
+                  _desktopPage = 0;
+                  _healthFilter = pendingHealth;
+                  _campusFilter = pendingCampus;
+                });
+                Navigator.pop(dialogContext);
+              },
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (_canFilterCampus) ...[
+                    const Text('Campus'),
+                    const SizedBox(height: AppSpacing.sm),
+                    _campusSelector(
+                      selectedCampus: pendingCampus,
+                      useSelectedCampus: true,
+                      onChanged: (selected) =>
+                          updateSheet(() => pendingCampus = selected),
+                    ),
+                    const SizedBox(height: AppSpacing.lg),
+                  ],
+                  const Text('Health Status'),
+                  const SizedBox(height: AppSpacing.sm),
+                  Wrap(
+                    spacing: AppSpacing.sm,
+                    runSpacing: AppSpacing.sm,
+                    children: _healthOptions
+                        .map(
+                          (value) => _healthChoice(
+                            value,
+                            pendingCampus == null
+                                ? _healthCount(value, plants)
+                                : value == 'All'
+                                ? plants
+                                      .where(
+                                        (plant) =>
+                                            int.tryParse(
                                               plant['campus_id']?.toString() ??
                                                   '',
                                             ) ==
-                                            pendingCampus &&
-                                        _health(plant) == value,
-                                  )
-                                  .length,
-                        pendingHealth,
-                        (selected) =>
-                            updateSheet(() => pendingHealth = selected),
-                      ),
-                    )
-                    .toList(),
+                                            pendingCampus,
+                                      )
+                                      .length
+                                : plants
+                                      .where(
+                                        (plant) =>
+                                            int.tryParse(
+                                                  plant['campus_id']
+                                                          ?.toString() ??
+                                                      '',
+                                                ) ==
+                                                pendingCampus &&
+                                            _health(plant) == value,
+                                      )
+                                      .length,
+                            pendingHealth,
+                            (selected) =>
+                                updateSheet(() => pendingHealth = selected),
+                          ),
+                        )
+                        .toList(),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),
@@ -892,17 +882,17 @@ class _PlantListScreenState extends State<PlantListScreen> {
     ].join(', ');
     return PlantSummaryCard(
       name: classification['common_name']?.toString() ?? 'Unnamed plant',
+      plantType: classification['plant_type']?.toString() ?? 'Plant',
+      role: widget.role,
+      campus: campus,
+      college: college,
       scientificName:
           classification['scientific_name']?.toString() ??
           'Scientific name unavailable',
       plantedAt: physicalLocation.isEmpty
           ? 'Location not recorded'
           : physicalLocation,
-      managedBy: college == null && campus == null
-          ? 'Not Recorded'
-          : [college, campus].whereType<String>().join(' · '),
-      lastInspected: _lastInspected(plant),
-      photo: _plantAvatar(plant, 52),
+      photo: _plantAvatar(plant, 44),
       status: _statusChip(_health(plant)),
       trailing: plant['archived_at'] != null && _capabilities.canRestorePlants
           ? IconButton.outlined(

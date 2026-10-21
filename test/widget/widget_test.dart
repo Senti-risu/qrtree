@@ -213,6 +213,45 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('university admin mobile profile hides campus and college', (
+    tester,
+  ) async {
+    var scopeNamesLoaded = false;
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: Scaffold(
+          body: Builder(
+            builder: (context) => FilledButton(
+              onPressed: () => showAppMobileProfileSheet(
+                context,
+                username: 'university.admin',
+                displayName: 'University Admin',
+                displayRole: 'University Admin',
+                role: 'university_admin',
+                loadScopeNames: () async {
+                  scopeNamesLoaded = true;
+                  return const AccountScopeNames();
+                },
+              ),
+              child: const Text('Open profile'),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Open profile'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Username'), findsOneWidget);
+    expect(find.text('Role'), findsOneWidget);
+    expect(find.text('Campus'), findsNothing);
+    expect(find.text('College'), findsNothing);
+    expect(scopeNamesLoaded, isFalse);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('campus admin More menu hides college-only management actions', (
     tester,
   ) async {

@@ -24,9 +24,9 @@ class PlantDetailsEditor extends StatefulWidget {
 }
 
 class _PlantDetailsEditorState extends State<PlantDetailsEditor> {
-  static const _noVariety = 'Not specified';
   final _form = GlobalKey<FormState>();
   final _variety = TextEditingController(), _planter = TextEditingController();
+  final _varietyFocusNode = FocusNode();
   late final _service = widget.repository ?? PlantDetailsEditorService();
   List<Map<String, dynamic>> _classes = [],
       _campuses = [],
@@ -55,12 +55,8 @@ class _PlantDetailsEditorState extends State<PlantDetailsEditor> {
               .toSet()
               .toList()
         : <String>[];
-    final current = _variety.text.trim();
-    if (current.isNotEmpty && !options.contains(current)) {
-      options.add(current);
-    }
     options.sort();
-    return [_noVariety, ...options];
+    return options;
   }
 
   @override
@@ -72,6 +68,7 @@ class _PlantDetailsEditorState extends State<PlantDetailsEditor> {
   @override
   void dispose() {
     _variety.dispose();
+    _varietyFocusNode.dispose();
     _planter.dispose();
     super.dispose();
   }
@@ -350,6 +347,45 @@ class _PlantDetailsEditorState extends State<PlantDetailsEditor> {
     ),
   );
 
+  Widget _varietyField() => _formField(
+    Autocomplete<String>(
+      textEditingController: _variety,
+      focusNode: _varietyFocusNode,
+      optionsBuilder: (value) {
+        final query = value.text.trim().toLowerCase();
+        return _varietyOptions.where(
+          (option) => query.isEmpty || option.toLowerCase().contains(query),
+        );
+      },
+      onSelected: (_) => setState(() => _dirty = true),
+      fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) =>
+          TextFormField(
+            controller: controller,
+            focusNode: focusNode,
+            enabled: !_disabled,
+            maxLength: 200,
+            onFieldSubmitted: (_) => onFieldSubmitted(),
+            onChanged: (_) => setState(() => _dirty = true),
+            decoration: InputDecoration(
+              labelText: 'Variety (Optional)',
+              helperText: 'Type a variety or select a suggestion.',
+              suffixIcon: controller.text.isEmpty
+                  ? null
+                  : IconButton(
+                      tooltip: 'Clear Variety',
+                      onPressed: _disabled
+                          ? null
+                          : () => setState(() {
+                              controller.clear();
+                              _dirty = true;
+                            }),
+                      icon: const Icon(Icons.clear),
+                    ),
+            ),
+          ),
+    ),
+  );
+
   Widget _dropdown({
     required String label,
     required int? value,
@@ -501,41 +537,19 @@ class _PlantDetailsEditorState extends State<PlantDetailsEditor> {
                       id: 'classification_id',
                       name: 'common_name',
                       changed: (v) {
+                        final currentVariety = _variety.text.trim();
                         _classification = v;
-                        _variety.clear();
+                        if (!_varietyOptions.any(
+                          (option) =>
+                              option.toLowerCase() ==
+                              currentVariety.toLowerCase(),
+                        )) {
+                          _variety.clear();
+                        }
                       },
                     ),
                     _readOnlyScientificName(),
-                    _formField(
-                      DropdownButtonFormField<String>(
-                        key: ValueKey(
-                          'variety-$_classification-${_variety.text}',
-                        ),
-                        initialValue: _varietyOptions.contains(_variety.text)
-                            ? _variety.text
-                            : _noVariety,
-                        isExpanded: true,
-                        decoration: const InputDecoration(
-                          labelText: 'Variety (Optional)',
-                        ),
-                        items: _varietyOptions
-                            .map(
-                              (variety) => DropdownMenuItem(
-                                value: variety,
-                                child: Text(variety),
-                              ),
-                            )
-                            .toList(),
-                        onChanged: _disabled
-                            ? null
-                            : (value) => setState(() {
-                                _variety.text = value == _noVariety
-                                    ? ''
-                                    : value ?? '';
-                                _dirty = true;
-                              }),
-                      ),
-                    ),
+                    _varietyField(),
                     _formField(
                       TextFormField(
                         controller: _planter,
