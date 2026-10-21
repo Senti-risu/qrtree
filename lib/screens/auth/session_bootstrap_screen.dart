@@ -1,3 +1,4 @@
+import '../../services/inspection_reminders.dart';
 import 'package:flutter/material.dart';
 import '../../services/app_session.dart';
 import '../../services/persistent_session.dart';
@@ -51,7 +52,13 @@ class _SessionBootstrapScreenState extends State<SessionBootstrapScreen> {
       if (user == null) {
         setState(() => _loading = false);
       } else {
-        _go(user.dashboardRoute, user.arguments);
+        final reminders = InspectionReminders.instance;
+        final fromReminder = reminders.launchPayload == '${user.userId}';
+        reminders.launchPayload = null;
+        _go(
+          fromReminder ? '/inspections' : user.dashboardRoute,
+          user.arguments,
+        );
       }
     } on SessionRejected {
       if (mounted) _go('/staff-login');

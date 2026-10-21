@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'services/inspection_reminders.dart';
+import 'widgets/protected_staff_route.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'config/supabase_config.dart';
@@ -38,7 +40,14 @@ Future<void> main() async {
     publishableKey: SupabaseConfig.publishableKey,
   );
 
+  try {
+    await InspectionReminders.instance.initialize();
+  } catch (_) {}
   runApp(const MyApp());
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    final reminders = InspectionReminders.instance;
+    reminders.refreshQuietly();
+  });
 }
 
 class MyApp extends StatelessWidget {
@@ -47,6 +56,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: InspectionReminders.instance.navigatorKey,
       title: 'EcoTag',
 
       debugShowCheckedModeBanner: false,
@@ -102,10 +112,13 @@ class MyApp extends StatelessWidget {
           }
           return MaterialPageRoute(
             settings: settings,
-            builder: (_) => SuperAdminScreen(
-              userId: args['user_id'] as int,
-              username: args['username'].toString(),
-              role: args['role'].toString(),
+            builder: _protected(
+              args,
+              (_) => SuperAdminScreen(
+                userId: args['user_id'] as int,
+                username: args['username'].toString(),
+                role: args['role'].toString(),
+              ),
             ),
           );
         }
@@ -119,10 +132,13 @@ class MyApp extends StatelessWidget {
           }
           return MaterialPageRoute(
             settings: settings,
-            builder: (_) => ManageAccountsScreen(
-              userId: args['user_id'] as int,
-              username: args['username'].toString(),
-              role: args['role'].toString(),
+            builder: _protected(
+              args,
+              (_) => ManageAccountsScreen(
+                userId: args['user_id'] as int,
+                username: args['username'].toString(),
+                role: args['role'].toString(),
+              ),
             ),
           );
         }
@@ -138,12 +154,15 @@ class MyApp extends StatelessWidget {
           }
           return MaterialPageRoute(
             settings: settings,
-            builder: (_) => InspectionAccountsScreen(
-              userId: args['user_id'] as int,
-              username: args['username'].toString(),
-              role: args['role'].toString(),
-              campusId: args['campus_id'] as int,
-              collegeId: args['college_id'] as int,
+            builder: _protected(
+              args,
+              (_) => InspectionAccountsScreen(
+                userId: args['user_id'] as int,
+                username: args['username'].toString(),
+                role: args['role'].toString(),
+                campusId: args['campus_id'] as int,
+                collegeId: args['college_id'] as int,
+              ),
             ),
           );
         }
@@ -163,12 +182,15 @@ class MyApp extends StatelessWidget {
           }
           return MaterialPageRoute(
             settings: settings,
-            builder: (_) => ActivityLogScreen(
-              userId: args['user_id'] as int,
-              username: args['username'].toString(),
-              role: args['role'].toString(),
-              campusId: args['campus_id'] as int?,
-              collegeId: args['college_id'] as int?,
+            builder: _protected(
+              args,
+              (_) => ActivityLogScreen(
+                userId: args['user_id'] as int,
+                username: args['username'].toString(),
+                role: args['role'].toString(),
+                campusId: args['campus_id'] as int?,
+                collegeId: args['college_id'] as int?,
+              ),
             ),
           );
         }
@@ -192,7 +214,7 @@ class MyApp extends StatelessWidget {
 
           return MaterialPageRoute(
             settings: settings,
-            builder: (context) {
+            builder: _protected(args, (context) {
               return DashboardScreen(
                 userId: userId as int,
                 username: username.toString(),
@@ -200,7 +222,7 @@ class MyApp extends StatelessWidget {
                 campusId: args['campus_id'] as int?,
                 collegeId: args['college_id'] as int?,
               );
-            },
+            }),
           );
         }
 
@@ -217,13 +239,16 @@ class MyApp extends StatelessWidget {
           }
           return MaterialPageRoute(
             settings: settings,
-            builder: (context) => PlantListScreen(
-              userId: args['user_id'] as int,
-              username: args['username'].toString(),
-              role: args['role'].toString(),
-              campusId: args['campus_id'] as int?,
-              collegeId: args['college_id'] as int?,
-              initialHealthFilter: args['health_filter']?.toString(),
+            builder: _protected(
+              args,
+              (context) => PlantListScreen(
+                userId: args['user_id'] as int,
+                username: args['username'].toString(),
+                role: args['role'].toString(),
+                campusId: args['campus_id'] as int?,
+                collegeId: args['college_id'] as int?,
+                initialHealthFilter: args['health_filter']?.toString(),
+              ),
             ),
           );
         }
@@ -238,11 +263,15 @@ class MyApp extends StatelessWidget {
           }
           return plantDetailsRoute(
             settings: settings,
-            builder: (_) => PlantDetailScreen(
-              plantId: args['plant_id'] as int,
-              userId: args['user_id'] as int,
-              username: args['username'].toString(),
-              role: args['role'].toString(),
+            builder: _protected(
+              args,
+              (_) => PlantDetailScreen(
+                plantId: args['plant_id'] as int,
+                userId: args['user_id'] as int,
+                username: args['username'].toString(),
+                role: args['role'].toString(),
+              ),
+              requiresScope: false,
             ),
           );
         }
@@ -256,12 +285,15 @@ class MyApp extends StatelessWidget {
           }
           return MaterialPageRoute(
             settings: settings,
-            builder: (_) => CollegePlantReportScreen(
-              userId: args['user_id'] as int,
-              username: args['username'].toString(),
-              role: args['role'].toString(),
-              campusId: args['campus_id'] as int?,
-              collegeId: args['college_id'] as int?,
+            builder: _protected(
+              args,
+              (_) => CollegePlantReportScreen(
+                userId: args['user_id'] as int,
+                username: args['username'].toString(),
+                role: args['role'].toString(),
+                campusId: args['campus_id'] as int?,
+                collegeId: args['college_id'] as int?,
+              ),
             ),
           );
         }
@@ -277,13 +309,16 @@ class MyApp extends StatelessWidget {
           }
           return MaterialPageRoute(
             settings: settings,
-            builder: (_) => InspectionHistoryScreen(
-              userId: args['user_id'] as int,
-              username: args['username'].toString(),
-              role: args['role'].toString(),
-              campusId: args['campus_id'] as int?,
-              collegeId: args['college_id'] as int?,
-              initialQueueFilter: args['queue_filter']?.toString(),
+            builder: _protected(
+              args,
+              (_) => InspectionHistoryScreen(
+                userId: args['user_id'] as int,
+                username: args['username'].toString(),
+                role: args['role'].toString(),
+                campusId: args['campus_id'] as int?,
+                collegeId: args['college_id'] as int?,
+                initialQueueFilter: args['queue_filter']?.toString(),
+              ),
             ),
           );
         }
@@ -319,7 +354,7 @@ class MyApp extends StatelessWidget {
 
           return MaterialPageRoute(
             settings: settings,
-            builder: (context) {
+            builder: _protected(args, (context) {
               return RegisterPlantScreen(
                 userId: userId as int,
                 username: username.toString(),
@@ -327,7 +362,7 @@ class MyApp extends StatelessWidget {
                 campusId: campusId as int,
                 collegeId: collegeId as int,
               );
-            },
+            }),
           );
         }
 
@@ -362,7 +397,7 @@ class MyApp extends StatelessWidget {
 
           return MaterialPageRoute(
             settings: settings,
-            builder: (context) {
+            builder: _protected(args, (context) {
               return QrManagementScreen(
                 userId: userId as int,
                 username: username.toString(),
@@ -370,7 +405,7 @@ class MyApp extends StatelessWidget {
                 campusId: campusId as int,
                 collegeId: collegeId as int,
               );
-            },
+            }),
           );
         }
 
@@ -401,7 +436,7 @@ class MyApp extends StatelessWidget {
 
           return MaterialPageRoute(
             settings: settings,
-            builder: (context) {
+            builder: _protected(args, (context) {
               return QrScannerScreen(
                 userId: userId as int,
                 username: username.toString(),
@@ -409,7 +444,7 @@ class MyApp extends StatelessWidget {
                 campusId: campusId as int?,
                 collegeId: collegeId as int?,
               );
-            },
+            }),
           );
         }
 
@@ -429,6 +464,16 @@ class MyApp extends StatelessWidget {
   // ERROR PAGE
   // ============================================================
 
+  static WidgetBuilder _protected(
+    Object? arguments,
+    WidgetBuilder builder, {
+    bool requiresScope = true,
+  }) =>
+      (context) => ProtectedStaffRoute(
+        arguments: arguments is Map<String, dynamic> ? arguments : const {},
+        builder: builder,
+        requiresScope: requiresScope,
+      );
   static Route<dynamic> _errorRoute(String message) {
     return MaterialPageRoute(
       builder: (context) {

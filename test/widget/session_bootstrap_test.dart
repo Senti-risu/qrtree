@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/services/inspection_reminders.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_application_1/models/app_role.dart';
 import 'package:flutter_application_1/services/persistent_session.dart';
@@ -24,8 +25,26 @@ void main() {
     routes: {
       '/dashboard': (_) => const Scaffold(body: Text('Dashboard loaded')),
       '/staff-login': (_) => const Scaffold(body: Text('Login required')),
+      '/inspections': (_) =>
+          const Scaffold(body: Text('Inspection queue loaded')),
     },
   );
+
+  for (final payload in ['5', '99']) {
+    testWidgets('reminder launch validates account $payload', (tester) async {
+      InspectionReminders.instance.launchPayload = payload;
+      addTearDown(() => InspectionReminders.instance.launchPayload = null);
+      await tester.pumpWidget(app(() async => user));
+      await tester.pumpAndSettle();
+      expect(
+        find.text(
+          payload == '5' ? 'Inspection queue loaded' : 'Dashboard loaded',
+        ),
+        findsOneWidget,
+      );
+      expect(InspectionReminders.instance.launchPayload, isNull);
+    });
+  }
 
   testWidgets('valid remembered session bypasses login', (tester) async {
     await tester.pumpWidget(app(() async => user));

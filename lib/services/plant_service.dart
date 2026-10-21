@@ -1,3 +1,4 @@
+import 'inspection_reminders.dart';
 import 'dart:typed_data';
 
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -306,6 +307,7 @@ class PlantService {
       throw Exception('Registration did not return a result.');
     }
 
+    InspectionReminders.instance.refreshQuietly();
     return rows.first;
   }
 
@@ -372,6 +374,8 @@ class PlantService {
         'p_reason': normalizedReason,
       },
     );
+
+    InspectionReminders.instance.refreshQuietly();
   }
 
   Future<void> reopenDeadPlant({
@@ -391,6 +395,8 @@ class PlantService {
         'p_reason': reason.trim(),
       },
     );
+
+    InspectionReminders.instance.refreshQuietly();
   }
 
   Future<void> restorePlant({required int plantId}) async {
@@ -401,5 +407,7 @@ class PlantService {
         'p_plant_id': plantId,
       },
     );
+
+    InspectionReminders.instance.refreshQuietly();
   }
 }

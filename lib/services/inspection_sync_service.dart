@@ -1,3 +1,4 @@
+import 'inspection_reminders.dart';
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -105,6 +106,7 @@ class InspectionSyncService {
       }
       await backend.submit(userId, draft);
       await store.remove(userId, id);
+      InspectionReminders.instance.refreshQuietly();
     } finally {
       _running.remove(id);
     }

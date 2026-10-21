@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../screens/inspections/reminder_settings_screen.dart';
 
 import '../models/app_role.dart';
 import '../screens/qr/qr_problem_reports_screen.dart';
@@ -255,6 +256,17 @@ class AppMobileNavbar extends StatelessWidget {
     if (action == null || !context.mounted) return;
 
     switch (action) {
+      case AppMobileMoreAction.reminders:
+        if (!await AppNavigationGuard.confirm(context) || !context.mounted) {
+          return;
+        }
+        await Navigator.push(
+          context,
+          MaterialPageRoute<void>(
+            builder: (_) => const ReminderSettingsScreen(),
+          ),
+        );
+        return;
       case AppMobileMoreAction.profile:
         final profileService = AccountProfileService();
         await showAppMobileProfileSheet(

@@ -1,3 +1,4 @@
+import 'inspection_reminders.dart';
 import 'dart:typed_data';
 
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -100,6 +101,8 @@ class InspectionService {
         'p_interval_days': intervalDays,
       },
     );
+
+    InspectionReminders.instance.refreshQuietly();
   }
 
   Future<String> uploadInspectionPhoto({
@@ -138,6 +141,7 @@ class InspectionService {
         'p_photo_url': photoUrl,
       },
     );
+    InspectionReminders.instance.refreshQuietly();
   }
 
   String _dateOnly(DateTime value) {

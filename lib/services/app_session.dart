@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'persistent_session.dart';
+import 'inspection_reminders.dart';
 
 class AppSession {
   AppSession._();
@@ -27,9 +28,29 @@ class AppSession {
 
   static String get requiredToken => _session.requiredToken;
 
+  /// Recheck the live account without resetting the saved session during navigation.
+  static Future<SessionIdentity?> validate() async {
+    if (!isAuthenticated) return null;
+    final token = requiredToken;
+    try {
+      final row = await _session.validate(token);
+      if (!isAuthenticated || requiredToken != token) return null;
+      return SessionIdentity.fromServer(row);
+    } on PostgrestException catch (error) {
+      final message = error.message.toLowerCase();
+      if (message.contains('session has expired') ||
+          message.contains('valid ecotag session is required')) {
+        throw const SessionRejected();
+      }
+      rethrow;
+    }
+  }
+
   static Future<void> start(String token) async {
     try {
+      await InspectionReminders.instance.cancel();
       await _session.start(token);
+      InspectionReminders.instance.resume();
     } catch (_) {
       try {
         await Supabase.instance.client
@@ -43,8 +64,15 @@ class AppSession {
     }
   }
 
-  static Future<void> clear() => _session.clear();
+  static Future<void> clear() async {
+    await InspectionReminders.instance.cancel();
+    await _session.clear();
+  }
+
   static Future<SessionIdentity?> restore() => _session.restore();
 
-  static Future<void> end() => _session.end();
+  static Future<void> end() async {
+    await InspectionReminders.instance.cancel();
+    await _session.end();
+  }
 }
