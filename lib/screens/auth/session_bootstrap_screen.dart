@@ -53,6 +53,7 @@ class _SessionBootstrapScreenState extends State<SessionBootstrapScreen> {
         setState(() => _loading = false);
       } else {
         final reminders = InspectionReminders.instance;
+        reminders.resume();
         final fromReminder = reminders.launchPayload == '${user.userId}';
         reminders.launchPayload = null;
         _go(

@@ -128,6 +128,25 @@ class PersistentSession {
     _token = null;
   }
 
+  /// Revalidate an active session without clearing it during background work.
+  Future<SessionIdentity?> validateCurrent() async {
+    final token = _token;
+    final generation = _generation;
+    if (token == null || token.isEmpty) return null;
+    try {
+      final row = await validate(token);
+      if (generation != _generation || token != _token) return null;
+      return SessionIdentity.fromServer(row);
+    } on PostgrestException catch (error) {
+      final message = error.message.toLowerCase();
+      if (message.contains('session has expired') ||
+          message.contains('valid ecotag session is required')) {
+        throw const SessionRejected();
+      }
+      rethrow;
+    }
+  }
+
   Future<SessionIdentity?> restore() async {
     final generation = ++_generation;
     _token = null;

@@ -35,6 +35,62 @@ class MemoryTokenStore implements SessionTokenStore {
 }
 
 void main() {
+  test(
+    'background validation keeps login active during dashboard access checks',
+    () async {
+      final pending = Completer<Map<String, dynamic>>();
+      var checks = 0;
+      final session = PersistentSession(
+        store: MemoryTokenStore(),
+        validate: (_) =>
+            ++checks == 1 ? pending.future : Future.value(identity()),
+        revoke: (_) async {},
+      );
+      await session.start(token);
+      final reminders = session.validateCurrent();
+      expect(session.isAuthenticated, isTrue);
+      expect(session.requiredToken, token);
+      final dashboard = await session.validateCurrent();
+      expect(dashboard?.dashboardRoute, '/dashboard');
+      pending.complete(identity());
+      expect((await reminders)?.userId, 5);
+      expect(session.requiredToken, token);
+    },
+  );
+
+  test(
+    'background validation cannot reactivate a logged-out session',
+    () async {
+      final pending = Completer<Map<String, dynamic>>();
+      final session = PersistentSession(
+        store: MemoryTokenStore(),
+        validate: (_) => pending.future,
+        revoke: (_) async {},
+      );
+      await session.start(token);
+      final checking = session.validateCurrent();
+      await session.clear();
+      pending.complete(identity());
+      expect(await checking, isNull);
+      expect(session.isAuthenticated, isFalse);
+    },
+  );
+
+  test('background network failure preserves the active session', () async {
+    final session = PersistentSession(
+      store: MemoryTokenStore(),
+      validate: (_) async => throw TimeoutException('offline'),
+      revoke: (_) async {},
+    );
+    await session.start(token);
+    await expectLater(
+      session.validateCurrent(),
+      throwsA(isA<TimeoutException>()),
+    );
+    expect(session.isAuthenticated, isTrue);
+    expect(session.requiredToken, token);
+  });
+
   PersistentSession manager(
     MemoryTokenStore store, {
     Future<Map<String, dynamic>> Function(String)? validate,

@@ -170,7 +170,7 @@ class InspectionReminders with WidgetsBindingObserver {
   Future<void> refresh() => _serial(() async {
     if (!supported || _suspended) return;
     await initialize();
-    final user = await AppSession.restore().catchError((Object error) async {
+    final user = await AppSession.validate().catchError((Object error) async {
       if (error is SessionRejected) await _plugin.cancelAll();
       throw error;
     });
@@ -232,7 +232,7 @@ class InspectionReminders with WidgetsBindingObserver {
   Future<void> test(int userId) => _serial(() async {
     if (_suspended) throw StateError('Sign in again before testing reminders.');
     await initialize();
-    final user = await AppSession.restore();
+    final user = await AppSession.validate();
     if (user?.userId != userId) {
       throw StateError('Your account changed. Open reminder settings again.');
     }
@@ -258,7 +258,7 @@ class InspectionReminders with WidgetsBindingObserver {
     if (_opening) return;
     _opening = true;
     try {
-      final user = await AppSession.restore();
+      final user = await AppSession.validate();
       final nav = navigatorKey.currentState;
       if (nav == null) return;
       if (user == null) {
@@ -267,10 +267,7 @@ class InspectionReminders with WidgetsBindingObserver {
       }
       if (payload != '${user.userId}') return;
       // Preserve an unfinished registration/inspection beneath the queue.
-      await nav.pushNamed(
-        '/inspections',
-        arguments: user.arguments,
-      );
+      await nav.pushNamed('/inspections', arguments: user.arguments);
     } catch (_) {
       // Keep the session bootstrap retry UI when validation is unavailable.
       navigatorKey.currentState?.pushNamedAndRemoveUntil('/', (_) => false);

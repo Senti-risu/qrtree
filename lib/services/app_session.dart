@@ -29,22 +29,7 @@ class AppSession {
   static String get requiredToken => _session.requiredToken;
 
   /// Recheck the live account without resetting the saved session during navigation.
-  static Future<SessionIdentity?> validate() async {
-    if (!isAuthenticated) return null;
-    final token = requiredToken;
-    try {
-      final row = await _session.validate(token);
-      if (!isAuthenticated || requiredToken != token) return null;
-      return SessionIdentity.fromServer(row);
-    } on PostgrestException catch (error) {
-      final message = error.message.toLowerCase();
-      if (message.contains('session has expired') ||
-          message.contains('valid ecotag session is required')) {
-        throw const SessionRejected();
-      }
-      rethrow;
-    }
-  }
+  static Future<SessionIdentity?> validate() => _session.validateCurrent();
 
   static Future<void> start(String token) async {
     try {

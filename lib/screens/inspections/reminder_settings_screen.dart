@@ -23,7 +23,7 @@ class _ReminderSettingsScreenState extends State<ReminderSettingsScreen> {
 
   Future<void> _load() async {
     try {
-      final user = await AppSession.restore();
+      final user = await AppSession.validate();
       if (user == null) {
         throw StateError('Sign in again to configure reminders.');
       }
