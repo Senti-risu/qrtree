@@ -18,7 +18,6 @@ enum AppMobileMoreAction {
   userManagement,
   reports,
   activityLog,
-  help,
   logout,
 }
 
@@ -137,16 +136,6 @@ Future<AppMobileMoreAction?> showAppMobileMoreSheet(
           ),
         ],
       ),
-    const _MoreGroup(
-      label: 'Help',
-      items: [
-        _MoreItem(
-          action: AppMobileMoreAction.help,
-          icon: Icons.help_outline_rounded,
-          title: 'How To Use EcoTag',
-        ),
-      ],
-    ),
     const _MoreGroup(
       label: 'Session',
       items: [

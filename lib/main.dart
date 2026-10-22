@@ -29,6 +29,7 @@ import 'screens/admin/inspection_accounts_screen.dart';
 import 'screens/admin/activity_log_screen.dart';
 import 'screens/admin/plant_classification_catalog_screen.dart';
 import 'screens/admin/inspection_schedule_settings_screen.dart';
+import 'screens/help_center_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -232,6 +233,34 @@ class MyApp extends StatelessWidget {
                 userId: args['user_id'] as int,
                 username: args['username'].toString(),
                 role: args['role'].toString(),
+              ),
+            ),
+          );
+        }
+
+        if (settings.name == '/help') {
+          if (args is! Map<String, dynamic> ||
+              args['user_id'] is! int ||
+              args['username'] == null ||
+              !const {
+                'super_admin',
+                'university_admin',
+                'campus_admin',
+                'college_admin',
+                'inspection_team',
+              }.contains(args['role'])) {
+            return _errorRoute('Staff access is required to view Help.');
+          }
+          return MaterialPageRoute(
+            settings: settings,
+            builder: _protected(
+              args,
+              (_) => HelpCenterScreen(
+                userId: args['user_id'] as int,
+                username: args['username'].toString(),
+                role: args['role'].toString(),
+                campusId: args['campus_id'] as int?,
+                collegeId: args['college_id'] as int?,
               ),
             ),
           );

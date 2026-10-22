@@ -316,9 +316,6 @@ class AppMobileNavbar extends StatelessWidget {
       case AppMobileMoreAction.activityLog:
         _navigate(context, '/activity-log');
         return;
-      case AppMobileMoreAction.help:
-        await _showHelp(context);
-        return;
       case AppMobileMoreAction.logout:
         if (!await AppNavigationGuard.confirm(context) || !context.mounted) {
           return;
@@ -341,73 +338,6 @@ class AppMobileNavbar extends StatelessWidget {
         return;
     }
   }
-
-  Future<void> _showHelp(BuildContext context) => showModalBottomSheet<void>(
-    context: context,
-    useSafeArea: true,
-    showDragHandle: true,
-    isScrollControlled: true,
-    builder: (sheetContext) => SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.xl,
-        AppSpacing.xs,
-        AppSpacing.xl,
-        AppSpacing.xl,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Text(
-            'How To Use EcoTag',
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.w800,
-              color: AppColors.darkGreen,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          const Text(
-            'Start with the task you need. EcoTag will only show actions allowed for your account.',
-            style: TextStyle(color: AppColors.textSecondary),
-          ),
-          const SizedBox(height: AppSpacing.lg),
-          const _HelpStep(
-            icon: Icons.qr_code_scanner_rounded,
-            title: 'Scan A QR',
-            body:
-                'Use the center Scan button, place the QR inside the frame, and follow the result shown.',
-          ),
-          const _HelpStep(
-            icon: Icons.local_florist_outlined,
-            title: 'Find A Plant',
-            body:
-                'Open Plants, search by name or tag, then tap a card to view its details.',
-          ),
-          const _HelpStep(
-            icon: Icons.fact_check_outlined,
-            title: 'Record An Inspection',
-            body:
-                'Confirm the plant, add a current photo, select its condition, and save your observations.',
-          ),
-          const _HelpStep(
-            icon: Icons.support_agent_rounded,
-            title: 'Need more help?',
-            body:
-                'Contact your College Admin. Open Profile to confirm your role, campus, and college.',
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton(
-              onPressed: () => Navigator.pop(sheetContext),
-              child: const Text('Got It'),
-            ),
-          ),
-        ],
-      ),
-    ),
-  );
 
   Future<bool> _confirmLogout(BuildContext context) async {
     final result = await showDialog<bool>(
@@ -495,54 +425,6 @@ class AppMobileNavbar extends StatelessWidget {
         SnackBar(content: Text(message), backgroundColor: AppColors.danger),
       );
   }
-}
-
-class _HelpStep extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String body;
-
-  const _HelpStep({
-    required this.icon,
-    required this.title,
-    required this.body,
-  });
-
-  @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.only(bottom: AppSpacing.lg),
-    child: Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          width: 42,
-          height: 42,
-          decoration: BoxDecoration(
-            color: AppColors.primaryContainer,
-            borderRadius: AppRadii.medium,
-          ),
-          child: Icon(icon, color: AppColors.green),
-        ),
-        const SizedBox(width: AppSpacing.md),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(title, style: const TextStyle(fontWeight: FontWeight.w800)),
-              const SizedBox(height: 3),
-              Text(
-                body,
-                style: const TextStyle(
-                  color: AppColors.textSecondary,
-                  height: 1.35,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    ),
-  );
 }
 
 class _MobileDestination {

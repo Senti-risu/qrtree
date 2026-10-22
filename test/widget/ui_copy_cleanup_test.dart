@@ -87,6 +87,8 @@ void main() {
       expect(tiles, isNotEmpty);
       expect(tiles.every((tile) => tile.subtitle == null), isTrue);
       expect(find.text('Profile'), findsOneWidget);
+      expect(find.text('How To Use EcoTag'), findsNothing);
+      expect(find.text('Help'), findsNothing);
       expect(find.text('View your account and access details'), findsNothing);
       if (role == 'university_admin') {
         expect(find.text('Inspection Schedule'), findsOneWidget);

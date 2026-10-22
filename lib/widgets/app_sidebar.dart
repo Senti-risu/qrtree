@@ -69,6 +69,11 @@ class AppSidebar extends StatelessWidget {
             icon: Icons.history_rounded,
             label: 'Activity Log',
           ),
+          const _NavItemData(
+            route: '/help',
+            icon: Icons.help_outline_rounded,
+            label: 'Help',
+          ),
         ]
       : [
           const _NavItemData(
@@ -130,6 +135,11 @@ class AppSidebar extends StatelessWidget {
               icon: Icons.history_rounded,
               label: 'Activity Log',
             ),
+          const _NavItemData(
+            route: '/help',
+            icon: Icons.help_outline_rounded,
+            label: 'Help',
+          ),
         ];
 
   @override
