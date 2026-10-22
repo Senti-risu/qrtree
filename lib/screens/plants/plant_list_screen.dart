@@ -1,3 +1,4 @@
+import '../../widgets/mobile_search_filter_row.dart';
 import '../../widgets/app_search_field.dart';
 import '../../utils/search_match.dart';
 import 'package:flutter/material.dart';
@@ -361,35 +362,10 @@ class _PlantListScreenState extends State<PlantListScreen> {
         _recordSelector(compact: true),
         const SizedBox(height: AppSpacing.md),
       ],
-      Row(
-        children: [
-          Expanded(child: _searchField()),
-          const SizedBox(width: AppSpacing.md),
-          IconButton(
-            onPressed: _showHealthFilters,
-            tooltip: 'Filters',
-            style: IconButton.styleFrom(
-              minimumSize: const Size(56, 56),
-              foregroundColor: AppColors.darkGreen,
-              backgroundColor: _hiddenFilterCount > 0
-                  ? AppColors.primaryContainer
-                  : AppColors.surface,
-              side: BorderSide(
-                color: _hiddenFilterCount > 0
-                    ? AppColors.green
-                    : AppColors.border,
-              ),
-              shape: const RoundedRectangleBorder(
-                borderRadius: AppRadii.medium,
-              ),
-            ),
-            icon: Badge(
-              isLabelVisible: _hiddenFilterCount > 0,
-              label: Text('$_hiddenFilterCount'),
-              child: const Icon(Icons.tune_rounded),
-            ),
-          ),
-        ],
+      MobileSearchFilterRow(
+        search: _searchField(),
+        onFilter: _showHealthFilters,
+        activeCount: _hiddenFilterCount,
       ),
       if (_healthFilter != 'All') ...[
         const SizedBox(height: AppSpacing.sm),
@@ -468,7 +444,7 @@ class _PlantListScreenState extends State<PlantListScreen> {
       isDense: true,
       contentPadding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.lg,
-        vertical: AppSpacing.xl,
+        vertical: kMobileSearchVerticalPadding,
       ),
       border: const OutlineInputBorder(
         borderRadius: AppRadii.medium,
@@ -610,29 +586,12 @@ class _PlantListScreenState extends State<PlantListScreen> {
     String selected,
     ValueChanged<String> onSelected,
   ) {
-    final active = value == selected;
-    final accent = _healthColor(value);
-    return ChoiceChip(
-      showCheckmark: false,
-      avatar: Icon(
-        _healthIcon(value),
-        size: 17,
-        color: active ? accent : AppColors.textSecondary,
-      ),
-      label: Text('$value  $count'),
-      selected: active,
-      onSelected: (_) => onSelected(value),
-      selectedColor: accent.withValues(alpha: .11),
-      backgroundColor: Colors.white,
-      side: BorderSide(
-        color: active ? accent : AppColors.border,
-        width: active ? 1.3 : 1,
-      ),
-      shape: const RoundedRectangleBorder(borderRadius: AppRadii.medium),
-      labelStyle: TextStyle(
-        fontWeight: FontWeight.w700,
-        color: active ? AppColors.darkGreen : AppColors.textSecondary,
-      ),
+    return AppFilterChip(
+      icon: _healthIcon(value),
+      label: '$value  $count',
+      selected: value == selected,
+      accent: _healthColor(value),
+      onSelected: () => onSelected(value),
     );
   }
 
@@ -657,10 +616,11 @@ class _PlantListScreenState extends State<PlantListScreen> {
     int? selectedCampus,
     bool useSelectedCampus = false,
     ValueChanged<int?>? onChanged,
+    double? width = 190,
   }) {
     final options = _campusOptions;
     return SizedBox(
-      width: 190,
+      width: width,
       child: DropdownButtonFormField<int>(
         initialValue: useSelectedCampus ? selectedCampus : _campusFilter,
         isExpanded: true,
@@ -716,6 +676,86 @@ class _PlantListScreenState extends State<PlantListScreen> {
                 .toList();
     }
 
+    final isMobileSheet = MediaQuery.sizeOf(context).width < 600;
+    Widget buildSheet(BuildContext hostContext) => StatefulBuilder(
+      builder: (context, updateSheet) => AppFilterSheet(
+        title: 'Filter Plants',
+        subtitle: 'Narrow the plant list',
+        applyLabel: 'Apply · ${filteredPlants().length} plants',
+        onReset: () => updateSheet(() {
+          pendingHealth = 'All';
+          pendingCampus = null;
+        }),
+        onApply: () {
+          setState(() {
+            _desktopPage = 0;
+            _healthFilter = pendingHealth;
+            _campusFilter = pendingCampus;
+          });
+          Navigator.pop(hostContext);
+        },
+        child: AppFilterSections(
+          sections: [
+            if (_canFilterCampus)
+              AppFilterSection(
+                label: 'Campus',
+                child: _campusSelector(
+                  width: double.infinity,
+                  selectedCampus: pendingCampus,
+                  useSelectedCampus: true,
+                  onChanged: (selected) =>
+                      updateSheet(() => pendingCampus = selected),
+                ),
+              ),
+            AppFilterSection(
+              label: 'Health Status',
+              child: Wrap(
+                spacing: AppSpacing.sm,
+                runSpacing: AppSpacing.sm,
+                children: _healthOptions
+                    .map(
+                      (value) => _healthChoice(
+                        value,
+                        pendingCampus == null
+                            ? _healthCount(value, plants)
+                            : value == 'All'
+                            ? plants
+                                  .where(
+                                    (plant) =>
+                                        int.tryParse(
+                                          plant['campus_id']?.toString() ?? '',
+                                        ) ==
+                                        pendingCampus,
+                                  )
+                                  .length
+                            : plants
+                                  .where(
+                                    (plant) =>
+                                        int.tryParse(
+                                              plant['campus_id']?.toString() ??
+                                                  '',
+                                            ) ==
+                                            pendingCampus &&
+                                        _health(plant) == value,
+                                  )
+                                  .length,
+                        pendingHealth,
+                        (selected) =>
+                            updateSheet(() => pendingHealth = selected),
+                      ),
+                    )
+                    .toList(),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (isMobileSheet) {
+      await showAppFilterSheet<void>(context, builder: buildSheet);
+      return;
+    }
     await showDialog<void>(
       context: context,
       builder: (dialogContext) => Dialog(
@@ -726,81 +766,7 @@ class _PlantListScreenState extends State<PlantListScreen> {
         clipBehavior: Clip.antiAlias,
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 520),
-          child: StatefulBuilder(
-            builder: (context, updateSheet) => AppFilterSheet(
-              title: 'Filter Plants',
-              applyLabel: 'Apply · ${filteredPlants().length} plants',
-              onReset: () => updateSheet(() {
-                pendingHealth = 'All';
-                pendingCampus = null;
-              }),
-              onApply: () {
-                setState(() {
-                  _desktopPage = 0;
-                  _healthFilter = pendingHealth;
-                  _campusFilter = pendingCampus;
-                });
-                Navigator.pop(dialogContext);
-              },
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (_canFilterCampus) ...[
-                    const Text('Campus'),
-                    const SizedBox(height: AppSpacing.sm),
-                    _campusSelector(
-                      selectedCampus: pendingCampus,
-                      useSelectedCampus: true,
-                      onChanged: (selected) =>
-                          updateSheet(() => pendingCampus = selected),
-                    ),
-                    const SizedBox(height: AppSpacing.lg),
-                  ],
-                  const Text('Health Status'),
-                  const SizedBox(height: AppSpacing.sm),
-                  Wrap(
-                    spacing: AppSpacing.sm,
-                    runSpacing: AppSpacing.sm,
-                    children: _healthOptions
-                        .map(
-                          (value) => _healthChoice(
-                            value,
-                            pendingCampus == null
-                                ? _healthCount(value, plants)
-                                : value == 'All'
-                                ? plants
-                                      .where(
-                                        (plant) =>
-                                            int.tryParse(
-                                              plant['campus_id']?.toString() ??
-                                                  '',
-                                            ) ==
-                                            pendingCampus,
-                                      )
-                                      .length
-                                : plants
-                                      .where(
-                                        (plant) =>
-                                            int.tryParse(
-                                                  plant['campus_id']
-                                                          ?.toString() ??
-                                                      '',
-                                                ) ==
-                                                pendingCampus &&
-                                            _health(plant) == value,
-                                      )
-                                      .length,
-                            pendingHealth,
-                            (selected) =>
-                                updateSheet(() => pendingHealth = selected),
-                          ),
-                        )
-                        .toList(),
-                  ),
-                ],
-              ),
-            ),
-          ),
+          child: buildSheet(dialogContext),
         ),
       ),
     );

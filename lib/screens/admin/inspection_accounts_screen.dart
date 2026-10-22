@@ -1,3 +1,5 @@
+import '../../widgets/mobile_search_filter_row.dart';
+import '../../widgets/app_filter_sheet.dart';
 import '../../widgets/app_search_field.dart';
 import '../../utils/search_match.dart';
 import 'package:flutter/material.dart';
@@ -100,163 +102,32 @@ class _InspectionAccountsScreenState extends State<InspectionAccountsScreen> {
 
   Future<void> _showMobileFilters() async {
     var pendingStatus = _statusFilter;
-    final selection = await showModalBottomSheet<String>(
-      context: context,
-      useSafeArea: true,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+    final selection = await showAppFilterSheet<String>(
+      context,
       builder: (sheetContext) => StatefulBuilder(
         builder: (context, setSheetState) {
-          Widget option(String value, String label) => ChoiceChip(
-            label: Text('$label (${_statusCount(value)})'),
+          Widget option(String value, String label) => AppFilterChip(
+            label: '$label (${_statusCount(value)})',
             selected: pendingStatus == value,
-            showCheckmark: false,
-            onSelected: (_) => setSheetState(() => pendingStatus = value),
-            selectedColor: AppColors.primaryContainer,
-            backgroundColor: AppColors.background,
-            side: BorderSide(
-              color: pendingStatus == value
-                  ? AppColors.green
-                  : AppColors.border,
-            ),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-            labelStyle: TextStyle(
-              color: pendingStatus == value
-                  ? AppColors.darkGreen
-                  : AppColors.textPrimary,
-              fontWeight: pendingStatus == value
-                  ? FontWeight.w700
-                  : FontWeight.w500,
-            ),
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+            onSelected: () => setSheetState(() => pendingStatus = value),
           );
 
-          return Align(
-            alignment: Alignment.bottomCenter,
-            child: ConstrainedBox(
-              constraints: BoxConstraints(
-                maxWidth: 560,
-                maxHeight: MediaQuery.sizeOf(sheetContext).height * 0.88,
-              ),
-              child: Material(
-                color: Colors.white,
-                clipBehavior: Clip.antiAlias,
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(24),
-                ),
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Center(
-                        child: Container(
-                          width: 42,
-                          height: 4,
-                          decoration: BoxDecoration(
-                            color: AppColors.border,
-                            borderRadius: BorderRadius.circular(99),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 18),
-                      Row(
-                        children: [
-                          Container(
-                            width: 42,
-                            height: 42,
-                            decoration: BoxDecoration(
-                              color: AppColors.primaryContainer,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: const Icon(
-                              Icons.tune_rounded,
-                              color: AppColors.green,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          const Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Filter Inspection Accounts',
-                                  style: TextStyle(
-                                    fontSize: AppTypography.sectionTitle,
-                                    fontWeight: FontWeight.w800,
-                                    color: AppColors.textPrimary,
-                                  ),
-                                ),
-                                Text(
-                                  'Choose An Account Status',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: AppColors.textSecondary,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          IconButton(
-                            tooltip: 'Close Filters',
-                            onPressed: () => Navigator.pop(sheetContext),
-                            icon: const Icon(Icons.close_rounded),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 24),
-                      const Text(
-                        'ACCOUNT STATUS',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.darkGreen,
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: [
-                          option('all', 'All'),
-                          option('active', 'Active'),
-                          option('inactive', 'Inactive'),
-                        ],
-                      ),
-                      const SizedBox(height: 28),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: OutlinedButton(
-                              onPressed: () =>
-                                  setSheetState(() => pendingStatus = 'all'),
-                              style: OutlinedButton.styleFrom(
-                                minimumSize: const Size.fromHeight(50),
-                                side: const BorderSide(color: AppColors.green),
-                              ),
-                              child: const Text('Reset'),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: FilledButton(
-                              onPressed: () =>
-                                  Navigator.pop(sheetContext, pendingStatus),
-                              style: FilledButton.styleFrom(
-                                minimumSize: const Size.fromHeight(50),
-                                backgroundColor: AppColors.green,
-                              ),
-                              child: const Text('Apply Filter'),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
+          return AppFilterSheet(
+            title: 'Filter Inspection Accounts',
+            subtitle: 'Choose an account status',
+            applyLabel: 'Apply Filters',
+            onReset: () => setSheetState(() => pendingStatus = 'all'),
+            onApply: () => Navigator.pop(sheetContext, pendingStatus),
+            child: AppFilterSection(
+              label: 'Account Status',
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  option('all', 'All'),
+                  option('active', 'Active'),
+                  option('inactive', 'Inactive'),
+                ],
               ),
             ),
           );
@@ -815,7 +686,9 @@ class _InspectionAccountsScreenState extends State<InspectionAccountsScreen> {
                 ),
           filled: true,
           fillColor: AppColors.surfaceSubtle,
-          contentPadding: const EdgeInsets.symmetric(vertical: 14),
+          contentPadding: EdgeInsets.symmetric(
+            vertical: isMobile ? kMobileSearchVerticalPadding : 14,
+          ),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(14),
             borderSide: const BorderSide(color: AppColors.border),
@@ -873,35 +746,10 @@ class _InspectionAccountsScreenState extends State<InspectionAccountsScreen> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Row(
-              children: [
-                Expanded(child: search),
-                const SizedBox(width: 10),
-                IconButton(
-                  onPressed: _showMobileFilters,
-                  tooltip: 'Filters',
-                  style: IconButton.styleFrom(
-                    minimumSize: const Size(50, 50),
-                    foregroundColor: AppColors.darkGreen,
-                    backgroundColor: _appliedFilterCount > 0
-                        ? AppColors.primaryContainer
-                        : AppColors.surface,
-                    side: BorderSide(
-                      color: _appliedFilterCount > 0
-                          ? AppColors.green
-                          : AppColors.border,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                  ),
-                  icon: Badge(
-                    isLabelVisible: _appliedFilterCount > 0,
-                    label: Text('$_appliedFilterCount'),
-                    child: const Icon(Icons.tune_rounded),
-                  ),
-                ),
-              ],
+            MobileSearchFilterRow(
+              search: search,
+              onFilter: _showMobileFilters,
+              activeCount: _appliedFilterCount,
             ),
             if (_statusFilter != 'all') ...[
               const SizedBox(height: 10),

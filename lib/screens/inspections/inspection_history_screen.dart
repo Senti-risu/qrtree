@@ -1,3 +1,5 @@
+import '../../widgets/app_filter_sheet.dart';
+import '../../widgets/mobile_search_filter_row.dart';
 import '../../widgets/app_search_field.dart';
 import 'package:flutter/material.dart';
 import '../../utils/search_match.dart';
@@ -791,6 +793,88 @@ class _InspectionHistoryScreenState extends State<InspectionHistoryScreen> {
     );
   }
 
+  Future<void> _openMobileFilters() async {
+    var health = _healthFilter;
+    var growth = _growthFilter;
+    final healthOptions = _filterOptions('health_status', 'status_name');
+    final growthOptions = _filterOptions('growth_stage', 'growth_stage');
+    Widget group(
+      String title,
+      String allLabel,
+      List<String> options,
+      String selected,
+      ValueChanged<String> onSelect,
+      String Function(String) labelOf,
+    ) => Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(title),
+        const SizedBox(height: AppSpacing.sm),
+        Wrap(
+          spacing: AppSpacing.sm,
+          runSpacing: AppSpacing.sm,
+          children: [
+            ChoiceChip(
+              label: Text(allLabel),
+              selected: selected == 'all',
+              onSelected: (_) => onSelect('all'),
+            ),
+            for (final option in options)
+              ChoiceChip(
+                label: Text(labelOf(option)),
+                selected: selected == option,
+                onSelected: (_) => onSelect(option),
+              ),
+          ],
+        ),
+      ],
+    );
+    final applied = await showModalBottomSheet<(String, String)>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      showDragHandle: true,
+      builder: (sheetContext) => StatefulBuilder(
+        builder: (context, setSheetState) => AppFilterSheet(
+          title: 'Filter Inspections',
+          applyLabel: 'Apply Filters',
+          onReset: () => setSheetState(() {
+            health = 'all';
+            growth = 'all';
+          }),
+          onApply: () => Navigator.pop(sheetContext, (health, growth)),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              group(
+                'Health',
+                'All Health',
+                healthOptions,
+                health,
+                (value) => setSheetState(() => health = value),
+                healthStatusLabel,
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              group(
+                'Growth',
+                'All Growth',
+                growthOptions,
+                growth,
+                (value) => setSheetState(() => growth = value),
+                (value) => value,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (applied == null || !mounted) return;
+    setState(() {
+      _healthFilter = applied.$1;
+      _growthFilter = applied.$2;
+    });
+  }
+
   Widget _inspectionSearchTools() => LayoutBuilder(
     builder: (context, constraints) {
       final healthOptions = _filterOptions('health_status', 'status_name');
@@ -840,17 +924,14 @@ class _InspectionHistoryScreenState extends State<InspectionHistoryScreen> {
               ],
             )
           else ...[
-            _inspectionSearchField(),
-            const SizedBox(height: 10),
-            filters,
-            Align(
-              alignment: Alignment.centerRight,
-              child: TextButton.icon(
-                onPressed: _hasActiveFilters ? _resetFilters : null,
-                icon: const Icon(Icons.filter_alt_off_outlined, size: 17),
-                label: const Text('Reset filters'),
-              ),
+            MobileSearchFilterRow(
+              search: _inspectionSearchField(),
+              onFilter: _openMobileFilters,
+              activeCount:
+                  (_healthFilter != 'all' ? 1 : 0) +
+                  (_growthFilter != 'all' ? 1 : 0),
             ),
+            const SizedBox(height: AppSpacing.md),
           ],
           Row(
             children: [
@@ -922,7 +1003,10 @@ class _InspectionHistoryScreenState extends State<InspectionHistoryScreen> {
       isDense: true,
       filled: true,
       fillColor: AppColors.background,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: 14,
+        vertical: kMobileSearchVerticalPadding,
+      ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
         borderSide: const BorderSide(color: AppColors.border),

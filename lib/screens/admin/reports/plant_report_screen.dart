@@ -1,3 +1,5 @@
+import '../../../widgets/mobile_search_filter_row.dart';
+import '../../../widgets/app_filter_sheet.dart';
 import '../../../widgets/app_search_field.dart';
 import '../../../utils/search_match.dart';
 import 'dart:math' as math;
@@ -548,32 +550,10 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
   Widget _mobileReportFilters() => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      Row(
-        children: [
-          Expanded(child: _reportSearchField()),
-          const SizedBox(width: 8),
-          IconButton(
-            onPressed: _showReportFilterSheet,
-            tooltip: 'Filters',
-            style: IconButton.styleFrom(
-              minimumSize: const Size(48, 48),
-              foregroundColor: AppColors.darkGreen,
-              side: BorderSide(
-                color: _advancedFilterCount > 0
-                    ? AppColors.green
-                    : AppColors.border,
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-            icon: Badge(
-              isLabelVisible: _advancedFilterCount > 0,
-              label: Text('$_advancedFilterCount'),
-              child: const Icon(Icons.tune_rounded),
-            ),
-          ),
-        ],
+      MobileSearchFilterRow(
+        search: _reportSearchField(),
+        onFilter: _showReportFilterSheet,
+        activeCount: _advancedFilterCount,
       ),
       if (_advancedFilterCount > 0) ...[
         const SizedBox(height: 10),
@@ -682,7 +662,10 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
       filled: true,
       fillColor: AppColors.background,
       isDense: true,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: 14,
+        vertical: kMobileSearchVerticalPadding,
+      ),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
         borderSide: const BorderSide(color: AppColors.border),
@@ -848,252 +831,136 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
     var pendingHealth = _healthStatus;
     var pendingGrowth = _growthStage;
 
-    await showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      backgroundColor: Colors.transparent,
+    await showAppFilterSheet<void>(
+      context,
       builder: (sheetContext) => StatefulBuilder(
-        builder: (context, updateSheet) => FractionallySizedBox(
-          heightFactor: .92,
-          child: Container(
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-            ),
-            child: Column(
-              children: [
-                const SizedBox(height: 10),
-                Container(
-                  width: 42,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: AppColors.borderStrong,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
+        builder: (context, updateSheet) => AppFilterSheet(
+          title: 'Filter Report',
+          subtitle: 'Refine the records shown in analytics',
+          applyLabel: 'Apply Filters',
+          onReset: () => updateSheet(() {
+            pendingDate = null;
+            pendingCampus = 'All';
+            pendingCollege = 'All';
+            pendingPlantType = 'All';
+            pendingHealth = 'All';
+            pendingGrowth = 'All';
+          }),
+          onApply: () {
+            setState(() {
+              _dateRange = pendingDate;
+              _campus = pendingCampus;
+              _college = pendingCollege;
+              _plantType = pendingPlantType;
+              _healthStatus = pendingHealth;
+              _growthStage = pendingGrowth;
+            });
+            Navigator.pop(sheetContext);
+          },
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Date & Location',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.darkGreen,
                 ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 16, 12, 10),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 38,
-                        height: 38,
-                        decoration: BoxDecoration(
-                          color: AppColors.primaryContainer,
-                          borderRadius: BorderRadius.circular(11),
-                        ),
-                        child: const Icon(
-                          Icons.tune_rounded,
-                          color: AppColors.green,
-                        ),
-                      ),
-                      const SizedBox(width: 11),
-                      const Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Filter Report',
-                              style: TextStyle(
-                                fontSize: AppTypography.sectionTitle,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
-                            Text(
-                              'Refine The Records Shown In Analytics',
-                              style: TextStyle(
-                                fontSize: AppTypography.caption,
-                                color: AppColors.textSecondary,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      IconButton(
-                        tooltip: 'Close Filters',
-                        onPressed: () => Navigator.pop(sheetContext),
-                        icon: const Icon(Icons.close_rounded),
-                      ),
-                    ],
-                  ),
+              ),
+              const SizedBox(height: 14),
+              _labeledFilterField(
+                'Registration Date',
+                _stagedDateField(
+                  sheetContext,
+                  pendingDate,
+                  (value) => updateSheet(() => pendingDate = value),
                 ),
-                const Divider(height: 1),
-                Expanded(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.fromLTRB(20, 18, 20, 24),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'DATE & LOCATION',
-                          style: TextStyle(
-                            fontSize: AppTypography.caption,
-                            fontWeight: FontWeight.w800,
-                            color: AppColors.textSecondary,
-                            letterSpacing: .8,
-                          ),
-                        ),
-                        const SizedBox(height: 14),
-                        _labeledFilterField(
-                          'Registration Date',
-                          _stagedDateField(
-                            sheetContext,
-                            pendingDate,
-                            (value) => updateSheet(() => pendingDate = value),
-                          ),
-                        ),
-                        if (_universityScope) ...[
-                          const SizedBox(height: 14),
-                          _labeledFilterField(
-                            'Campus',
-                            _dropdown(
-                              pendingCampus,
-                              _options(
-                                (plant) =>
-                                    _related(plant, 'campus', 'campus_name'),
-                              ),
-                              (value) => updateSheet(() {
-                                pendingCampus = value;
-                                pendingCollege = 'All';
-                              }),
-                            ),
-                          ),
-                        ],
-                        if (widget.role != 'college_admin') ...[
-                          const SizedBox(height: 14),
-                          _labeledFilterField(
-                            'College',
-                            _dropdown(
-                              pendingCollege,
-                              _collegeOptionsFor(pendingCampus),
-                              (value) =>
-                                  updateSheet(() => pendingCollege = value),
-                            ),
-                          ),
-                        ],
-                        const SizedBox(height: 28),
-                        const Text(
-                          'PLANT DETAILS',
-                          style: TextStyle(
-                            fontSize: AppTypography.label,
-                            fontWeight: FontWeight.w800,
-                            color: AppColors.textSecondary,
-                            letterSpacing: 1,
-                          ),
-                        ),
-                        const SizedBox(height: 14),
-                        _labeledFilterField(
-                          'Plant Type',
-                          _dropdown(
-                            pendingPlantType,
-                            _options(
-                              (plant) => _related(
-                                plant,
-                                'plant_classification',
-                                'plant_type',
-                              ),
-                            ),
-                            (value) =>
-                                updateSheet(() => pendingPlantType = value),
-                          ),
-                        ),
-                        const SizedBox(height: 14),
-                        _labeledFilterField(
-                          'Growth Stage',
-                          _dropdown(
-                            pendingGrowth,
-                            _options(
-                              (plant) => _related(
-                                plant,
-                                'growth_status',
-                                'growth_stage',
-                              ),
-                            ),
-                            (value) => updateSheet(() => pendingGrowth = value),
-                          ),
-                        ),
-                        const SizedBox(height: 28),
-                        const Text(
-                          'HEALTH STATUS',
-                          style: TextStyle(
-                            fontSize: AppTypography.label,
-                            fontWeight: FontWeight.w800,
-                            color: AppColors.textSecondary,
-                            letterSpacing: 1,
-                          ),
-                        ),
-                        const SizedBox(height: 14),
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: _reportHealthOptions
-                              .map(
-                                (value) => _reportHealthChoice(
-                                  value,
-                                  pendingHealth,
-                                  (selected) => updateSheet(
-                                    () => pendingHealth = selected,
-                                  ),
-                                ),
-                              )
-                              .toList(),
-                        ),
-                      ],
+              ),
+              if (_universityScope) ...[
+                const SizedBox(height: 14),
+                _labeledFilterField(
+                  'Campus',
+                  _dropdown(
+                    pendingCampus,
+                    _options(
+                      (plant) => _related(plant, 'campus', 'campus_name'),
                     ),
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    border: Border(top: BorderSide(color: AppColors.border)),
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: () => updateSheet(() {
-                            pendingDate = null;
-                            pendingCampus = 'All';
-                            pendingCollege = 'All';
-                            pendingPlantType = 'All';
-                            pendingHealth = 'All';
-                            pendingGrowth = 'All';
-                          }),
-                          style: OutlinedButton.styleFrom(
-                            minimumSize: const Size.fromHeight(48),
-                          ),
-                          child: const Text('Reset'),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        flex: 2,
-                        child: FilledButton(
-                          onPressed: () {
-                            setState(() {
-                              _dateRange = pendingDate;
-                              _campus = pendingCampus;
-                              _college = pendingCollege;
-                              _plantType = pendingPlantType;
-                              _healthStatus = pendingHealth;
-                              _growthStage = pendingGrowth;
-                            });
-                            Navigator.pop(sheetContext);
-                          },
-                          style: FilledButton.styleFrom(
-                            minimumSize: const Size.fromHeight(48),
-                            backgroundColor: AppColors.green,
-                          ),
-                          child: const Text('Apply Filters'),
-                        ),
-                      ),
-                    ],
+                    (value) => updateSheet(() {
+                      pendingCampus = value;
+                      pendingCollege = 'All';
+                    }),
                   ),
                 ),
               ],
-            ),
+              if (widget.role != 'college_admin') ...[
+                const SizedBox(height: 14),
+                _labeledFilterField(
+                  'College',
+                  _dropdown(
+                    pendingCollege,
+                    _collegeOptionsFor(pendingCampus),
+                    (value) => updateSheet(() => pendingCollege = value),
+                  ),
+                ),
+              ],
+              const SizedBox(height: 28),
+              const Text(
+                'Plant Details',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.darkGreen,
+                ),
+              ),
+              const SizedBox(height: 14),
+              _labeledFilterField(
+                'Plant Type',
+                _dropdown(
+                  pendingPlantType,
+                  _options(
+                    (plant) =>
+                        _related(plant, 'plant_classification', 'plant_type'),
+                  ),
+                  (value) => updateSheet(() => pendingPlantType = value),
+                ),
+              ),
+              const SizedBox(height: 14),
+              _labeledFilterField(
+                'Growth Stage',
+                _dropdown(
+                  pendingGrowth,
+                  _options(
+                    (plant) => _related(plant, 'growth_status', 'growth_stage'),
+                  ),
+                  (value) => updateSheet(() => pendingGrowth = value),
+                ),
+              ),
+              const SizedBox(height: 28),
+              const Text(
+                'Health Status',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.darkGreen,
+                ),
+              ),
+              const SizedBox(height: 14),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: _reportHealthOptions
+                    .map(
+                      (value) => _reportHealthChoice(
+                        value,
+                        pendingHealth,
+                        (selected) =>
+                            updateSheet(() => pendingHealth = selected),
+                      ),
+                    )
+                    .toList(),
+              ),
+            ],
           ),
         ),
       ),

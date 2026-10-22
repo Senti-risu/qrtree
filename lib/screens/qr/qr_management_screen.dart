@@ -1,3 +1,4 @@
+import '../../widgets/mobile_search_filter_row.dart';
 import '../../widgets/app_search_field.dart';
 import 'dart:async';
 import '../../widgets/media_preview.dart';
@@ -812,7 +813,7 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
       fillColor: AppColors.background,
       contentPadding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.lg,
-        vertical: AppSpacing.md,
+        vertical: kMobileSearchVerticalPadding,
       ),
       enabledBorder: const OutlineInputBorder(
         borderRadius: AppRadii.medium,
@@ -822,27 +823,6 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
         borderRadius: AppRadii.medium,
         borderSide: AppBorders.focusedSide,
       ),
-    ),
-  );
-
-  Widget _mobileFilterButton() => IconButton(
-    onPressed: _openMobileFilters,
-    tooltip: 'Filters',
-    style: IconButton.styleFrom(
-      minimumSize: const Size(48, 48),
-      foregroundColor: AppColors.darkGreen,
-      backgroundColor: _activeFilterCount > 0
-          ? AppColors.primaryContainer
-          : AppColors.surface,
-      side: BorderSide(
-        color: _activeFilterCount > 0 ? AppColors.green : AppColors.border,
-      ),
-      shape: const RoundedRectangleBorder(borderRadius: AppRadii.medium),
-    ),
-    icon: Badge(
-      isLabelVisible: _activeFilterCount > 0,
-      label: Text('$_activeFilterCount'),
-      child: const Icon(Icons.tune_rounded),
     ),
   );
 
@@ -938,12 +918,11 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             title,
-            const SizedBox(height: AppSpacing.md),
-            _searchField(),
-            const SizedBox(height: AppSpacing.sm),
-            Align(
-              alignment: Alignment.centerRight,
-              child: _mobileFilterButton(),
+            const SizedBox(height: AppSpacing.lg),
+            MobileSearchFilterRow(
+              search: _searchField(),
+              onFilter: _openMobileFilters,
+              activeCount: _activeFilterCount,
             ),
             if (_activeFilterCount > 0) ...[
               const SizedBox(height: AppSpacing.sm),

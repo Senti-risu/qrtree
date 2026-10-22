@@ -1,3 +1,5 @@
+import '../../widgets/mobile_search_filter_row.dart';
+import '../../widgets/app_filter_sheet.dart';
 import '../../widgets/app_search_field.dart';
 import '../../utils/search_match.dart';
 import 'package:flutter/material.dart';
@@ -101,224 +103,92 @@ class _ManageAccountsScreenState extends State<ManageAccountsScreen> {
   Future<void> _showMobileFilters() async {
     var pendingRole = _roleFilter;
     var pendingStatus = _statusFilter;
-    final selection = await showModalBottomSheet<List<String>>(
-      context: context,
-      useSafeArea: true,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+    final selection = await showAppFilterSheet<List<String>>(
+      context,
       builder: (sheetContext) => StatefulBuilder(
         builder: (context, setSheetState) {
           Widget option({
             required String label,
             required bool selected,
             required VoidCallback onTap,
-          }) => ChoiceChip(
-            label: Text(label),
+          }) => AppFilterChip(
+            label: label,
             selected: selected,
-            showCheckmark: false,
-            onSelected: (_) => onTap(),
-            selectedColor: AppColors.primaryContainer,
-            backgroundColor: AppColors.background,
-            side: BorderSide(
-              color: selected ? AppColors.green : AppColors.border,
-            ),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-            labelStyle: TextStyle(
-              color: selected ? AppColors.darkGreen : AppColors.textPrimary,
-              fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-            ),
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+            onSelected: onTap,
           );
 
-          return Align(
-            alignment: Alignment.bottomCenter,
-            child: ConstrainedBox(
-              constraints: BoxConstraints(
-                maxWidth: 560,
-                maxHeight: MediaQuery.sizeOf(sheetContext).height * 0.88,
-              ),
-              child: Material(
-                color: Colors.white,
-                clipBehavior: Clip.antiAlias,
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(24),
-                ),
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
+          return AppFilterSheet(
+            title: 'Filter Accounts',
+            subtitle: 'Narrow results by role and status',
+            applyLabel: 'Apply Filters',
+            onReset: () => setSheetState(() {
+              pendingRole = 'all';
+              pendingStatus = 'all';
+            }),
+            onApply: () =>
+                Navigator.pop(sheetContext, [pendingRole, pendingStatus]),
+            child: AppFilterSections(
+              sections: [
+                AppFilterSection(
+                  label: 'Role',
+                  child: Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
                     children: [
-                      Center(
-                        child: Container(
-                          width: 42,
-                          height: 4,
-                          decoration: BoxDecoration(
-                            color: AppColors.border,
-                            borderRadius: BorderRadius.circular(99),
-                          ),
+                      option(
+                        label: 'All Roles',
+                        selected: pendingRole == 'all',
+                        onTap: () => setSheetState(() => pendingRole = 'all'),
+                      ),
+                      option(
+                        label: 'University Admin',
+                        selected: pendingRole == 'university_admin',
+                        onTap: () => setSheetState(
+                          () => pendingRole = 'university_admin',
                         ),
                       ),
-                      const SizedBox(height: 18),
-                      Row(
-                        children: [
-                          Container(
-                            width: 42,
-                            height: 42,
-                            decoration: BoxDecoration(
-                              color: AppColors.primaryContainer,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: const Icon(
-                              Icons.tune_rounded,
-                              color: AppColors.green,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          const Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Filter Accounts',
-                                  style: TextStyle(
-                                    fontSize: AppTypography.sectionTitle,
-                                    fontWeight: FontWeight.w800,
-                                    color: AppColors.textPrimary,
-                                  ),
-                                ),
-                                Text(
-                                  'Narrow Results By Role And Status',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: AppColors.textSecondary,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          IconButton(
-                            tooltip: 'Close Filters',
-                            onPressed: () => Navigator.pop(sheetContext),
-                            icon: const Icon(Icons.close_rounded),
-                          ),
-                        ],
+                      option(
+                        label: 'Campus Admin',
+                        selected: pendingRole == 'campus_admin',
+                        onTap: () =>
+                            setSheetState(() => pendingRole = 'campus_admin'),
                       ),
-                      const SizedBox(height: 24),
-                      const Text(
-                        'ROLE',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.darkGreen,
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: [
-                          option(
-                            label: 'All Roles',
-                            selected: pendingRole == 'all',
-                            onTap: () =>
-                                setSheetState(() => pendingRole = 'all'),
-                          ),
-                          option(
-                            label: 'University Admin',
-                            selected: pendingRole == 'university_admin',
-                            onTap: () => setSheetState(
-                              () => pendingRole = 'university_admin',
-                            ),
-                          ),
-                          option(
-                            label: 'Campus Admin',
-                            selected: pendingRole == 'campus_admin',
-                            onTap: () => setSheetState(
-                              () => pendingRole = 'campus_admin',
-                            ),
-                          ),
-                          option(
-                            label: 'College Admin',
-                            selected: pendingRole == 'college_admin',
-                            onTap: () => setSheetState(
-                              () => pendingRole = 'college_admin',
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 22),
-                      const Text(
-                        'ACCOUNT STATUS',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.darkGreen,
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: [
-                          option(
-                            label: 'All Statuses',
-                            selected: pendingStatus == 'all',
-                            onTap: () =>
-                                setSheetState(() => pendingStatus = 'all'),
-                          ),
-                          option(
-                            label: 'Active',
-                            selected: pendingStatus == 'active',
-                            onTap: () =>
-                                setSheetState(() => pendingStatus = 'active'),
-                          ),
-                          option(
-                            label: 'Inactive',
-                            selected: pendingStatus == 'inactive',
-                            onTap: () =>
-                                setSheetState(() => pendingStatus = 'inactive'),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 28),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: OutlinedButton(
-                              onPressed: () => setSheetState(() {
-                                pendingRole = 'all';
-                                pendingStatus = 'all';
-                              }),
-                              style: OutlinedButton.styleFrom(
-                                minimumSize: const Size.fromHeight(50),
-                                side: const BorderSide(color: AppColors.green),
-                              ),
-                              child: const Text('Reset'),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: FilledButton(
-                              onPressed: () => Navigator.pop(sheetContext, [
-                                pendingRole,
-                                pendingStatus,
-                              ]),
-                              style: FilledButton.styleFrom(
-                                minimumSize: const Size.fromHeight(50),
-                                backgroundColor: AppColors.green,
-                              ),
-                              child: const Text('Apply Filters'),
-                            ),
-                          ),
-                        ],
+                      option(
+                        label: 'College Admin',
+                        selected: pendingRole == 'college_admin',
+                        onTap: () =>
+                            setSheetState(() => pendingRole = 'college_admin'),
                       ),
                     ],
                   ),
                 ),
-              ),
+                AppFilterSection(
+                  label: 'Account Status',
+                  child: Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      option(
+                        label: 'All Statuses',
+                        selected: pendingStatus == 'all',
+                        onTap: () => setSheetState(() => pendingStatus = 'all'),
+                      ),
+                      option(
+                        label: 'Active',
+                        selected: pendingStatus == 'active',
+                        onTap: () =>
+                            setSheetState(() => pendingStatus = 'active'),
+                      ),
+                      option(
+                        label: 'Inactive',
+                        selected: pendingStatus == 'inactive',
+                        onTap: () =>
+                            setSheetState(() => pendingStatus = 'inactive'),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           );
         },
@@ -852,7 +722,9 @@ class _ManageAccountsScreenState extends State<ManageAccountsScreen> {
                   ),
             filled: true,
             fillColor: AppColors.surfaceSubtle,
-            contentPadding: const EdgeInsets.symmetric(vertical: 14),
+            contentPadding: EdgeInsets.symmetric(
+              vertical: isMobile ? kMobileSearchVerticalPadding : 14,
+            ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
               borderSide: const BorderSide(color: AppColors.border),
@@ -910,35 +782,10 @@ class _ManageAccountsScreenState extends State<ManageAccountsScreen> {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Row(
-                children: [
-                  Expanded(child: search),
-                  const SizedBox(width: 10),
-                  IconButton(
-                    onPressed: _showMobileFilters,
-                    tooltip: 'Filters',
-                    style: IconButton.styleFrom(
-                      minimumSize: const Size(50, 50),
-                      foregroundColor: AppColors.darkGreen,
-                      backgroundColor: _appliedFilterCount > 0
-                          ? AppColors.primaryContainer
-                          : AppColors.surface,
-                      side: BorderSide(
-                        color: _appliedFilterCount > 0
-                            ? AppColors.green
-                            : AppColors.border,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                    ),
-                    icon: Badge(
-                      isLabelVisible: _appliedFilterCount > 0,
-                      label: Text('$_appliedFilterCount'),
-                      child: const Icon(Icons.tune_rounded),
-                    ),
-                  ),
-                ],
+              MobileSearchFilterRow(
+                search: search,
+                onFilter: _showMobileFilters,
+                activeCount: _appliedFilterCount,
               ),
               if (_appliedFilterCount > 0) ...[
                 const SizedBox(height: 10),
