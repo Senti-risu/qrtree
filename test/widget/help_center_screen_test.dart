@@ -27,8 +27,8 @@ void main() {
 
     expect(find.text('Help Center'), findsOneWidget);
     expect(find.text('Inspection Team'), findsNWidgets(2));
-    expect(find.text('Super Admin'), findsOneWidget);
-    expect(find.text('Guest'), findsOneWidget);
+    expect(find.text('Super Admin'), findsNothing);
+    expect(find.text('Guest'), findsNothing);
     expect(find.text('Help'), findsNWidgets(2));
     expect(
       find.textContaining('download assigned plants first'),
