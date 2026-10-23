@@ -51,11 +51,8 @@ widgets`, and `report models` are now `widgets/` and `models/` inside their
 features. Test filenames are unchanged, inside `test/unit` or `test/widget`.
 Tests containing both unit and widget cases live in `test/widget`.
 
-The old `lib/project structure` note is preserved at
-`docs/archive/initial_project_structure.txt`; it describes an earlier plan, not
-the current app. The older `plant_report.dart` is retained at
-`lib/screens/admin/reports/legacy/plant_list_page.dart`. Current named routes do
-not use its `PlantListPage` screen. No unfinished work was discarded.
+The old project structure note and the unused legacy `PlantListPage` screen
+have been removed; they are available in git history.
 
 ## Working conventions
 
