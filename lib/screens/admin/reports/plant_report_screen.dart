@@ -109,10 +109,11 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
         plant_id, variety, date_planted, tree_planter, created_at,
         campus_id, college_id, last_inspected_on, next_inspection_due_on, inspection_interval_days,
         plant_classification (common_name, scientific_name, plant_type),
-        campus:campus!plant_campus_id_fkey (campus_name), college (college_name),
+        campus:campus!plant_campus_id_fkey (campus_name),
+        college:college!plant_college_id_fkey (college_name),
         growth_status (growth_stage), health_status (status_name),
         qr_tag:qr_tag!plant_qr_tag_id_fkey(qr_code_string),
-        town(town_name), barangay(barangay_name)
+        town(town_name), barangay:barangay!plant_barangay_id_fkey(barangay_name)
       ''')
           .isFilter('archived_at', null);
       if (widget.role == 'campus_admin') {
@@ -421,6 +422,43 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
     }
   }
 
+  Future<void> _printCampusSummary(List<List<String>> rows) async {
+    final generated = ReportExportData.manilaNow();
+    try {
+      final bytes = await ReportExportService().campusSummaryPdf(
+        rows: rows,
+        scope: _scopeLabel,
+        filters: [
+          'Campus: $_campus',
+          'College: $_college',
+          'Type: $_plantType',
+          'Health: $_healthStatus',
+          'Growth: $_growthStage',
+        ].join('; '),
+        preparedBy: widget.username,
+        generated:
+            '${ReportExportData.date(generated)} ${generated.hour.toString().padLeft(2, "0")}:${generated.minute.toString().padLeft(2, "0")}',
+      );
+      if (!mounted) return;
+      await Printing.layoutPdf(
+        name: 'EcoTag_campus_summary_${ReportExportData.date(generated)}.pdf',
+        onLayout: (_) async => bytes,
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            userFacingError(
+              error,
+              fallback: 'Could not prepare the campus summary.',
+            ),
+          ),
+        ),
+      );
+    }
+  }
+
   String _tag(Map<String, dynamic> plant) {
     final tag = _map(plant['qr_tag'])['qr_code_string']?.toString();
     return tag == null || tag.isEmpty ? 'PLANT-${plant['plant_id']}' : tag;
@@ -490,11 +528,11 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
                   children: [
                     _kpiCards(),
                     const SizedBox(height: AppSpacing.lg),
-                    const MonitoringOutcomesCard(),
-                    const SizedBox(height: AppSpacing.lg),
                     _analytics(),
                     const SizedBox(height: AppSpacing.lg),
                     _inspectionAndScope(),
+                    const SizedBox(height: AppSpacing.lg),
+                    const MonitoringOutcomesCard(),
                     const SizedBox(height: AppSpacing.lg),
                     _detailedReport(),
                   ],
@@ -1027,15 +1065,13 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
   Widget _kpiCards() => LayoutBuilder(
     builder: (_, constraints) {
       final columns = AppBreakpoints.isDesktop(constraints.maxWidth)
-          ? 3
-          : AppBreakpoints.isTablet(constraints.maxWidth)
-          ? 2
+          ? 4
           : constraints.maxWidth >= 360
           ? 2
           : 1;
       final width =
-          (constraints.maxWidth - (AppSpacing.md * (columns - 1))) / columns;
-      final inspected = _filteredPlants.where(_inspected).length;
+          (constraints.maxWidth - (AppSpacing.md * (columns - 1))) / columns -
+          .01;
       return Wrap(
         spacing: AppSpacing.md,
         runSpacing: AppSpacing.md,
@@ -1066,20 +1102,6 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
             _count('Dead'),
             Icons.local_florist_outlined,
             AppColors.danger,
-            width,
-          ),
-          _kpi(
-            'Inspected',
-            inspected,
-            Icons.fact_check_outlined,
-            AppColors.info,
-            width,
-          ),
-          _kpi(
-            'Pending',
-            _filteredPlants.length - inspected,
-            Icons.pending_actions_outlined,
-            AppColors.warningAccent,
             width,
           ),
         ],
@@ -1706,6 +1728,34 @@ class _CollegePlantReportScreenState extends State<CollegePlantReportScreen> {
                     ),
                   ],
                 ),
+              ),
+              OutlinedButton.icon(
+                onPressed: campuses.isEmpty || _exporting
+                    ? null
+                    : () => _printCampusSummary([
+                        for (final campus in campuses)
+                          if (int.tryParse(
+                                campus['campus_id']?.toString() ?? '',
+                              )
+                              case final int id)
+                            [
+                              campus['campus_name']?.toString() ??
+                                  'Unknown campus',
+                              '${counts[id]?.healthy ?? 0}',
+                              '${counts[id]?.attention ?? 0}',
+                              '${counts[id]?.dead ?? 0}',
+                              '${counts[id]?.total ?? 0}',
+                            ],
+                        [
+                          'TOTAL',
+                          '$healthyTotal',
+                          '$attentionTotal',
+                          '$deadTotal',
+                          '$plantTotal',
+                        ],
+                      ]),
+                icon: const Icon(Icons.print_outlined, size: 18),
+                label: const Text('Print'),
               ),
             ],
           ),

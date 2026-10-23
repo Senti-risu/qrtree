@@ -173,26 +173,13 @@ class RecentPlantsTable extends StatelessWidget {
       ),
       const SizedBox(width: 12),
       Expanded(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              _name(plant),
-              style: const TextStyle(
-                fontWeight: FontWeight.w700,
-                fontSize: AppTypography.body,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            const SizedBox(height: 5),
-            Text(
-              _value(plant['tree_planter'], 'Planter Not Recorded'),
-              style: const TextStyle(
-                color: AppColors.textSecondary,
-                fontSize: AppTypography.caption,
-              ),
-            ),
-          ],
+        child: Text(
+          _name(plant),
+          style: const TextStyle(
+            fontWeight: FontWeight.w700,
+            fontSize: AppTypography.body,
+            color: AppColors.textPrimary,
+          ),
         ),
       ),
     ],
@@ -275,7 +262,7 @@ class RecentPlantsTable extends StatelessWidget {
           for (final label in [
             'PLANT',
             'TAG ID',
-            'VARIETY / STAGE',
+            'STAGE',
             'HEALTH',
             'LAST INSPECTION',
             'ACTION',
@@ -313,22 +300,9 @@ class RecentPlantsTable extends StatelessWidget {
               onTap: onViewPlant == null ? null : () => onViewPlant!(plant),
             ),
             _cell(
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    _value(plant['variety'], 'Not Specified'),
-                    style: const TextStyle(fontSize: AppTypography.body),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    _stage(plant),
-                    style: const TextStyle(
-                      fontSize: AppTypography.caption,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ],
+              Text(
+                _stage(plant),
+                style: const TextStyle(fontSize: AppTypography.body),
               ),
               onTap: onViewPlant == null ? null : () => onViewPlant!(plant),
             ),
@@ -380,16 +354,9 @@ class RecentPlantsTable extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 12),
-              Wrap(
-                spacing: 20,
-                runSpacing: 10,
-                children: [
-                  Text(_value(plant['variety'], 'Not Specified')),
-                  Text(
-                    _stage(plant),
-                    style: const TextStyle(color: AppColors.textSecondary),
-                  ),
-                ],
+              Text(
+                _stage(plant),
+                style: const TextStyle(color: AppColors.textSecondary),
               ),
               const SizedBox(height: 12),
               _badge(plant),

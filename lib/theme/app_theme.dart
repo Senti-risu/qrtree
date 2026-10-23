@@ -150,14 +150,15 @@ class AppTheme {
       dataTableTheme: DataTableThemeData(
         headingRowColor: const WidgetStatePropertyAll(AppColors.surfaceSubtle),
         headingRowHeight: 48,
-        dataRowMinHeight: 56,
+        dataRowMinHeight: 64,
         dataRowMaxHeight: double.infinity,
-        horizontalMargin: 16,
+        horizontalMargin: 18,
         columnSpacing: 24,
+        dividerThickness: 1,
         headingTextStyle: compactTextTheme.labelMedium?.copyWith(
           fontSize: 11,
           fontWeight: FontWeight.w700,
-          letterSpacing: 0.8,
+          letterSpacing: 0.7,
           color: AppColors.textSecondary,
         ),
         dataTextStyle: compactTextTheme.bodyMedium,

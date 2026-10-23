@@ -108,6 +108,75 @@ class ReportExportService {
         ],
   ];
 
+  Future<Uint8List> campusSummaryPdf({
+    required List<List<String>> rows,
+    required String scope,
+    required String filters,
+    required String preparedBy,
+    required String generated,
+  }) async {
+    final regular = await rootBundle.load('assets/fonts/Roboto-Regular.ttf');
+    final bold = await rootBundle.load('assets/fonts/Roboto-Bold.ttf');
+    final document = pw.Document(
+      title: 'EcoTag - Campus Summary',
+      author: preparedBy,
+      theme: pw.ThemeData.withFont(
+        base: pw.Font.ttf(regular),
+        bold: pw.Font.ttf(bold),
+      ),
+    );
+    document.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.all(36),
+        build: (_) => [
+          pw.Text(
+            'EcoTag - Campus Summary',
+            style: pw.TextStyle(
+              fontSize: 20,
+              fontWeight: pw.FontWeight.bold,
+              color: _green,
+            ),
+          ),
+          pw.SizedBox(height: 4),
+          pw.Text('Plant health totals for each campus'),
+          pw.SizedBox(height: 10),
+          pw.Text('Scope: $scope', style: const pw.TextStyle(fontSize: 9)),
+          pw.Text('Filters: $filters', style: const pw.TextStyle(fontSize: 9)),
+          pw.Text(
+            'Prepared by: $preparedBy | Generated: $generated',
+            style: const pw.TextStyle(fontSize: 9),
+          ),
+          pw.SizedBox(height: 14),
+          pw.TableHelper.fromTextArray(
+            headers: const [
+              'Campus',
+              'Healthy',
+              'Needs Attention',
+              'Dead',
+              'Total',
+            ],
+            data: rows,
+            headerStyle: pw.TextStyle(
+              fontWeight: pw.FontWeight.bold,
+              color: PdfColors.white,
+            ),
+            headerDecoration: pw.BoxDecoration(color: _green),
+            cellAlignments: {
+              for (var i = 1; i < 5; i++) i: pw.Alignment.centerRight,
+            },
+            border: pw.TableBorder.all(color: _line, width: .5),
+            cellPadding: const pw.EdgeInsets.symmetric(
+              horizontal: 8,
+              vertical: 6,
+            ),
+          ),
+        ],
+      ),
+    );
+    return document.save();
+  }
+
   Future<Uint8List> pdfBytes(ExportReport report) async {
     final regular = await rootBundle.load('assets/fonts/Roboto-Regular.ttf');
     final bold = await rootBundle.load('assets/fonts/Roboto-Bold.ttf');

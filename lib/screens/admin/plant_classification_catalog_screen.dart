@@ -262,14 +262,14 @@ class _PlantClassificationCatalogScreenState
   ) async {
     final commonName =
         classification['common_name']?.toString() ?? 'this classification';
+    if (classification['is_used'] == true) return;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Remove plant classification?'),
         content: Text(
-          '"$commonName" will be removed from the catalog and no longer be '
-          'available for new plant records. Existing plants and their saved '
-          'data will not be deleted.',
+          '"$commonName" will be removed from the catalog. Only entries that '
+          'are not used by any plant can be removed.',
         ),
         actions: [
           TextButton(
@@ -455,10 +455,16 @@ class _PlantClassificationCatalogScreenState
         constraints: const BoxConstraints.tightFor(width: 40, height: 40),
       ),
       IconButton(
-        tooltip: 'Delete ${classification['common_name'] ?? 'classification'}',
-        onPressed: _saving ? null : () => _deleteClassification(classification),
+        tooltip: classification['is_used'] == true
+            ? 'Cannot delete ${classification['common_name'] ?? 'classification'} because plants use it'
+            : 'Delete ${classification['common_name'] ?? 'classification'}',
+        onPressed: _saving || classification['is_used'] == true
+            ? null
+            : () => _deleteClassification(classification),
         icon: const Icon(Icons.delete_outline_rounded),
-        color: AppColors.danger,
+        color: classification['is_used'] == true
+            ? AppColors.textSecondary
+            : AppColors.danger,
         visualDensity: VisualDensity.compact,
         constraints: const BoxConstraints.tightFor(width: 40, height: 40),
       ),

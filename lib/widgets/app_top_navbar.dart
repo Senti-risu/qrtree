@@ -61,7 +61,9 @@ class AppTopNavbar extends StatelessWidget {
               64.0,
               160.0,
             ),
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
+      padding: EdgeInsets.symmetric(
+        horizontal: compact ? AppSpacing.sm : AppSpacing.xl,
+      ),
       decoration: const BoxDecoration(
         color: AppColors.surface,
         border: Border(bottom: BorderSide(color: AppColors.navbarBorder)),
@@ -113,26 +115,32 @@ class AppTopNavbar extends StatelessWidget {
               ),
             ),
             const SizedBox(width: AppSpacing.sm),
-            const Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'EcoTag',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                    color: AppColors.darkGreen,
+            const Flexible(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'EcoTag',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: AppColors.darkGreen,
+                    ),
                   ),
-                ),
-                Text(
-                  'Campus Plant Profiling System',
-                  style: TextStyle(
-                    fontSize: 10,
-                    color: AppColors.textSecondary,
+                  Text(
+                    'Campus Plant Profiling System',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: AppColors.textSecondary,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ],
           if (showBrand) const Spacer(),

@@ -127,14 +127,29 @@ class PlantService implements PlantClassificationCatalog {
         .from('plant_classification')
         .select(
           'classification_id, plant_type, common_name, scientific_name, '
-          'plant_classification_variety(variety_id, variety_name)',
+          'plant(count), plant_classification_variety(variety_id, variety_name)',
         )
         .eq('is_active', true)
         .order('common_name');
 
-    return List<Map<String, dynamic>>.from(
-      data,
-    ).map(capitalizeLookupNames).toList();
+    return List<Map<String, dynamic>>.from(data).map((classification) {
+      final normalized = capitalizeLookupNames(classification);
+      normalized['is_used'] = _plantCount(classification['plant']) > 0;
+      return normalized;
+    }).toList();
+  }
+
+  int _plantCount(Object? relation) {
+    if (relation is List && relation.isEmpty) return 0;
+    final countRow = relation is List ? relation.first : relation;
+    if (countRow is! Map) {
+      throw const FormatException(
+        'Plant classification usage count is unavailable.',
+      );
+    }
+    final count = countRow['count'];
+    if (count is int && count >= 0) return count;
+    throw const FormatException('Plant classification usage count is invalid.');
   }
 
   @override

@@ -7,6 +7,8 @@ See [Project structure](docs/PROJECT_STRUCTURE.md) for source folders, screen
 locations, and test groups.
 See the [project guide](docs/PROJECT_GUIDE.md) for the system's roles, features,
 user flows, and code responsibilities.
+See the [system diagrams](docs/SYSTEM_DIAGRAMS.md) for the architecture, roles,
+and inspection synchronization flow.
 See the [user guide](docs/USER_GUIDE.md) for staff and guest instructions.
 
 ## Run locally
@@ -39,10 +41,19 @@ data before using a fresh Supabase project.
 
 Apply unapplied migrations in filename order, beginning with
 `202608230001_add_plant_inspections.sql` and ending with
-`202610200002_automatic_qr_damage.sql` (the latest migration currently in this
-repository). Use Supabase SQL Editor or your established migration runner, and
-record applied filenames. Do not reapply older function definitions after newer
-migrations. Verify upgrades against a staging copy first.
+`202610230002_only_delete_unused_plant_classifications.sql` (the latest migration
+currently in this repository). Use Supabase SQL Editor or your established
+migration runner, and record applied filenames. Do not reapply older function
+definitions after newer migrations. Verify upgrades against a staging copy
+first.
+
+The latest migration backfills `plant_classification.plant_type_id` and adds a
+foreign key to `plant_type_catalog`. It aborts if any existing classification
+has no matching catalog entry. The existing `plant_type` text column remains
+synchronized for compatibility with current app queries and database functions.
+Plant classifications can be removed from the active catalog only when no
+plant record references them; this is checked by both the catalog UI and the
+database function.
 
 Deploy the unapplied migrations before distributing this client. Monitoring adds request
 IDs and observation timestamps to inspections, the staff timeline, and scope-checked

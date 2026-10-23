@@ -34,7 +34,6 @@ class InspectionSchedule {
         _date(plant['next_inspection_due_on']) ??
         reference?.add(Duration(days: intervalDays(plant)));
     final today = _date(now ?? DateTime.now())!;
-    // A plant due today is not overdue until the next calendar day.
     return due != null && due.isBefore(today);
   }
 }

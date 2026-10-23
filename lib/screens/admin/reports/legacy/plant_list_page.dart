@@ -118,7 +118,7 @@ class _PlantListPageState extends State<PlantListPage> {
         campus:campus!plant_campus_id_fkey (
           campus_name
         ),
-        college (
+        college:college!plant_college_id_fkey (
           college_name
         )
       ''')

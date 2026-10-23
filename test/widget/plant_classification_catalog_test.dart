@@ -125,6 +125,20 @@ void main() {
     );
   });
 
+  test('only unused classifications can be removed', () {
+    final sql = File(
+      'supabase/migrations/202610230002_only_delete_unused_plant_classifications.sql',
+    ).readAsStringSync();
+    expect(sql, contains('where p.classification_id = p_classification_id'));
+    expect(
+      sql,
+      contains(
+        'This plant classification cannot be removed because existing plants use it',
+      ),
+    );
+    expect(sql, contains('for share'));
+  });
+
   test('plant types are stored in a managed, extensible catalog', () {
     final sql = File(
       'supabase/migrations/202610220001_addable_plant_types.sql',
@@ -242,7 +256,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(
         find.textContaining(
-          'Existing plants and their saved data will not be deleted.',
+          'Only entries that are not used by any plant can be removed.',
         ),
         findsOneWidget,
       );
@@ -261,6 +275,47 @@ void main() {
       expect(tester.takeException(), isNull);
     },
   );
+
+  testWidgets('delete is disabled for classifications used by plants', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1440, 1000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final catalog = FakePlantCatalog()
+      ..entries.add({
+        'classification_id': 1,
+        'plant_type': 'Tree',
+        'common_name': 'Mango',
+        'scientific_name': 'Mangifera indica',
+        'is_used': true,
+        'plant_classification_variety': [],
+      });
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: PlantClassificationCatalogScreen(
+          userId: 5,
+          username: 'University Admin',
+          role: 'university_admin',
+          catalog: catalog,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final deleteButton = tester.widget<IconButton>(
+      find.ancestor(
+        of: find.byTooltip('Cannot delete Mango because plants use it'),
+        matching: find.byType(IconButton),
+      ),
+    );
+    expect(deleteButton.onPressed, isNull);
+    expect(catalog.deletes, 0);
+    expect(tester.takeException(), isNull);
+  });
 
   testWidgets('catalog type filter is a dropdown beside search', (
     tester,

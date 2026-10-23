@@ -91,9 +91,10 @@ class _PlantListScreenState extends State<PlantListScreen> {
         archived_at, archive_reason,
         planting_location_type,
         planting_campus:campus!plant_planting_campus_id_fkey(campus_name),
-        town(town_name), barangay(barangay_name),
+        town(town_name), barangay:barangay!plant_barangay_id_fkey(barangay_name),
         plant_classification (common_name, scientific_name, plant_type),
-        campus:campus!plant_campus_id_fkey (campus_name), college (college_name),
+        campus:campus!plant_campus_id_fkey (campus_name),
+        college:college!plant_college_id_fkey (college_name),
         growth_status (growth_stage), health_status (status_name),
         qr_tag:qr_tag!plant_qr_tag_id_fkey(qr_code_string)
       ''');
@@ -895,99 +896,7 @@ class _PlantListScreenState extends State<PlantListScreen> {
           ),
           const SizedBox(height: 8),
           const Divider(),
-          SizedBox(
-            width: double.infinity,
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: DataTable(
-                showCheckboxColumn: false,
-                headingRowColor: const WidgetStatePropertyAll(
-                  AppColors.background,
-                ),
-                columnSpacing: 28,
-                columns: const [
-                  DataColumn(label: Text('PLANT NAME')),
-                  DataColumn(label: Text('TAG ID')),
-                  DataColumn(label: Text('PLANT TYPE')),
-                  DataColumn(label: Text('CAMPUS')),
-                  DataColumn(label: Text('STAGE')),
-                  DataColumn(label: Text('HEALTH')),
-                  DataColumn(label: Text('DATE PLANTED')),
-                  DataColumn(label: Text('LAST INSPECTION')),
-                  DataColumn(label: Text('ACTION')),
-                ],
-                rows: pagePlants.map((plant) {
-                  final classification = _map(plant['plant_classification']);
-                  return DataRow(
-                    onSelectChanged: (_) => _openPlant(plant),
-                    cells: [
-                      DataCell(
-                        Row(
-                          children: [
-                            _plantAvatar(plant, 38),
-                            const SizedBox(width: 10),
-                            SizedBox(
-                              width: 130,
-                              child: Text(
-                                classification['common_name']?.toString() ??
-                                    'Unnamed plant',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      DataCell(Text(_tagId(plant))),
-                      DataCell(
-                        Text(classification['plant_type']?.toString() ?? '—'),
-                      ),
-                      DataCell(
-                        Text(
-                          _map(plant['campus'])['campus_name']?.toString() ??
-                              '—',
-                        ),
-                      ),
-                      DataCell(
-                        Text(
-                          _map(
-                                plant['growth_status'],
-                              )['growth_stage']?.toString() ??
-                              '—',
-                        ),
-                      ),
-                      DataCell(_statusChip(_health(plant))),
-                      DataCell(Text(_date(plant['date_planted']))),
-                      DataCell(Text(_lastInspected(plant))),
-                      DataCell(
-                        plant['archived_at'] != null &&
-                                _capabilities.canRestorePlants
-                            ? OutlinedButton.icon(
-                                onPressed: () => _restorePlant(plant),
-                                icon: const Icon(
-                                  Icons.unarchive_outlined,
-                                  size: 18,
-                                ),
-                                label: const Text('Restore'),
-                              )
-                            : TextButton.icon(
-                                onPressed: () => _openPlant(plant),
-                                icon: const Icon(
-                                  Icons.visibility_outlined,
-                                  size: 18,
-                                ),
-                                label: const Text('View'),
-                              ),
-                      ),
-                    ],
-                  );
-                }).toList(),
-              ),
-            ),
-          ),
+          _plantGrid(pagePlants),
           Row(
             children: [
               Expanded(
@@ -1017,6 +926,191 @@ class _PlantListScreenState extends State<PlantListScreen> {
             ],
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _gridCell(Widget child, {bool heading = false, VoidCallback? onTap}) =>
+      InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: 18,
+            vertical: heading ? 16 : 18,
+          ),
+          child: child,
+        ),
+      );
+
+  Widget _plantGrid(List<Map<String, dynamic>> plants) {
+    final extraLabel = _canFilterCampus
+        ? 'CAMPUS'
+        : widget.role == 'campus_admin'
+        ? 'COLLEGE'
+        : null;
+    final labels = [
+      'PLANT',
+      'TAG ID',
+      'PLANT TYPE',
+      ?extraLabel,
+      'STAGE',
+      'HEALTH',
+      'DATE PLANTED',
+      'LAST INSPECTION',
+      'ACTION',
+    ];
+    const muted = TextStyle(
+      fontSize: AppTypography.caption,
+      color: AppColors.textSecondary,
+    );
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minWidth: 1150),
+        child: SizedBox(
+          width: 1150 + (extraLabel == null ? 0 : 150),
+          child: Table(
+            columnWidths: {
+              0: const FlexColumnWidth(2.2),
+              1: const FlexColumnWidth(1.9),
+              2: const FlexColumnWidth(1.3),
+              for (var i = 3; i < labels.length - 1; i++)
+                i: const FlexColumnWidth(1.4),
+              labels.length - 1: const FixedColumnWidth(170),
+            },
+            defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+            border: const TableBorder(
+              horizontalInside: BorderSide(color: AppColors.border),
+            ),
+            children: [
+              TableRow(
+                decoration: const BoxDecoration(color: AppColors.surfaceSubtle),
+                children: [
+                  for (final label in labels)
+                    _gridCell(
+                      Text(
+                        label,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: .7,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                      heading: true,
+                    ),
+                ],
+              ),
+              for (final plant in plants)
+                () {
+                  final classification = _map(plant['plant_classification']);
+                  void open() => _openPlant(plant);
+                  return TableRow(
+                    children: [
+                      _gridCell(
+                        Row(
+                          children: [
+                            _plantAvatar(plant, 42),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                classification['common_name']?.toString() ??
+                                    'Unnamed plant',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: AppTypography.body,
+                                  color: AppColors.textPrimary,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        onTap: open,
+                      ),
+                      _gridCell(
+                        Text(
+                          _tagId(plant),
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                        onTap: open,
+                      ),
+                      _gridCell(
+                        Text(classification['plant_type']?.toString() ?? '—'),
+                        onTap: open,
+                      ),
+                      if (_canFilterCampus)
+                        _gridCell(
+                          Text(
+                            _map(plant['campus'])['campus_name']?.toString() ??
+                                '—',
+                          ),
+                          onTap: open,
+                        )
+                      else if (extraLabel != null)
+                        _gridCell(
+                          Text(
+                            _map(
+                                  plant['college'],
+                                )['college_name']?.toString() ??
+                                '—',
+                          ),
+                          onTap: open,
+                        ),
+                      _gridCell(
+                        Text(
+                          _map(
+                                plant['growth_status'],
+                              )['growth_stage']?.toString() ??
+                              'Not Recorded',
+                        ),
+                        onTap: open,
+                      ),
+                      _gridCell(
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: _statusChip(_health(plant)),
+                        ),
+                        onTap: open,
+                      ),
+                      _gridCell(
+                        Text(_date(plant['date_planted']), style: muted),
+                        onTap: open,
+                      ),
+                      _gridCell(
+                        Text(_lastInspected(plant), style: muted),
+                        onTap: open,
+                      ),
+                      _gridCell(
+                        plant['archived_at'] != null &&
+                                _capabilities.canRestorePlants
+                            ? OutlinedButton.icon(
+                                onPressed: () => _restorePlant(plant),
+                                icon: const Icon(
+                                  Icons.unarchive_outlined,
+                                  size: 16,
+                                ),
+                                label: const Text('Restore'),
+                              )
+                            : OutlinedButton.icon(
+                                onPressed: open,
+                                icon: const Icon(Icons.open_in_new, size: 16),
+                                label: const Text(
+                                  'View Plant',
+                                  style: TextStyle(
+                                    fontSize: AppTypography.caption,
+                                  ),
+                                ),
+                              ),
+                      ),
+                    ],
+                  );
+                }(),
+            ],
+          ),
+        ),
       ),
     );
   }

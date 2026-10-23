@@ -201,6 +201,7 @@ deployment checks against a staging Supabase project or device testing.
 
 ## Further reading
 
+- [System diagrams](./SYSTEM_DIAGRAMS.md)
 - [Project structure](./PROJECT_STRUCTURE.md)
 - [Monitoring workflows](./MONITORING_WORKFLOWS.md)
 - [Registration drafts](./REGISTRATION_DRAFTS.md)

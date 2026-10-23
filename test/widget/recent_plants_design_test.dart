@@ -81,7 +81,7 @@ void main() {
             ),
           );
           expect(find.text('ECOTAG-202610-000004'), findsOneWidget);
-          expect(find.text('Campus Team'), findsOneWidget);
+          expect(find.text('Campus Team'), findsNothing);
           expect(find.text('Healthy'), findsNWidgets(2));
           expect(find.text('Dead'), findsOneWidget);
           await tester.ensureVisible(find.text('View Plant').first);
